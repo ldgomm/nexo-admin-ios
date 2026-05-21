@@ -2,7 +2,7 @@
 //  AppContainer.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import Combine
@@ -16,6 +16,8 @@ final class AppContainer: ObservableObject {
     let apiClient: APIClient
     let authRepository: any AuthRepository
     let dashboardRepository: any DashboardRepository
+    let adminAccessRepository: any AdminAccessRepository
+    let adminBusinessRepository: any AdminBusinessRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -27,6 +29,8 @@ final class AppContainer: ObservableObject {
         apiClient: APIClient,
         authRepository: any AuthRepository,
         dashboardRepository: any DashboardRepository,
+        adminAccessRepository: any AdminAccessRepository,
+        adminBusinessRepository: any AdminBusinessRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -36,6 +40,8 @@ final class AppContainer: ObservableObject {
         self.apiClient = apiClient
         self.authRepository = authRepository
         self.dashboardRepository = dashboardRepository
+        self.adminAccessRepository = adminAccessRepository
+        self.adminBusinessRepository = adminBusinessRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -61,6 +67,10 @@ final class AppContainer: ObservableObject {
         let authRepository = RemoteAuthRepository(authAPI: authAPI)
         let dashboardAPI = RemoteDashboardAPI(apiClient: client)
         let dashboardRepository = RemoteDashboardRepository(api: dashboardAPI)
+        let adminAccessAPI = RemoteAdminAccessAPI(apiClient: client)
+        let adminAccessRepository = RemoteAdminAccessRepository(api: adminAccessAPI)
+        let adminBusinessAPI = RemoteAdminBusinessAPI(apiClient: client)
+        let adminBusinessRepository = RemoteAdminBusinessRepository(api: adminBusinessAPI)
 
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
@@ -80,6 +90,8 @@ final class AppContainer: ObservableObject {
             apiClient: client,
             authRepository: authRepository,
             dashboardRepository: dashboardRepository,
+            adminAccessRepository: adminAccessRepository,
+            adminBusinessRepository: adminBusinessRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )

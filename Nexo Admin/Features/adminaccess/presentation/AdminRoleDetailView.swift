@@ -1,0 +1,187 @@
+//
+//  AdminRoleDetailView.swift
+//  Nexo Admin
+//
+//  Created by José Ruiz on 21/5/26.
+//
+
+import SwiftUI
+
+struct AdminRoleDetailView: View {
+    @StateObject var viewModel: AdminRoleDetailViewModel
+    @State private var selectedSheet: AdminRoleDetailSheet?
+
+    var body: some View {
+        List { content }
+            .navigationTitle("Rol")
+            .refreshable { await viewModel.refresh() }
+            .task { await viewModel.load() }
+            .alert("No se pudo completar", isPresented: Binding(get: { viewModel.errorMessage != nil }, set: { _ in viewModel.errorMessage = nil })) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.errorMessage ?? "")
+            }
+            .sheet(item: $selectedSheet) { sheet in
+                NavigationStack { sheetContent(sheet) }
+            }
+    }
+
+    @ViewBuilder private var content: some View {
+        switch viewModel.state {
+        case .idle, .loading:
+            Section { ProgressView("Cargando rol…") }
+        case .empty(let message):
+            Section { EmptyStateView(systemImage: "person.badge.key", title: "Sin rol", message: message) }
+        case .failed(let message):
+            Section { ErrorStateView(title: "No se pudo cargar", message: message, retry: { Task { await viewModel.refresh() } }) }
+        case .loaded(let role):
+            Section("Resumen") {
+                LabeledContent("Nombre", value: role.name)
+                LabeledContent("Código", value: role.code)
+                LabeledContent("Estado", value: role.status.readableStatus)
+                LabeledContent("Tipo", value: role.type.readableStatus)
+                LabeledContent("Scope", value: role.scope.readableStatus)
+                LabeledContent("Versión", value: "\(role.schemaVersion)")
+                Text(role.description)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Seguridad") {
+                Toggle("Rol del sistema", isOn: .constant(role.systemRole)).disabled(true)
+                Toggle("Crítico", isOn: .constant(role.critical)).disabled(true)
+                Toggle("Editable", isOn: .constant(role.editable)).disabled(true)
+            }
+
+            Section("Permisos") {
+                if role.permissionKeys.isEmpty {
+                    Text("Sin permisos")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(role.permissionKeys.sorted(), id: \.self) { permission in
+                        Text(permission)
+                            .font(.caption.monospaced())
+                    }
+                }
+            }
+
+            Section("Acciones") {
+                if role.canBeEditedFromApp {
+                    Button { selectedSheet = .edit } label: { Label("Editar rol", systemImage: "square.and.pencil") }
+                    if role.isActive {
+                        Button(role: .destructive) { selectedSheet = .deactivate } label: { Label("Desactivar", systemImage: "pause.circle") }
+                    } else {
+                        Button { selectedSheet = .activate } label: { Label("Activar", systemImage: "play.circle") }
+                    }
+                } else {
+                    Text("Este rol no puede editarse desde la administración de la organización.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func sheetContent(_ sheet: AdminRoleDetailSheet) -> some View {
+        switch sheet {
+        case .edit:
+            AdminRoleEditView(viewModel: viewModel, onDone: { selectedSheet = nil })
+        case .activate:
+            AdminRoleReasonActionView(
+                title: "Activar rol",
+                message: "El rol volverá a poder asignarse y usarse según reglas del backend.",
+                reason: $viewModel.actionReason,
+                isMutating: viewModel.isMutating,
+                actionTitle: "Activar",
+                role: nil,
+                onCancel: { selectedSheet = nil },
+                onConfirm: { await viewModel.activate(); if viewModel.errorMessage == nil { selectedSheet = nil } }
+            )
+        case .deactivate:
+            AdminRoleReasonActionView(
+                title: "Desactivar rol",
+                message: "El backend rechazará la operación si deja a la organización sin administrador o sin gestor de roles.",
+                reason: $viewModel.actionReason,
+                isMutating: viewModel.isMutating,
+                actionTitle: "Desactivar",
+                role: .destructive,
+                onCancel: { selectedSheet = nil },
+                onConfirm: { await viewModel.deactivate(); if viewModel.errorMessage == nil { selectedSheet = nil } }
+            )
+        }
+    }
+}
+
+private enum AdminRoleDetailSheet: Identifiable {
+    case edit
+    case activate
+    case deactivate
+
+    var id: String { String(describing: self) }
+}
+
+private struct AdminRoleEditView: View {
+    @ObservedObject var viewModel: AdminRoleDetailViewModel
+    let onDone: () -> Void
+
+    var body: some View {
+        Form {
+            Section("Datos") {
+                TextField("Nombre", text: $viewModel.updateInput.name)
+                TextField("Descripción", text: $viewModel.updateInput.description, axis: .vertical)
+                    .lineLimit(2...4)
+            }
+
+            PermissionSelectionList(
+                permissions: viewModel.permissions,
+                selectedPermissionKeys: $viewModel.updateInput.permissionKeys
+            )
+
+            Section("Auditoría") {
+                TextField("Motivo", text: $viewModel.updateInput.reason, axis: .vertical)
+                    .lineLimit(2...4)
+            }
+        }
+        .navigationTitle("Editar rol")
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) { Button("Cancelar", action: onDone) }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Guardar") {
+                    Task {
+                        await viewModel.save()
+                        if viewModel.errorMessage == nil { onDone() }
+                    }
+                }
+                .disabled(!viewModel.canSave || viewModel.isMutating)
+            }
+        }
+    }
+}
+
+private struct AdminRoleReasonActionView: View {
+    let title: String
+    let message: String
+    @Binding var reason: String
+    let isMutating: Bool
+    let actionTitle: String
+    let role: ButtonRole?
+    let onCancel: () -> Void
+    let onConfirm: () async -> Void
+
+    var body: some View {
+        Form {
+            Section { Text(message).foregroundStyle(.secondary) }
+            Section("Auditoría") {
+                TextField("Motivo", text: $reason, axis: .vertical)
+                    .lineLimit(2...4)
+            }
+        }
+        .navigationTitle(title)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) { Button("Cancelar", action: onCancel) }
+            ToolbarItem(placement: .confirmationAction) {
+                Button(actionTitle, role: role) { Task { await onConfirm() } }
+                    .disabled(reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isMutating)
+            }
+        }
+    }
+}

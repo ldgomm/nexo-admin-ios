@@ -10,6 +10,8 @@ import SwiftUI
 struct AdminShellView: View {
     @ObservedObject var sessionStore: AuthSessionStore
     let dashboardRepository: any DashboardRepository
+    let adminAccessRepository: any AdminAccessRepository
+    let adminBusinessRepository: any AdminBusinessRepository
     let onLogout: () -> Void
 
     @State private var selectedTab: AdminShellTab = .dashboard
@@ -26,9 +28,12 @@ struct AdminShellView: View {
             .tabItem { Label("Inicio", systemImage: "chart.bar.doc.horizontal") }
             .tag(AdminShellTab.dashboard)
 
-            BusinessPlaceholderView(sessionStore: sessionStore)
-                .tabItem { Label("Negocio", systemImage: "building.2") }
-                .tag(AdminShellTab.business)
+            AdminBusinessHomeView(
+                sessionStore: sessionStore,
+                repository: adminBusinessRepository
+            )
+            .tabItem { Label("Negocio", systemImage: "building.2") }
+            .tag(AdminShellTab.business)
 
             CatalogPlaceholderView(sessionStore: sessionStore)
                 .tabItem { Label("Catálogo", systemImage: "square.grid.2x2") }
@@ -38,9 +43,13 @@ struct AdminShellView: View {
                 .tabItem { Label("Fiscal/SRI", systemImage: "doc.text.magnifyingglass") }
                 .tag(AdminShellTab.fiscal)
 
-            AdminProfileView(sessionStore: sessionStore, onLogout: onLogout)
-                .tabItem { Label("Admin", systemImage: "person.crop.circle") }
-                .tag(AdminShellTab.admin)
+            AdminAccessHomeView(
+                sessionStore: sessionStore,
+                repository: adminAccessRepository,
+                onLogout: onLogout
+            )
+            .tabItem { Label("Admin", systemImage: "person.crop.circle") }
+            .tag(AdminShellTab.admin)
         }
     }
 
@@ -68,26 +77,6 @@ private enum AdminShellTab: Hashable {
     case admin
 }
 
-private struct BusinessPlaceholderView: View {
-    @ObservedObject var sessionStore: AuthSessionStore
-
-    var body: some View {
-        PlaceholderModuleView(
-            title: "Negocio",
-            systemImage: "building.2.fill",
-            message: "Datos del negocio, actividades, sucursales, horarios y puntos de emisión entran en el sprint de configuración del negocio.",
-            permissions: sessionStore.effectivePermissions,
-            required: [
-                PermissionCatalog.organizationView,
-                PermissionCatalog.organizationUpdate,
-                PermissionCatalog.activitiesView,
-                PermissionCatalog.branchesView,
-                PermissionCatalog.emissionPointsView
-            ]
-        )
-    }
-}
-
 private struct CatalogPlaceholderView: View {
     @ObservedObject var sessionStore: AuthSessionStore
 
@@ -95,7 +84,7 @@ private struct CatalogPlaceholderView: View {
         PlaceholderModuleView(
             title: "Catálogo",
             systemImage: "square.grid.2x2.fill",
-            message: "Catálogo local, búsqueda, copia desde maestro, solicitudes e historial de precios entran después del dashboard.",
+            message: "Catálogo local, búsqueda, copia desde maestro, solicitudes e historial de precios entran después de configuración del negocio.",
             permissions: sessionStore.effectivePermissions,
             required: [
                 PermissionCatalog.catalogLocalView,

@@ -32,8 +32,13 @@ enum PermissionCatalog {
     static let branchLocationUpdate = "branch.location.update"
     static let businessHoursView = "business_hours.view"
     static let businessHoursUpdate = "business_hours.update"
-    static let emissionPointsView = "settings.emission_points.view"
-    static let emissionPointsManage = "settings.emission_points.manage"
+    static let businessHoursPublicVisibilityUpdate = "business_hours.public_visibility.update"
+    static let settingsBranchesView = "settings.branches.view"
+    static let settingsBranchesManage = "settings.branches.manage"
+    static let settingsEmissionPointsView = "settings.emission_points.view"
+    static let settingsEmissionPointsManage = "settings.emission_points.manage"
+    static let emissionPointsView = settingsEmissionPointsView
+    static let emissionPointsManage = settingsEmissionPointsManage
 
     static let catalogLocalView = "catalog.local.view"
     static let catalogLocalCopyFromMaster = "catalog.local.copy_from_master"
