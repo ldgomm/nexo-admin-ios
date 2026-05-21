@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		AC920BBF2FBE96B900DFC157 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AC920B3B2FBE8EEC00DFC157 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AC920B422FBE8EEC00DFC157;
+			remoteInfo = "Nexo Admin";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		AC920B432FBE8EEC00DFC157 /* Nexo Admin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Nexo Admin.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC920BBB2FBE96B900DFC157 /* Nexo AdminTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Nexo AdminTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = "Nexo Admin";
 			sourceTree = "<group>";
 		};
+		AC920BBC2FBE96B900DFC157 /* Nexo AdminTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Nexo AdminTests";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AC920B402FBE8EEC00DFC157 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC920BB82FBE96B900DFC157 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				AC920B452FBE8EEC00DFC157 /* Nexo Admin */,
+				AC920BBC2FBE96B900DFC157 /* Nexo AdminTests */,
 				AC920B442FBE8EEC00DFC157 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				AC920B432FBE8EEC00DFC157 /* Nexo Admin.app */,
+				AC920BBB2FBE96B900DFC157 /* Nexo AdminTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,29 @@
 			productReference = AC920B432FBE8EEC00DFC157 /* Nexo Admin.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AC920BBA2FBE96B900DFC157 /* Nexo AdminTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AC920BC12FBE96B900DFC157 /* Build configuration list for PBXNativeTarget "Nexo AdminTests" */;
+			buildPhases = (
+				AC920BB72FBE96B900DFC157 /* Sources */,
+				AC920BB82FBE96B900DFC157 /* Frameworks */,
+				AC920BB92FBE96B900DFC157 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AC920BC02FBE96B900DFC157 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AC920BBC2FBE96B900DFC157 /* Nexo AdminTests */,
+			);
+			name = "Nexo AdminTests";
+			packageProductDependencies = (
+			);
+			productName = "Nexo AdminTests";
+			productReference = AC920BBB2FBE96B900DFC157 /* Nexo AdminTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +130,10 @@
 				TargetAttributes = {
 					AC920B422FBE8EEC00DFC157 = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					AC920BBA2FBE96B900DFC157 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = AC920B422FBE8EEC00DFC157;
 					};
 				};
 			};
@@ -100,12 +152,20 @@
 			projectRoot = "";
 			targets = (
 				AC920B422FBE8EEC00DFC157 /* Nexo Admin */,
+				AC920BBA2FBE96B900DFC157 /* Nexo AdminTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AC920B412FBE8EEC00DFC157 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC920BB92FBE96B900DFC157 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +182,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AC920BB72FBE96B900DFC157 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AC920BC02FBE96B900DFC157 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AC920B422FBE8EEC00DFC157 /* Nexo Admin */;
+			targetProxy = AC920BBF2FBE96B900DFC157 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AC920B4C2FBE8EED00DFC157 /* Debug */ = {
@@ -270,7 +345,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -302,11 +377,53 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AC920BC22FBE96B900DFC157 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5KDK28ZYPD;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.premierdarkcoffee.sales.Nexo-AdminTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nexo Admin.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nexo Admin";
+			};
+			name = Debug;
+		};
+		AC920BC32FBE96B900DFC157 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5KDK28ZYPD;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.premierdarkcoffee.sales.Nexo-AdminTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Nexo Admin.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Nexo Admin";
 			};
 			name = Release;
 		};
@@ -327,6 +444,15 @@
 			buildConfigurations = (
 				AC920B4F2FBE8EED00DFC157 /* Debug */,
 				AC920B502FBE8EED00DFC157 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AC920BC12FBE96B900DFC157 /* Build configuration list for PBXNativeTarget "Nexo AdminTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC920BC22FBE96B900DFC157 /* Debug */,
+				AC920BC32FBE96B900DFC157 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
