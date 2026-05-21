@@ -14,7 +14,8 @@ final class AppContainer: ObservableObject {
     let tokenStore: AuthTokenStorage
     let organizationSelectionStore: OrganizationSelectionStoring
     let apiClient: APIClient
-    let authRepository: AuthRepository
+    let authRepository: any AuthRepository
+    let dashboardRepository: any DashboardRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -24,7 +25,8 @@ final class AppContainer: ObservableObject {
         tokenStore: AuthTokenStorage,
         organizationSelectionStore: OrganizationSelectionStoring,
         apiClient: APIClient,
-        authRepository: AuthRepository,
+        authRepository: any AuthRepository,
+        dashboardRepository: any DashboardRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -33,6 +35,7 @@ final class AppContainer: ObservableObject {
         self.organizationSelectionStore = organizationSelectionStore
         self.apiClient = apiClient
         self.authRepository = authRepository
+        self.dashboardRepository = dashboardRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -55,13 +58,16 @@ final class AppContainer: ObservableObject {
         )
 
         let authAPI = RemoteAuthAPI(apiClient: client)
-        let repository = RemoteAuthRepository(authAPI: authAPI)
+        let authRepository = RemoteAuthRepository(authAPI: authAPI)
+        let dashboardAPI = RemoteDashboardAPI(apiClient: client)
+        let dashboardRepository = RemoteDashboardRepository(api: dashboardAPI)
+
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
             organizationSelectionStore: organizationStore
         )
         let coordinator = AuthSessionCoordinator(
-            repository: repository,
+            repository: authRepository,
             sessionStore: sessionStore,
             tokenStore: tokenStore,
             organizationSelectionStore: organizationStore
@@ -72,7 +78,8 @@ final class AppContainer: ObservableObject {
             tokenStore: tokenStore,
             organizationSelectionStore: organizationStore,
             apiClient: client,
-            authRepository: repository,
+            authRepository: authRepository,
+            dashboardRepository: dashboardRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )

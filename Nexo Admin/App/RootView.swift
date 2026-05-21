@@ -37,6 +37,7 @@ struct RootView: View {
             case .authenticated:
                 AdminShellView(
                     sessionStore: container.sessionStore,
+                    dashboardRepository: container.dashboardRepository,
                     onLogout: { Task { await container.authCoordinator.logout() } }
                 )
 

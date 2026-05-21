@@ -9,22 +9,28 @@ import SwiftUI
 
 struct AdminShellView: View {
     @ObservedObject var sessionStore: AuthSessionStore
+    let dashboardRepository: any DashboardRepository
     let onLogout: () -> Void
-    
+
     var body: some View {
         TabView {
-            DashboardPlaceholderView(sessionStore: sessionStore)
-                .tabItem { Label("Inicio", systemImage: "chart.bar.doc.horizontal") }
-            
+            DashboardView(
+                viewModel: DashboardViewModel(
+                    getSummary: GetDashboardSummaryUseCase(repository: dashboardRepository),
+                    sessionStore: sessionStore
+                )
+            )
+            .tabItem { Label("Inicio", systemImage: "chart.bar.doc.horizontal") }
+
             BusinessPlaceholderView(sessionStore: sessionStore)
                 .tabItem { Label("Negocio", systemImage: "building.2") }
-            
+
             CatalogPlaceholderView(sessionStore: sessionStore)
                 .tabItem { Label("Catálogo", systemImage: "square.grid.2x2") }
-            
+
             FiscalPlaceholderView(sessionStore: sessionStore)
                 .tabItem { Label("Fiscal/SRI", systemImage: "doc.text.magnifyingglass") }
-            
+
             AdminProfileView(sessionStore: sessionStore, onLogout: onLogout)
                 .tabItem { Label("Admin", systemImage: "person.crop.circle") }
         }
@@ -33,7 +39,7 @@ struct AdminShellView: View {
 
 private struct BusinessPlaceholderView: View {
     @ObservedObject var sessionStore: AuthSessionStore
-    
+
     var body: some View {
         PlaceholderModuleView(
             title: "Negocio",
@@ -47,12 +53,12 @@ private struct BusinessPlaceholderView: View {
 
 private struct CatalogPlaceholderView: View {
     @ObservedObject var sessionStore: AuthSessionStore
-    
+
     var body: some View {
         PlaceholderModuleView(
             title: "Catálogo",
             systemImage: "square.grid.2x2.fill",
-            message: "Catálogo local, búsqueda, copia desde maestro y solicitudes entran después de estabilizar auth + dashboard.",
+            message: "Catálogo local, búsqueda, copia desde maestro y solicitudes entran después de estabilizar dashboard + usuarios.",
             permissions: sessionStore.effectivePermissions,
             required: [PermissionCatalog.catalogLocalView, PermissionCatalog.catalogLocalManage]
         )
@@ -61,7 +67,7 @@ private struct CatalogPlaceholderView: View {
 
 private struct FiscalPlaceholderView: View {
     @ObservedObject var sessionStore: AuthSessionStore
-    
+
     var body: some View {
         PlaceholderModuleView(
             title: "Fiscal/SRI",
@@ -79,7 +85,7 @@ private struct PlaceholderModuleView: View {
     let message: String
     let permissions: Set<String>
     let required: Set<String>
-    
+
     var body: some View {
         NavigationStack {
             PermissionGate(permissions: permissions, required: required) {

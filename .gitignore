@@ -38,3 +38,4 @@ GoogleService-Info.plist
 
 export_swift_to_md.sh
 project_swift_files.md
+add_swift_header.sh

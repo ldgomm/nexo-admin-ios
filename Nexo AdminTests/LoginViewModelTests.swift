@@ -1,3 +1,10 @@
+//
+//  LoginViewModelTests.swift
+//  Nexo Admin
+//
+//  Created by José Ruiz on 20/5/26.
+//
+
 import XCTest
 @testable import Nexo_Admin
 

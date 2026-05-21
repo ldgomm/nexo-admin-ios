@@ -31,6 +31,22 @@ enum PermissionCatalog {
     static let taxSettingsView = "tax.settings.view"
     static let taxManage = "tax.manage"
 
+    static let reportsToday = "reports.today"
+    static let reportsSales = "reports.sales"
+    static let reportsCash = "reports.cash"
+    static let reportsDocuments = "reports.documents"
+
+    static let cashViewCurrent = "cash.view_current"
+    static let cashViewHistory = "cash.view_history"
+
+    static let documentsView = "documents.view"
+    static let documentsDownloadPDF = "documents.download_pdf"
+    static let documentsDownloadXML = "documents.download_xml"
+
+    static let signatureViewMetadata = "signature.view_metadata"
+    static let signatureUpload = "signature.upload"
+    static let signatureTest = "signature.test"
+
     static let auditView = "audit.view"
 }
 
