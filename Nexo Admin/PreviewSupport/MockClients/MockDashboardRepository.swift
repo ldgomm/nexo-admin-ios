@@ -1,10 +1,8 @@
 //
-//  Archivo: MockDashboardRepository.swift
-//  Proyecto: Nexo Admin
-//  Autor: José Ruiz
-//  Fecha: 21/5/26
+//  MockDashboardRepository.swift
+//  Nexo Admin
 //
-//  Sprint 13iOS-B — Dashboard administrativo
+//  Created by José Ruiz on 21/5/26.
 //
 
 import Foundation
@@ -23,6 +21,19 @@ final class MockDashboardRepository: DashboardRepository, @unchecked Sendable {
 
     func summary(period: DashboardPeriod) async throws -> DashboardSummary {
         try await Task.sleep(nanoseconds: delayNanoseconds)
-        return summary
+        return DashboardSummary(
+            generatedAt: summary.generatedAt,
+            businessDate: summary.businessDate,
+            period: period,
+            sales: summary.sales,
+            cash: summary.cash,
+            documents: summary.documents,
+            tax: summary.tax,
+            signature: summary.signature,
+            pendingReceivables: summary.pendingReceivables,
+            topItems: summary.topItems,
+            alerts: summary.alerts,
+            quickActions: summary.quickActions
+        )
     }
 }

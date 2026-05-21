@@ -2,7 +2,7 @@
 //  DashboardViewModel.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import Combine
@@ -11,6 +11,7 @@ import Foundation
 @MainActor
 final class DashboardViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<DashboardSummary> = .idle
+    @Published private(set) var isRefreshing = false
     @Published var selectedPeriod: DashboardPeriod = .today
 
     private let getSummary: GetDashboardSummaryUseCase
@@ -31,6 +32,19 @@ final class DashboardViewModel: ObservableObject {
         sessionStore.currentUser?.displayName.nonEmpty ?? "admin"
     }
 
+    var periodSubtitle: String {
+        switch selectedPeriod {
+        case .today: return "Estado operativo de hoy"
+        case .week: return "Resumen acumulado de la semana"
+        case .month: return "Resumen acumulado del mes"
+        }
+    }
+
+    var currentSummary: DashboardSummary? {
+        guard case .loaded(let summary) = state else { return nil }
+        return summary
+    }
+
     var visibleQuickActions: [DashboardQuickAction] {
         let actions: [DashboardQuickAction]
         if case .loaded(let summary) = state {
@@ -46,27 +60,44 @@ final class DashboardViewModel: ObservableObject {
         return summary.alerts
     }
 
+    var criticalAlertCount: Int {
+        visibleAlerts.filter { $0.severity == .critical }.count
+    }
+
     func load() async {
         if case .loaded = state { return }
         await refresh()
     }
 
     func refresh() async {
-        state = .loading
+        let hadLoadedContent: Bool
+        if case .loaded = state {
+            hadLoadedContent = true
+            isRefreshing = true
+        } else {
+            hadLoadedContent = false
+            state = .loading
+        }
+
         do {
             let summary = try await getSummary.execute(period: selectedPeriod)
+            isRefreshing = false
             if isEffectivelyEmpty(summary) {
-                state = .empty("Todavía no hay datos operativos para este periodo.")
+                state = .empty(selectedPeriod.emptyMessage)
             } else {
                 state = .loaded(summary)
             }
         } catch {
-            state = .failed(error.userFriendlyMessage)
+            isRefreshing = false
+            if hadLoadedContent {
+                state = .failed(error.userFriendlyMessage)
+            } else {
+                state = .failed(error.userFriendlyMessage)
+            }
         }
     }
 
     func changePeriod(_ period: DashboardPeriod) async {
-        guard selectedPeriod != period else { return }
         selectedPeriod = period
         await refresh()
     }
@@ -75,8 +106,11 @@ final class DashboardViewModel: ObservableObject {
         summary.sales.salesCount == 0
             && summary.sales.pendingCount == 0
             && summary.cash.status.lowercased() != "open"
+            && summary.cash.openSessionCount == 0
             && summary.documents.pendingCount == 0
             && summary.documents.rejectedCount == 0
+            && summary.pendingReceivables.amount == 0
+            && summary.topItems.isEmpty
             && summary.alerts.isEmpty
     }
 }

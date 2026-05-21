@@ -2,13 +2,32 @@
 //  DashboardAPI.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import Foundation
 
 protocol DashboardAPI: Sendable {
-    func summary(period: DashboardPeriod) async throws -> DashboardSummaryResponseDTO
+    func operationalSummary(request: DashboardSummaryRequest) async throws -> DashboardOperationalReportResponseDTO
+}
+
+struct DashboardSummaryRequest: Equatable, Sendable {
+    let period: DashboardPeriod
+    let range: DashboardDateRange
+    let branchId: String?
+    let activityId: String?
+
+    init(
+        period: DashboardPeriod,
+        range: DashboardDateRange,
+        branchId: String? = nil,
+        activityId: String? = nil
+    ) {
+        self.period = period
+        self.range = range
+        self.branchId = branchId
+        self.activityId = activityId
+    }
 }
 
 final class RemoteDashboardAPI: DashboardAPI, @unchecked Sendable {
@@ -18,12 +37,26 @@ final class RemoteDashboardAPI: DashboardAPI, @unchecked Sendable {
         self.apiClient = apiClient
     }
 
-    func summary(period: DashboardPeriod) async throws -> DashboardSummaryResponseDTO {
-        try await apiClient.send(
+    func operationalSummary(request: DashboardSummaryRequest) async throws -> DashboardOperationalReportResponseDTO {
+        var queryItems = [
+            URLQueryItem(name: "date", value: request.range.businessDate),
+            URLQueryItem(name: "from", value: request.range.from),
+            URLQueryItem(name: "to", value: request.range.to),
+            URLQueryItem(name: "timezone", value: request.range.timezone)
+        ]
+
+        if let branchId = request.branchId?.nilIfBlank {
+            queryItems.append(URLQueryItem(name: "branchId", value: branchId))
+        }
+        if let activityId = request.activityId?.nilIfBlank {
+            queryItems.append(URLQueryItem(name: "activityId", value: activityId))
+        }
+
+        return try await apiClient.send(
             APIEndpoint(
-                path: "/admin/dashboard/summary",
+                path: "/admin/reports/operational-today",
                 method: .get,
-                queryItems: [URLQueryItem(name: "period", value: period.rawValue)],
+                queryItems: queryItems,
                 requiresAuth: true,
                 requiresOrganization: true
             )

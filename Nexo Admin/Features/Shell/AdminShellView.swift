@@ -2,7 +2,7 @@
 //  AdminShellView.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import SwiftUI
@@ -12,29 +12,60 @@ struct AdminShellView: View {
     let dashboardRepository: any DashboardRepository
     let onLogout: () -> Void
 
+    @State private var selectedTab: AdminShellTab = .dashboard
+
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             DashboardView(
                 viewModel: DashboardViewModel(
                     getSummary: GetDashboardSummaryUseCase(repository: dashboardRepository),
                     sessionStore: sessionStore
-                )
+                ),
+                onQuickAction: navigate(to:)
             )
             .tabItem { Label("Inicio", systemImage: "chart.bar.doc.horizontal") }
+            .tag(AdminShellTab.dashboard)
 
             BusinessPlaceholderView(sessionStore: sessionStore)
                 .tabItem { Label("Negocio", systemImage: "building.2") }
+                .tag(AdminShellTab.business)
 
             CatalogPlaceholderView(sessionStore: sessionStore)
                 .tabItem { Label("Catálogo", systemImage: "square.grid.2x2") }
+                .tag(AdminShellTab.catalog)
 
             FiscalPlaceholderView(sessionStore: sessionStore)
                 .tabItem { Label("Fiscal/SRI", systemImage: "doc.text.magnifyingglass") }
+                .tag(AdminShellTab.fiscal)
 
             AdminProfileView(sessionStore: sessionStore, onLogout: onLogout)
                 .tabItem { Label("Admin", systemImage: "person.crop.circle") }
+                .tag(AdminShellTab.admin)
         }
     }
+
+    private func navigate(to destination: DashboardQuickActionDestination) {
+        switch destination {
+        case .business, .branches, .emissionPoints:
+            selectedTab = .business
+        case .catalog, .catalogRequests:
+            selectedTab = .catalog
+        case .tax, .signature, .sri, .documents:
+            selectedTab = .fiscal
+        case .users, .roles, .audit, .support:
+            selectedTab = .admin
+        case .cash:
+            selectedTab = .dashboard
+        }
+    }
+}
+
+private enum AdminShellTab: Hashable {
+    case dashboard
+    case business
+    case catalog
+    case fiscal
+    case admin
 }
 
 private struct BusinessPlaceholderView: View {
@@ -46,7 +77,13 @@ private struct BusinessPlaceholderView: View {
             systemImage: "building.2.fill",
             message: "Datos del negocio, actividades, sucursales, horarios y puntos de emisión entran en el sprint de configuración del negocio.",
             permissions: sessionStore.effectivePermissions,
-            required: [PermissionCatalog.organizationView, PermissionCatalog.organizationUpdate, PermissionCatalog.activitiesView]
+            required: [
+                PermissionCatalog.organizationView,
+                PermissionCatalog.organizationUpdate,
+                PermissionCatalog.activitiesView,
+                PermissionCatalog.branchesView,
+                PermissionCatalog.emissionPointsView
+            ]
         )
     }
 }
@@ -58,9 +95,14 @@ private struct CatalogPlaceholderView: View {
         PlaceholderModuleView(
             title: "Catálogo",
             systemImage: "square.grid.2x2.fill",
-            message: "Catálogo local, búsqueda, copia desde maestro y solicitudes entran después de estabilizar dashboard + usuarios.",
+            message: "Catálogo local, búsqueda, copia desde maestro, solicitudes e historial de precios entran después del dashboard.",
             permissions: sessionStore.effectivePermissions,
-            required: [PermissionCatalog.catalogLocalView, PermissionCatalog.catalogLocalManage]
+            required: [
+                PermissionCatalog.catalogLocalView,
+                PermissionCatalog.catalogLocalCopyFromMaster,
+                PermissionCatalog.catalogLocalUpdateLocalCopy,
+                PermissionCatalog.catalogLocalRequestNewItem
+            ]
         )
     }
 }
@@ -74,7 +116,14 @@ private struct FiscalPlaceholderView: View {
             systemImage: "doc.text.fill",
             message: "Configuración tributaria, firma electrónica, readiness SRI, comprobantes, RIDE/XML y errores SRI deben venir desde backend.",
             permissions: sessionStore.effectivePermissions,
-            required: [PermissionCatalog.taxSettingsView, PermissionCatalog.taxManage]
+            required: [
+                PermissionCatalog.taxSettingsView,
+                PermissionCatalog.reportsTaxView,
+                PermissionCatalog.signatureViewAudit,
+                PermissionCatalog.documentsView,
+                PermissionCatalog.documentsElectronicInvoiceView,
+                PermissionCatalog.documentsElectronicInvoiceViewErrors
+            ]
         )
     }
 }

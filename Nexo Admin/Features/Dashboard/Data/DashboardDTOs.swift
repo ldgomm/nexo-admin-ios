@@ -2,18 +2,26 @@
 //  DashboardDTOs.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import Foundation
 
-struct DashboardSummaryResponseDTO: Decodable, Sendable {
-    let generatedAt: String?
-    let sales: DashboardSalesSummaryDTO?
-    let cash: DashboardCashSummaryDTO?
-    let documents: DashboardDocumentSummaryDTO?
+struct DashboardOperationalReportResponseDTO: Decodable, Sendable {
+    let organizationId: String?
+    let branchId: String?
+    let activityId: String?
+    let businessDate: String?
+    let from: String?
+    let to: String?
+    let sales: DashboardSalesSummaryReportDTO?
+    let cash: DashboardCashSummaryReportDTO?
+    let tax: DashboardTaxSummaryReportDTO?
+    let currentCashSession: DashboardCashSessionDTO?
+    let pendingReceivables: DashboardMoneyDTO?
+    let topItems: [DashboardTopItemDTO]?
+    let alerts: [DashboardOperationalAlertDTO]?
     let signature: DashboardSignatureSummaryDTO?
-    let alerts: [DashboardAlertDTO]?
 }
 
 struct DashboardMoneyDTO: Decodable, Sendable {
@@ -21,34 +29,106 @@ struct DashboardMoneyDTO: Decodable, Sendable {
     let currency: String?
 }
 
-struct DashboardSalesSummaryDTO: Decodable, Sendable {
-    let grossTotal: DashboardMoneyDTO?
-    let netTotal: DashboardMoneyDTO?
-    let collectedTotal: DashboardMoneyDTO?
+struct DashboardSalesSummaryReportDTO: Decodable, Sendable {
+    let organizationId: String?
+    let branchId: String?
+    let activityId: String?
+    let from: String?
+    let to: String?
+    let saleCount: Int?
+    let closedSaleCount: Int?
+    let canceledSaleCount: Int?
+    let openSaleCount: Int?
+    let itemCount: Int?
+    let subtotal: DashboardMoneyDTO?
+    let discountTotal: DashboardMoneyDTO?
+    let taxTotal: DashboardMoneyDTO?
+    let grandTotal: DashboardMoneyDTO?
+    let paidTotal: DashboardMoneyDTO?
     let receivableTotal: DashboardMoneyDTO?
-    let salesCount: Int?
-    let canceledCount: Int?
-    let pendingCount: Int?
-    let averageTicket: DashboardMoneyDTO?
+    let byOperationalStatus: [DashboardStatusCountDTO]?
+    let byPaymentStatus: [DashboardStatusCountDTO]?
+    let byDocumentStatus: [DashboardStatusCountDTO]?
+    let topItems: [DashboardTopItemDTO]?
 }
 
-struct DashboardCashSummaryDTO: Decodable, Sendable {
+struct DashboardCashSummaryReportDTO: Decodable, Sendable {
+    let organizationId: String?
+    let branchId: String?
+    let from: String?
+    let to: String?
+    let openSessionCount: Int?
+    let closedSessionCount: Int?
+    let movementCount: Int?
+    let cashInTotal: DashboardMoneyDTO?
+    let cashOutTotal: DashboardMoneyDTO?
+    let netCashMovement: DashboardMoneyDTO?
+    let expectedOpenCashTotal: DashboardMoneyDTO?
+    let countedClosedCashTotal: DashboardMoneyDTO?
+    let differenceClosedCashTotal: DashboardMoneyDTO?
+    let byMovementType: [DashboardStatusCountDTO]?
+}
+
+struct DashboardTaxSummaryReportDTO: Decodable, Sendable {
+    let organizationId: String?
+    let branchId: String?
+    let activityId: String?
+    let from: String?
+    let to: String?
+    let documentCount: Int?
+    let authorizedDocumentCount: Int?
+    let documentGrandTotal: DashboardMoneyDTO?
+    let taxTotal: DashboardMoneyDTO?
+    let byTaxRate: [DashboardTaxRateLineDTO]?
+}
+
+struct DashboardTaxRateLineDTO: Decodable, Sendable {
+    let taxCode: String?
+    let rateCode: String?
+    let rate: String?
+    let taxableBase: DashboardMoneyDTO?
+    let taxAmount: DashboardMoneyDTO?
+    let documentCount: Int?
+}
+
+struct DashboardTopItemDTO: Decodable, Sendable {
+    let catalogItemId: String?
+    let name: String?
+    let quantity: String?
+    let netTotal: DashboardMoneyDTO?
+    let lineTotal: DashboardMoneyDTO?
+}
+
+struct DashboardStatusCountDTO: Decodable, Sendable {
     let status: String?
+    let count: Int?
+}
+
+struct DashboardCashSessionDTO: Decodable, Sendable {
+    let id: String?
+    let organizationId: String?
+    let branchId: String?
     let openedBy: String?
     let openedAt: String?
-    let expectedCash: DashboardMoneyDTO?
-    let cashSales: DashboardMoneyDTO?
-    let cashInflow: DashboardMoneyDTO?
-    let cashOutflow: DashboardMoneyDTO?
-    let difference: DashboardMoneyDTO?
+    let status: String?
+    let openingBalance: DashboardMoneyDTO?
+    let expectedCashAmount: DashboardMoneyDTO?
+    let countedCashAmount: DashboardMoneyDTO?
+    let differenceAmount: DashboardMoneyDTO?
+    let movementCount: Int?
+    let closingStartedAt: String?
+    let closedAt: String?
+    let canceledAt: String?
 }
 
-struct DashboardDocumentSummaryDTO: Decodable, Sendable {
-    let authorizedCount: Int?
-    let rejectedCount: Int?
-    let pendingCount: Int?
-    let returnedCount: Int?
-    let lastAuthorizedAt: String?
+struct DashboardOperationalAlertDTO: Decodable, Sendable {
+    let code: String?
+    let severity: String?
+    let message: String?
+    let actionHint: String?
+    let title: String?
+    let category: String?
+    let destination: String?
 }
 
 struct DashboardSignatureSummaryDTO: Decodable, Sendable {
@@ -57,15 +137,4 @@ struct DashboardSignatureSummaryDTO: Decodable, Sendable {
     let expiresAt: String?
     let daysUntilExpiration: Int?
     let lastTestStatus: String?
-}
-
-struct DashboardAlertDTO: Decodable, Sendable {
-    let id: String?
-    let title: String?
-    let message: String?
-    let severity: String?
-    let category: String?
-    let createdAt: String?
-    let actionTitle: String?
-    let destination: String?
 }

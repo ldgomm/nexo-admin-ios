@@ -2,7 +2,7 @@
 //  PermissionCatalog.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import Foundation
@@ -16,48 +16,109 @@ enum PermissionCatalog {
     static let credentialsUsersBlock = "credentials.users.block"
     static let credentialsUsersUnblock = "credentials.users.unblock"
     static let credentialsUsersResetPassword = "credentials.users.reset_password"
+    static let credentialsSessionsRevoke = "credentials.sessions.revoke"
     static let credentialsRolesView = "credentials.roles.view"
     static let credentialsRolesManage = "credentials.roles.manage"
 
     static let organizationView = "organization.view"
     static let organizationUpdate = "organization.update"
     static let activitiesView = "activities.view"
+    static let activitiesCreate = "activities.create"
+    static let activitiesUpdate = "activities.update"
     static let branchesView = "branches.view"
+    static let branchesCreate = "branches.create"
+    static let branchesUpdate = "branches.update"
+    static let branchLocationView = "branch.location.view"
+    static let branchLocationUpdate = "branch.location.update"
+    static let businessHoursView = "business_hours.view"
+    static let businessHoursUpdate = "business_hours.update"
     static let emissionPointsView = "settings.emission_points.view"
+    static let emissionPointsManage = "settings.emission_points.manage"
 
     static let catalogLocalView = "catalog.local.view"
-    static let catalogLocalManage = "catalog.local.manage"
+    static let catalogLocalCopyFromMaster = "catalog.local.copy_from_master"
+    static let catalogLocalUpdateLocalCopy = "catalog.local.update_local_copy"
+    static let catalogLocalChangePrice = "catalog.local.change_price"
+    static let catalogLocalChangeTaxProfile = "catalog.local.change_tax_profile"
+    static let catalogLocalDisableLocalCopy = "catalog.local.disable_local_copy"
+    static let catalogLocalRequestNewItem = "catalog.local.request_new_item"
+    static let catalogPriceHistoryView = "catalog.price_history.view"
+    static let catalogIdentifiersScan = "catalog.identifiers.scan"
 
-    static let taxSettingsView = "tax.settings.view"
-    static let taxManage = "tax.manage"
+    static let customersView = "customers.view"
+    static let customersCreate = "customers.create"
+    static let customersUpdate = "customers.update"
 
-    static let reportsToday = "reports.today"
-    static let reportsSales = "reports.sales"
-    static let reportsCash = "reports.cash"
-    static let reportsDocuments = "reports.documents"
+    static let salesView = "sales.view"
+    static let paymentsView = "payments.view"
+    static let receivablesView = "receivables.view"
 
-    static let cashViewCurrent = "cash.view_current"
-    static let cashViewHistory = "cash.view_history"
+    static let cashView = "cash.view"
+    static let cashSessionViewCurrent = "cash.session.view_current"
+    static let cashSessionViewHistory = "cash.session.view_history"
+    static let cashSessionOpen = "cash.session.open"
+    static let cashSessionClose = "cash.session.close"
 
     static let documentsView = "documents.view"
     static let documentsDownloadPDF = "documents.download_pdf"
     static let documentsDownloadXML = "documents.download_xml"
+    static let documentsElectronicInvoiceView = "documents.electronic_invoice.view"
+    static let documentsElectronicInvoiceList = "documents.electronic_invoice.list"
+    static let documentsElectronicInvoiceDownloadXML = "documents.electronic_invoice.download_xml"
+    static let documentsElectronicInvoiceDownloadRIDE = "documents.electronic_invoice.download_ride"
+    static let documentsElectronicInvoiceEmail = "documents.electronic_invoice.email"
+    static let documentsElectronicInvoiceViewErrors = "documents.electronic_invoice.view_errors"
+    static let documentsElectronicInvoiceViewAudit = "documents.electronic_invoice.view_audit"
+    static let documentsElectronicInvoiceHomologate = "documents.electronic_invoice.homologate"
+    static let documentsElectronicInvoiceEnableProduction = "documents.electronic_invoice.enable_production"
+    static let documentsElectronicInvoiceManageSettings = "documents.electronic_invoice.manage_settings"
 
-    static let signatureViewMetadata = "signature.view_metadata"
-    static let signatureUpload = "signature.upload"
+    static let taxSettingsView = "tax.settings.view"
+    static let taxSettingsUpdateOrganizationRegime = "tax.settings.update_organization_regime"
+    static let taxProfilesAssignToItem = "tax.profiles.assign_to_item"
+
+    static let signatureReplace = "signature.replace"
+    static let signatureRevoke = "signature.revoke"
     static let signatureTest = "signature.test"
+    static let signatureViewAudit = "signature.view_audit"
+
+    static let reportsDashboardView = "reports.dashboard.view"
+    static let reportsSalesView = "reports.sales.view"
+    static let reportsCashView = "reports.cash.view"
+    static let reportsTaxView = "reports.tax.view"
+    static let reportsDocumentsView = "reports.documents.view"
 
     static let auditView = "audit.view"
+    static let supportView = "support.view"
+
+    static let catalogLocalManage = catalogLocalUpdateLocalCopy
+    static let reportsToday = reportsDashboardView
+    static let reportsSales = reportsSalesView
+    static let reportsCash = reportsCashView
+    static let reportsDocuments = reportsDocumentsView
+    static let cashViewCurrent = cashSessionViewCurrent
+    static let cashViewHistory = cashSessionViewHistory
+    static let signatureViewMetadata = signatureViewAudit
+    static let signatureUpload = signatureReplace
+    static let taxManage = taxSettingsUpdateOrganizationRegime
 }
 
 struct PermissionSet: Equatable, Sendable {
     let values: Set<String>
+
+    init(_ values: Set<String>) {
+        self.values = values
+    }
+
+    init(values: Set<String>) {
+        self.values = values
+    }
 
     func can(_ permission: String) -> Bool {
         values.contains(PermissionCatalog.all) || values.contains(permission)
     }
 
     func canAny(_ permissions: Set<String>) -> Bool {
-        values.contains(PermissionCatalog.all) || !values.isDisjoint(with: permissions)
+        values.contains(PermissionCatalog.all) || permissions.isEmpty || !values.isDisjoint(with: permissions)
     }
 }

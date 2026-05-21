@@ -2,7 +2,7 @@
 //  DashboardModels.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import Foundation
@@ -21,6 +21,15 @@ enum DashboardAlertSeverity: String, Codable, Equatable, Sendable {
         case .success: return 3
         }
     }
+
+    var title: String {
+        switch self {
+        case .critical: return "Crítica"
+        case .warning: return "Advertencia"
+        case .info: return "Info"
+        case .success: return "OK"
+        }
+    }
 }
 
 enum DashboardAlertCategory: String, Codable, Equatable, Sendable {
@@ -31,7 +40,24 @@ enum DashboardAlertCategory: String, Codable, Equatable, Sendable {
     case document
     case catalog
     case user
+    case receivable
+    case tax
     case unknown
+
+    var title: String {
+        switch self {
+        case .operational: return "Operación"
+        case .sri: return "SRI"
+        case .signature: return "Firma"
+        case .cash: return "Caja"
+        case .document: return "Comprobantes"
+        case .catalog: return "Catálogo"
+        case .user: return "Usuarios"
+        case .receivable: return "Cuentas por cobrar"
+        case .tax: return "Tributario"
+        case .unknown: return "General"
+        }
+    }
 }
 
 struct DashboardMoney: Codable, Equatable, Sendable {
@@ -44,10 +70,46 @@ struct DashboardMoney: Codable, Equatable, Sendable {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = currency
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.currencySymbol = currency == "USD" ? "$" : currency
+        formatter.locale = Locale(identifier: "es_EC")
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
         return formatter.string(from: amount as NSDecimalNumber) ?? "\(currency) \(amount)"
+    }
+
+    func divided(by denominator: Int) -> DashboardMoney {
+        guard denominator > 0 else { return DashboardMoney(amount: 0, currency: currency) }
+        let result = NSDecimalNumber(decimal: amount).dividing(by: NSDecimalNumber(value: denominator)).decimalValue
+        return DashboardMoney(amount: result, currency: currency)
+    }
+}
+
+struct DashboardStatusCount: Identifiable, Equatable, Sendable {
+    let status: String
+    let count: Int
+
+    var id: String { status }
+
+    var label: String {
+        status
+            .replacingOccurrences(of: "_", with: " ")
+            .capitalized
+    }
+}
+
+struct DashboardTopItem: Identifiable, Equatable, Sendable {
+    let id: String
+    let catalogItemId: String?
+    let name: String
+    let quantity: Decimal
+    let netTotal: DashboardMoney
+    let lineTotal: DashboardMoney
+
+    var quantityText: String {
+        let formatter = NumberFormatter()
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: quantity as NSDecimalNumber) ?? "\(quantity)"
     }
 }
 
@@ -57,9 +119,14 @@ struct DashboardSalesSummary: Equatable, Sendable {
     let collectedTotal: DashboardMoney
     let receivableTotal: DashboardMoney
     let salesCount: Int
+    let closedCount: Int
     let canceledCount: Int
     let pendingCount: Int
+    let itemCount: Int
     let averageTicket: DashboardMoney
+    let byOperationalStatus: [DashboardStatusCount]
+    let byPaymentStatus: [DashboardStatusCount]
+    let byDocumentStatus: [DashboardStatusCount]
 
     static let empty = DashboardSalesSummary(
         grossTotal: .zeroUSD,
@@ -67,9 +134,14 @@ struct DashboardSalesSummary: Equatable, Sendable {
         collectedTotal: .zeroUSD,
         receivableTotal: .zeroUSD,
         salesCount: 0,
+        closedCount: 0,
         canceledCount: 0,
         pendingCount: 0,
-        averageTicket: .zeroUSD
+        itemCount: 0,
+        averageTicket: .zeroUSD,
+        byOperationalStatus: [],
+        byPaymentStatus: [],
+        byDocumentStatus: []
     )
 }
 
@@ -77,38 +149,54 @@ struct DashboardCashSummary: Equatable, Sendable {
     let status: String
     let openedBy: String?
     let openedAt: String?
+    let openSessionCount: Int
+    let closedSessionCount: Int
+    let movementCount: Int
     let expectedCash: DashboardMoney
     let cashSales: DashboardMoney
     let cashInflow: DashboardMoney
     let cashOutflow: DashboardMoney
+    let netCashMovement: DashboardMoney
     let difference: DashboardMoney?
+    let byMovementType: [DashboardStatusCount]
 
-    var isOpen: Bool { status.lowercased() == "open" }
+    var isOpen: Bool { status.lowercased() == "open" || openSessionCount > 0 }
 
     static let empty = DashboardCashSummary(
         status: "closed",
         openedBy: nil,
         openedAt: nil,
+        openSessionCount: 0,
+        closedSessionCount: 0,
+        movementCount: 0,
         expectedCash: .zeroUSD,
         cashSales: .zeroUSD,
         cashInflow: .zeroUSD,
         cashOutflow: .zeroUSD,
-        difference: nil
+        netCashMovement: .zeroUSD,
+        difference: nil,
+        byMovementType: []
     )
 }
 
 struct DashboardDocumentSummary: Equatable, Sendable {
+    let totalCount: Int
     let authorizedCount: Int
     let rejectedCount: Int
     let pendingCount: Int
     let returnedCount: Int
+    let documentGrandTotal: DashboardMoney
+    let taxTotal: DashboardMoney
     let lastAuthorizedAt: String?
 
     static let empty = DashboardDocumentSummary(
+        totalCount: 0,
         authorizedCount: 0,
         rejectedCount: 0,
         pendingCount: 0,
         returnedCount: 0,
+        documentGrandTotal: .zeroUSD,
+        taxTotal: .zeroUSD,
         lastAuthorizedAt: nil
     )
 }
@@ -119,8 +207,10 @@ struct DashboardSignatureSummary: Equatable, Sendable {
     let expiresAt: String?
     let daysUntilExpiration: Int?
     let lastTestStatus: String?
+    let sourceAvailable: Bool
 
     var requiresAttention: Bool {
+        guard sourceAvailable else { return false }
         let normalized = status.lowercased()
         if ["expired", "revoked", "test_failed", "blocked", "not_configured"].contains(normalized) {
             return true
@@ -129,13 +219,48 @@ struct DashboardSignatureSummary: Equatable, Sendable {
         return false
     }
 
+    static let unavailable = DashboardSignatureSummary(
+        status: "unavailable",
+        ownerName: nil,
+        expiresAt: nil,
+        daysUntilExpiration: nil,
+        lastTestStatus: nil,
+        sourceAvailable: false
+    )
+
     static let empty = DashboardSignatureSummary(
         status: "not_configured",
         ownerName: nil,
         expiresAt: nil,
         daysUntilExpiration: nil,
-        lastTestStatus: nil
+        lastTestStatus: nil,
+        sourceAvailable: true
     )
+}
+
+struct DashboardTaxSummary: Equatable, Sendable {
+    let documentCount: Int
+    let authorizedDocumentCount: Int
+    let taxTotal: DashboardMoney
+    let byTaxRate: [DashboardTaxRateLine]
+
+    static let empty = DashboardTaxSummary(
+        documentCount: 0,
+        authorizedDocumentCount: 0,
+        taxTotal: .zeroUSD,
+        byTaxRate: []
+    )
+}
+
+struct DashboardTaxRateLine: Identifiable, Equatable, Sendable {
+    let taxCode: String
+    let rateCode: String
+    let rate: Decimal
+    let taxableBase: DashboardMoney
+    let taxAmount: DashboardMoney
+    let documentCount: Int
+
+    var id: String { "\(taxCode)-\(rateCode)-\(rate)" }
 }
 
 struct DashboardAlert: Identifiable, Equatable, Sendable {
@@ -181,19 +306,29 @@ enum DashboardQuickActionDestination: String, Codable, Equatable, Sendable {
 
 struct DashboardSummary: Equatable, Sendable {
     let generatedAt: String
+    let businessDate: String
+    let period: DashboardPeriod
     let sales: DashboardSalesSummary
     let cash: DashboardCashSummary
     let documents: DashboardDocumentSummary
+    let tax: DashboardTaxSummary
     let signature: DashboardSignatureSummary
+    let pendingReceivables: DashboardMoney
+    let topItems: [DashboardTopItem]
     let alerts: [DashboardAlert]
     let quickActions: [DashboardQuickAction]
 
     static let empty = DashboardSummary(
         generatedAt: "",
+        businessDate: "",
+        period: .today,
         sales: .empty,
         cash: .empty,
         documents: .empty,
-        signature: .empty,
+        tax: .empty,
+        signature: .unavailable,
+        pendingReceivables: .zeroUSD,
+        topItems: [],
         alerts: [],
         quickActions: []
     )
