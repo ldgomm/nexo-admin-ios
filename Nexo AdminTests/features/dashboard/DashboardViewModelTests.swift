@@ -1,10 +1,3 @@
-//
-//  DashboardViewModelTests.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 20/5/26.
-//
-
 import XCTest
 @testable import Nexo_Admin
 
@@ -89,19 +82,48 @@ private enum DashboardTestData {
     static func summary() -> DashboardSummary {
         DashboardSummary(
             generatedAt: "2026-05-21T00:00:00Z",
+            businessDate: "2026-05-21",
+            period: .today,
             sales: DashboardSalesSummary(
                 grossTotal: DashboardMoney(amount: 120, currency: "USD"),
                 netTotal: DashboardMoney(amount: 110, currency: "USD"),
                 collectedTotal: DashboardMoney(amount: 90, currency: "USD"),
                 receivableTotal: DashboardMoney(amount: 20, currency: "USD"),
                 salesCount: 8,
+                closedCount: 5,
                 canceledCount: 1,
                 pendingCount: 2,
-                averageTicket: DashboardMoney(amount: 13.75, currency: "USD")
+                itemCount: 18,
+                averageTicket: DashboardMoney(amount: 13.75, currency: "USD"),
+                byOperationalStatus: [
+                    DashboardStatusCount(status: "closed", count: 5),
+                    DashboardStatusCount(status: "open", count: 2),
+                    DashboardStatusCount(status: "canceled", count: 1)
+                ],
+                byPaymentStatus: [
+                    DashboardStatusCount(status: "paid", count: 6),
+                    DashboardStatusCount(status: "pending", count: 2)
+                ],
+                byDocumentStatus: [
+                    DashboardStatusCount(status: "authorized", count: 4),
+                    DashboardStatusCount(status: "pending", count: 1)
+                ]
             ),
             cash: .empty,
             documents: .empty,
+            tax: .empty,
             signature: .empty,
+            pendingReceivables: DashboardMoney(amount: 20, currency: "USD"),
+            topItems: [
+                DashboardTopItem(
+                    id: "item_1",
+                    catalogItemId: "item_1",
+                    name: "Producto demo",
+                    quantity: 2,
+                    netTotal: DashboardMoney(amount: 20, currency: "USD"),
+                    lineTotal: DashboardMoney(amount: 20, currency: "USD")
+                )
+            ],
             alerts: [
                 DashboardAlert(
                     id: "alert_1",
