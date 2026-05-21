@@ -40,6 +40,7 @@ enum PermissionCatalog {
     static let emissionPointsView = settingsEmissionPointsView
     static let emissionPointsManage = settingsEmissionPointsManage
 
+    static let catalogManageMaster = "catalog.manage_master"
     static let catalogLocalView = "catalog.local.view"
     static let catalogLocalCopyFromMaster = "catalog.local.copy_from_master"
     static let catalogLocalUpdateLocalCopy = "catalog.local.update_local_copy"
@@ -97,6 +98,7 @@ enum PermissionCatalog {
     static let supportView = "support.view"
 
     static let catalogLocalManage = catalogLocalUpdateLocalCopy
+    static let catalogMasterManage = catalogManageMaster
     static let reportsToday = reportsDashboardView
     static let reportsSales = reportsSalesView
     static let reportsCash = reportsCashView

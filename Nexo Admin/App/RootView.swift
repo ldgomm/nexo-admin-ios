@@ -40,6 +40,7 @@ struct RootView: View {
                     dashboardRepository: container.dashboardRepository,
                     adminAccessRepository: container.adminAccessRepository,
                     adminBusinessRepository: container.adminBusinessRepository,
+                    adminCatalogRepository: container.adminCatalogRepository,
                     onLogout: { Task { await container.authCoordinator.logout() } }
                 )
 

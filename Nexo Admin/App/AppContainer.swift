@@ -18,6 +18,7 @@ final class AppContainer: ObservableObject {
     let dashboardRepository: any DashboardRepository
     let adminAccessRepository: any AdminAccessRepository
     let adminBusinessRepository: any AdminBusinessRepository
+    let adminCatalogRepository: any AdminCatalogRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -31,6 +32,7 @@ final class AppContainer: ObservableObject {
         dashboardRepository: any DashboardRepository,
         adminAccessRepository: any AdminAccessRepository,
         adminBusinessRepository: any AdminBusinessRepository,
+        adminCatalogRepository: any AdminCatalogRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -42,6 +44,7 @@ final class AppContainer: ObservableObject {
         self.dashboardRepository = dashboardRepository
         self.adminAccessRepository = adminAccessRepository
         self.adminBusinessRepository = adminBusinessRepository
+        self.adminCatalogRepository = adminCatalogRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -71,6 +74,8 @@ final class AppContainer: ObservableObject {
         let adminAccessRepository = RemoteAdminAccessRepository(api: adminAccessAPI)
         let adminBusinessAPI = RemoteAdminBusinessAPI(apiClient: client)
         let adminBusinessRepository = RemoteAdminBusinessRepository(api: adminBusinessAPI)
+        let adminCatalogAPI = RemoteAdminCatalogAPI(apiClient: client)
+        let adminCatalogRepository = RemoteAdminCatalogRepository(api: adminCatalogAPI)
 
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
@@ -92,6 +97,7 @@ final class AppContainer: ObservableObject {
             dashboardRepository: dashboardRepository,
             adminAccessRepository: adminAccessRepository,
             adminBusinessRepository: adminBusinessRepository,
+            adminCatalogRepository: adminCatalogRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )

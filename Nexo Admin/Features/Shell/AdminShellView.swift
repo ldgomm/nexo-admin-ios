@@ -12,6 +12,7 @@ struct AdminShellView: View {
     let dashboardRepository: any DashboardRepository
     let adminAccessRepository: any AdminAccessRepository
     let adminBusinessRepository: any AdminBusinessRepository
+    let adminCatalogRepository: any AdminCatalogRepository
     let onLogout: () -> Void
 
     @State private var selectedTab: AdminShellTab = .dashboard
@@ -35,9 +36,12 @@ struct AdminShellView: View {
             .tabItem { Label("Negocio", systemImage: "building.2") }
             .tag(AdminShellTab.business)
 
-            CatalogPlaceholderView(sessionStore: sessionStore)
-                .tabItem { Label("Catálogo", systemImage: "square.grid.2x2") }
-                .tag(AdminShellTab.catalog)
+            AdminCatalogHomeView(
+                sessionStore: sessionStore,
+                repository: adminCatalogRepository
+            )
+            .tabItem { Label("Catálogo", systemImage: "square.grid.2x2") }
+            .tag(AdminShellTab.catalog)
 
             FiscalPlaceholderView(sessionStore: sessionStore)
                 .tabItem { Label("Fiscal/SRI", systemImage: "doc.text.magnifyingglass") }
@@ -75,25 +79,6 @@ private enum AdminShellTab: Hashable {
     case catalog
     case fiscal
     case admin
-}
-
-private struct CatalogPlaceholderView: View {
-    @ObservedObject var sessionStore: AuthSessionStore
-
-    var body: some View {
-        PlaceholderModuleView(
-            title: "Catálogo",
-            systemImage: "square.grid.2x2.fill",
-            message: "Catálogo local, búsqueda, copia desde maestro, solicitudes e historial de precios entran después de configuración del negocio.",
-            permissions: sessionStore.effectivePermissions,
-            required: [
-                PermissionCatalog.catalogLocalView,
-                PermissionCatalog.catalogLocalCopyFromMaster,
-                PermissionCatalog.catalogLocalUpdateLocalCopy,
-                PermissionCatalog.catalogLocalRequestNewItem
-            ]
-        )
-    }
 }
 
 private struct FiscalPlaceholderView: View {

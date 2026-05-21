@@ -51,7 +51,7 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
             version: 1
         )
     ]
-
+    
     private var roles: [AdminAccessRole] = [
         AdminAccessRole(
             id: "role_owner",
@@ -84,7 +84,7 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
             schemaVersion: 1
         )
     ]
-
+    
     private let permissions: [AdminAccessPermission] = [
         AdminAccessPermission(
             code: PermissionCatalog.credentialsUsersView,
@@ -129,10 +129,10 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
             featureFlag: nil
         )
     ]
-
+    
     func listUsers(query: String?, status: String?, limit: Int) async throws -> [AdminAccessUser] { users }
     func getUser(id: String) async throws -> AdminAccessUser { users.first { $0.id == id }! }
-
+    
     func createTemporaryUser(_ input: CreateTemporaryAdminUserInput) async throws -> AdminTemporaryUserResult {
         let user = AdminAccessUser(
             id: "usr_new",
@@ -157,7 +157,7 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
         users.append(user)
         return AdminTemporaryUserResult(user: user, credentialId: "cred_new", membershipId: "mem_new", temporaryPassword: "Temp123!Demo", mustChangePassword: true, createdAt: user.createdAt)
     }
-
+    
     func updateUser(id: String, input: UpdateAdminUserInput) async throws -> AdminAccessUser { users.first { $0.id == id }! }
     func blockUser(id: String, reason: String) async throws -> AdminAccessUser { users.first { $0.id == id }! }
     func unblockUser(id: String, reason: String) async throws -> AdminAccessUser { users.first { $0.id == id }! }
@@ -167,13 +167,13 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
     func revokeSessions(userId: String, reason: String) async throws -> AdminUserSessionRevocationResult {
         AdminUserSessionRevocationResult(userId: userId, revokedSessions: 1, revokedRefreshTokens: 1, revokedAt: "2026-05-21T00:00:00Z", reason: reason)
     }
-
+    
     func listInvitations(status: String?, limit: Int) async throws -> [AdminAccessInvitation] { [] }
     func getInvitation(id: String) async throws -> AdminAccessInvitation { throw AppError.notFound }
     func createInvitation(_ input: CreateAdminInvitationInput) async throws -> AdminInvitationCreatedResult { throw AppError.validation("not implemented") }
     func resendInvitation(id: String, reason: String) async throws -> AdminInvitationResendResult { throw AppError.validation("not implemented") }
     func revokeInvitation(id: String, reason: String) async throws -> AdminAccessInvitation { throw AppError.validation("not implemented") }
-
+    
     func listRoles(includeSystemTemplates: Bool) async throws -> [AdminAccessRole] { roles }
     func getRole(id: String) async throws -> AdminAccessRole { roles.first { $0.id == id }! }
     func createRole(_ input: CreateAdminRoleInput) async throws -> AdminAccessRole {
@@ -184,6 +184,6 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
     func updateRole(id: String, input: UpdateAdminRoleInput) async throws -> AdminAccessRole { roles.first { $0.id == id }! }
     func activateRole(id: String, reason: String) async throws -> AdminAccessRole { roles.first { $0.id == id }! }
     func deactivateRole(id: String, reason: String) async throws -> AdminAccessRole { roles.first { $0.id == id }! }
-
+    
     func listPermissions(includeReserved: Bool) async throws -> [AdminAccessPermission] { permissions }
 }
