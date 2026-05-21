@@ -1,10 +1,3 @@
-//
-//  RootView.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import SwiftUI
 
 struct RootView: View {
@@ -41,6 +34,7 @@ struct RootView: View {
                     adminAccessRepository: container.adminAccessRepository,
                     adminBusinessRepository: container.adminBusinessRepository,
                     adminCatalogRepository: container.adminCatalogRepository,
+                    adminTaxSriRepository: container.adminTaxSriRepository,
                     onLogout: { Task { await container.authCoordinator.logout() } }
                 )
 

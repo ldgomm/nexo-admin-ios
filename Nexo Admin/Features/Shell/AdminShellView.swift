@@ -1,10 +1,3 @@
-//
-//  AdminShellView.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import SwiftUI
 
 struct AdminShellView: View {
@@ -13,6 +6,7 @@ struct AdminShellView: View {
     let adminAccessRepository: any AdminAccessRepository
     let adminBusinessRepository: any AdminBusinessRepository
     let adminCatalogRepository: any AdminCatalogRepository
+    let adminTaxSriRepository: any AdminTaxSriRepository
     let onLogout: () -> Void
 
     @State private var selectedTab: AdminShellTab = .dashboard
@@ -43,7 +37,10 @@ struct AdminShellView: View {
             .tabItem { Label("Catálogo", systemImage: "square.grid.2x2") }
             .tag(AdminShellTab.catalog)
 
-            FiscalPlaceholderView(sessionStore: sessionStore)
+            AdminTaxSriHomeView(
+                sessionStore: sessionStore,
+                repository: adminTaxSriRepository
+            )
                 .tabItem { Label("Fiscal/SRI", systemImage: "doc.text.magnifyingglass") }
                 .tag(AdminShellTab.fiscal)
 
@@ -79,49 +76,4 @@ private enum AdminShellTab: Hashable {
     case catalog
     case fiscal
     case admin
-}
-
-private struct FiscalPlaceholderView: View {
-    @ObservedObject var sessionStore: AuthSessionStore
-
-    var body: some View {
-        PlaceholderModuleView(
-            title: "Fiscal/SRI",
-            systemImage: "doc.text.fill",
-            message: "Configuración tributaria, firma electrónica, readiness SRI, comprobantes, RIDE/XML y errores SRI deben venir desde backend.",
-            permissions: sessionStore.effectivePermissions,
-            required: [
-                PermissionCatalog.taxSettingsView,
-                PermissionCatalog.reportsTaxView,
-                PermissionCatalog.signatureViewAudit,
-                PermissionCatalog.documentsView,
-                PermissionCatalog.documentsElectronicInvoiceView,
-                PermissionCatalog.documentsElectronicInvoiceViewErrors
-            ]
-        )
-    }
-}
-
-private struct PlaceholderModuleView: View {
-    let title: String
-    let systemImage: String
-    let message: String
-    let permissions: Set<String>
-    let required: Set<String>
-
-    var body: some View {
-        NavigationStack {
-            PermissionGate(permissions: permissions, required: required) {
-                EmptyStateView(systemImage: systemImage, title: title, message: message)
-                    .navigationTitle(title)
-            } fallback: {
-                EmptyStateView(
-                    systemImage: "lock.fill",
-                    title: "Sin permiso",
-                    message: "Tu usuario no tiene permisos efectivos para este módulo. El backend también validará cada acción."
-                )
-                .navigationTitle(title)
-            }
-        }
-    }
 }

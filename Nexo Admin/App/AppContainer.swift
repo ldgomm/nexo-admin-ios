@@ -1,10 +1,3 @@
-//
-//  AppContainer.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import Combine
 
 @MainActor
@@ -19,6 +12,7 @@ final class AppContainer: ObservableObject {
     let adminAccessRepository: any AdminAccessRepository
     let adminBusinessRepository: any AdminBusinessRepository
     let adminCatalogRepository: any AdminCatalogRepository
+    let adminTaxSriRepository: any AdminTaxSriRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -33,6 +27,7 @@ final class AppContainer: ObservableObject {
         adminAccessRepository: any AdminAccessRepository,
         adminBusinessRepository: any AdminBusinessRepository,
         adminCatalogRepository: any AdminCatalogRepository,
+        adminTaxSriRepository: any AdminTaxSriRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -45,6 +40,7 @@ final class AppContainer: ObservableObject {
         self.adminAccessRepository = adminAccessRepository
         self.adminBusinessRepository = adminBusinessRepository
         self.adminCatalogRepository = adminCatalogRepository
+        self.adminTaxSriRepository = adminTaxSriRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -76,6 +72,8 @@ final class AppContainer: ObservableObject {
         let adminBusinessRepository = RemoteAdminBusinessRepository(api: adminBusinessAPI)
         let adminCatalogAPI = RemoteAdminCatalogAPI(apiClient: client)
         let adminCatalogRepository = RemoteAdminCatalogRepository(api: adminCatalogAPI)
+        let adminTaxSriAPI = RemoteAdminTaxSriAPI(apiClient: client)
+        let adminTaxSriRepository = RemoteAdminTaxSriRepository(api: adminTaxSriAPI)
 
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
@@ -98,6 +96,7 @@ final class AppContainer: ObservableObject {
             adminAccessRepository: adminAccessRepository,
             adminBusinessRepository: adminBusinessRepository,
             adminCatalogRepository: adminCatalogRepository,
+            adminTaxSriRepository: adminTaxSriRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )

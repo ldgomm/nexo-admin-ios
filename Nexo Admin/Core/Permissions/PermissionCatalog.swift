@@ -1,10 +1,3 @@
-//
-//  PermissionCatalog.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import Foundation
 
 enum PermissionCatalog {
@@ -83,6 +76,20 @@ enum PermissionCatalog {
     static let taxSettingsUpdateOrganizationRegime = "tax.settings.update_organization_regime"
     static let taxProfilesAssignToItem = "tax.profiles.assign_to_item"
 
+
+    static let taxProfilesView = "tax.profiles.view"
+    static let taxProfilesManage = "tax.profiles.manage"
+    static let sriSettingsView = "sri.settings.view"
+    static let sriSettingsManage = "sri.settings.manage"
+    static let sriReadinessRun = "sri.readiness.run"
+    static let sriHomologationRunsView = "sri.homologation_runs.view"
+    static let sriProductionRequest = "sri.production.request"
+    static let electronicSignatureView = "electronic_signature.view"
+    static let electronicSignatureUpload = "electronic_signature.upload"
+    static let electronicSignatureValidate = "electronic_signature.validate"
+    static let electronicSignatureActivate = "electronic_signature.activate"
+    static let electronicSignatureRevoke = "electronic_signature.revoke"
+
     static let signatureReplace = "signature.replace"
     static let signatureRevoke = "signature.revoke"
     static let signatureTest = "signature.test"
@@ -106,6 +113,7 @@ enum PermissionCatalog {
     static let cashViewCurrent = cashSessionViewCurrent
     static let cashViewHistory = cashSessionViewHistory
     static let signatureViewMetadata = signatureViewAudit
+    static let signatureUploadLegacy = signatureReplace
     static let signatureUpload = signatureReplace
     static let taxManage = taxSettingsUpdateOrganizationRegime
 }
