@@ -1,3 +1,10 @@
+//
+//  RootView.swift
+//  Nexo Admin
+//
+//  Created by José Ruiz on 21/5/26.
+//
+
 import SwiftUI
 
 struct RootView: View {
@@ -35,6 +42,7 @@ struct RootView: View {
                     adminBusinessRepository: container.adminBusinessRepository,
                     adminCatalogRepository: container.adminCatalogRepository,
                     adminTaxSriRepository: container.adminTaxSriRepository,
+                    adminElectronicDocumentRepository: container.adminElectronicDocumentRepository,
                     onLogout: { Task { await container.authCoordinator.logout() } }
                 )
 
@@ -96,7 +104,7 @@ private struct MandatoryPasswordChangePlaceholderView: View {
                 .foregroundStyle(.orange)
             Text("Cambio de contraseña requerido")
                 .font(.title.bold())
-            Text("El backend indicó que esta credencial debe cambiar su contraseña antes de continuar. El flujo completo entra en el siguiente corte del módulo Auth.")
+            Text("El backend indicó que esta credencial debe cambiar su contraseña antes de continuar.")
                 .foregroundStyle(.secondary)
             HPrimaryButton(title: "Cerrar sesión", action: onLogout)
         }

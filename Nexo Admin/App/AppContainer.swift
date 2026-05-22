@@ -1,3 +1,10 @@
+//
+//  AppContainer.swift
+//  Nexo Admin
+//
+//  Created by José Ruiz on 21/5/26.
+//
+
 import Combine
 
 @MainActor
@@ -13,6 +20,7 @@ final class AppContainer: ObservableObject {
     let adminBusinessRepository: any AdminBusinessRepository
     let adminCatalogRepository: any AdminCatalogRepository
     let adminTaxSriRepository: any AdminTaxSriRepository
+    let adminElectronicDocumentRepository: any AdminElectronicDocumentRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -28,6 +36,7 @@ final class AppContainer: ObservableObject {
         adminBusinessRepository: any AdminBusinessRepository,
         adminCatalogRepository: any AdminCatalogRepository,
         adminTaxSriRepository: any AdminTaxSriRepository,
+        adminElectronicDocumentRepository: any AdminElectronicDocumentRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -41,6 +50,7 @@ final class AppContainer: ObservableObject {
         self.adminBusinessRepository = adminBusinessRepository
         self.adminCatalogRepository = adminCatalogRepository
         self.adminTaxSriRepository = adminTaxSriRepository
+        self.adminElectronicDocumentRepository = adminElectronicDocumentRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -64,16 +74,24 @@ final class AppContainer: ObservableObject {
 
         let authAPI = RemoteAuthAPI(apiClient: client)
         let authRepository = RemoteAuthRepository(authAPI: authAPI)
+
         let dashboardAPI = RemoteDashboardAPI(apiClient: client)
         let dashboardRepository = RemoteDashboardRepository(api: dashboardAPI)
+
         let adminAccessAPI = RemoteAdminAccessAPI(apiClient: client)
         let adminAccessRepository = RemoteAdminAccessRepository(api: adminAccessAPI)
+
         let adminBusinessAPI = RemoteAdminBusinessAPI(apiClient: client)
         let adminBusinessRepository = RemoteAdminBusinessRepository(api: adminBusinessAPI)
+
         let adminCatalogAPI = RemoteAdminCatalogAPI(apiClient: client)
         let adminCatalogRepository = RemoteAdminCatalogRepository(api: adminCatalogAPI)
+
         let adminTaxSriAPI = RemoteAdminTaxSriAPI(apiClient: client)
         let adminTaxSriRepository = RemoteAdminTaxSriRepository(api: adminTaxSriAPI)
+
+        let adminElectronicDocumentAPI = RemoteAdminElectronicDocumentAPI(apiClient: client)
+        let adminElectronicDocumentRepository = RemoteAdminElectronicDocumentRepository(api: adminElectronicDocumentAPI)
 
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
@@ -97,6 +115,7 @@ final class AppContainer: ObservableObject {
             adminBusinessRepository: adminBusinessRepository,
             adminCatalogRepository: adminCatalogRepository,
             adminTaxSriRepository: adminTaxSriRepository,
+            adminElectronicDocumentRepository: adminElectronicDocumentRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )

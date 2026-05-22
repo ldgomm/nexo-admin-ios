@@ -1,3 +1,10 @@
+//
+//  AdminShellView.swift
+//  Nexo Admin
+//
+//  Created by José Ruiz on 21/5/26.
+//
+
 import SwiftUI
 
 struct AdminShellView: View {
@@ -7,42 +14,37 @@ struct AdminShellView: View {
     let adminBusinessRepository: any AdminBusinessRepository
     let adminCatalogRepository: any AdminCatalogRepository
     let adminTaxSriRepository: any AdminTaxSriRepository
+    let adminElectronicDocumentRepository: any AdminElectronicDocumentRepository
     let onLogout: () -> Void
 
-    @State private var selectedTab: AdminShellTab = .dashboard
-
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView {
             DashboardView(
                 viewModel: DashboardViewModel(
                     getSummary: GetDashboardSummaryUseCase(repository: dashboardRepository),
                     sessionStore: sessionStore
-                ),
-                onQuickAction: navigate(to:)
+                )
             )
             .tabItem { Label("Inicio", systemImage: "chart.bar.doc.horizontal") }
-            .tag(AdminShellTab.dashboard)
 
             AdminBusinessHomeView(
                 sessionStore: sessionStore,
                 repository: adminBusinessRepository
             )
             .tabItem { Label("Negocio", systemImage: "building.2") }
-            .tag(AdminShellTab.business)
 
             AdminCatalogHomeView(
                 sessionStore: sessionStore,
                 repository: adminCatalogRepository
             )
             .tabItem { Label("Catálogo", systemImage: "square.grid.2x2") }
-            .tag(AdminShellTab.catalog)
 
-            AdminTaxSriHomeView(
+            FiscalSriShellView(
                 sessionStore: sessionStore,
-                repository: adminTaxSriRepository
+                taxSriRepository: adminTaxSriRepository,
+                electronicDocumentRepository: adminElectronicDocumentRepository
             )
-                .tabItem { Label("Fiscal/SRI", systemImage: "doc.text.magnifyingglass") }
-                .tag(AdminShellTab.fiscal)
+            .tabItem { Label("Fiscal/SRI", systemImage: "doc.text.magnifyingglass") }
 
             AdminAccessHomeView(
                 sessionStore: sessionStore,
@@ -50,30 +52,39 @@ struct AdminShellView: View {
                 onLogout: onLogout
             )
             .tabItem { Label("Admin", systemImage: "person.crop.circle") }
-            .tag(AdminShellTab.admin)
-        }
-    }
-
-    private func navigate(to destination: DashboardQuickActionDestination) {
-        switch destination {
-        case .business, .branches, .emissionPoints:
-            selectedTab = .business
-        case .catalog, .catalogRequests:
-            selectedTab = .catalog
-        case .tax, .signature, .sri, .documents:
-            selectedTab = .fiscal
-        case .users, .roles, .audit, .support:
-            selectedTab = .admin
-        case .cash:
-            selectedTab = .dashboard
         }
     }
 }
 
-private enum AdminShellTab: Hashable {
-    case dashboard
-    case business
-    case catalog
-    case fiscal
-    case admin
+private struct FiscalSriShellView: View {
+    @ObservedObject var sessionStore: AuthSessionStore
+    let taxSriRepository: any AdminTaxSriRepository
+    let electronicDocumentRepository: any AdminElectronicDocumentRepository
+
+    var body: some View {
+        NavigationStack {
+            List {
+                NavigationLink {
+                    AdminTaxSriHomeView(
+                        sessionStore: sessionStore,
+                        repository: taxSriRepository
+                    )
+                } label: {
+                    Label("Tributario, firma y SRI", systemImage: "checklist.checked")
+                }
+
+                NavigationLink {
+                    AdminElectronicDocumentsView(
+                        viewModel: AdminElectronicDocumentsViewModel(
+                            repository: electronicDocumentRepository,
+                            permissions: sessionStore.effectivePermissions
+                        )
+                    )
+                } label: {
+                    Label("Comprobantes electrónicos", systemImage: "doc.text.magnifyingglass")
+                }
+            }
+            .navigationTitle("Fiscal/SRI")
+        }
+    }
 }

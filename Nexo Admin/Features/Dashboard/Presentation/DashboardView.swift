@@ -52,7 +52,7 @@ struct DashboardView: View {
                 }
             }
             .task { await viewModel.load() }
-            .onChange(of: viewModel.selectedPeriod) { newValue in
+            .onChange(of: viewModel.selectedPeriod) { _, newValue in
                 Task { await viewModel.changePeriod(newValue) }
             }
         }
