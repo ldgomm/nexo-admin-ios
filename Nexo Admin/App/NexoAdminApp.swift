@@ -2,14 +2,14 @@
 //  NexoAdminApp.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import SwiftUI
 
 @main
 struct NexoAdminApp: App {
-    @StateObject private var container = AppContainer.live()
+    @StateObject private var container = AppContainer.live(environment: .current())
 
     var body: some Scene {
         WindowGroup {

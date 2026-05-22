@@ -83,6 +83,23 @@ struct AdminAccessHomeView: View {
                     }
                 }
 
+
+                if permissions.canAny([PermissionCatalog.supportDiagnosticsView, PermissionCatalog.auditView]) {
+                    Section("Cierre técnico") {
+                        NavigationLink {
+                            ReleaseReadinessView(
+                                viewModel: ReleaseReadinessViewModel(sessionStore: sessionStore)
+                            )
+                        } label: {
+                            AdminAccessHomeRow(
+                                title: "Hardening y TestFlight",
+                                subtitle: "Checklist interno de build, permisos, seguridad, SRI y salida a pruebas",
+                                systemImage: "checkmark.seal.fill"
+                            )
+                        }
+                    }
+                }
+
                 Section("Seguridad") {
                     Text("Toda mutación crítica exige motivo y vuelve a ser validada por el backend. La app solo muestra acciones permitidas por permisos efectivos.")
                         .font(.footnote)

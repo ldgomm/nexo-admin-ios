@@ -2,7 +2,7 @@
 //  AppEnvironment.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 20/5/26.
+//  Created by José Ruiz on 21/5/26.
 //
 
 import Foundation
@@ -25,4 +25,18 @@ struct AppEnvironment: Sendable {
         apiVersion: "v1",
         buildConfiguration: .debug
     )
+
+    static func current(bundle: Bundle = .main) -> AppEnvironment {
+        let buildInfo = BuildInfo.current(bundle: bundle)
+        guard let url = URL(string: buildInfo.apiBaseURL) else {
+            return .debug
+        }
+
+        return AppEnvironment(
+            baseURL: url,
+            appName: buildInfo.appName,
+            apiVersion: "v1",
+            buildConfiguration: buildInfo.configuration
+        )
+    }
 }
