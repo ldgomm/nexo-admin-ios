@@ -7,52 +7,141 @@
 
 import SwiftUI
 
+private enum AdminShellTab: CaseIterable, Hashable {
+    case dashboard
+    case business
+    case catalog
+    case fiscalSri
+    case reports
+    case admin
+    
+    var title: String {
+        switch self {
+        case .dashboard: return "Inicio"
+        case .business: return "Negocio"
+        case .catalog: return "Catálogo"
+        case .fiscalSri: return "Fiscal/SRI"
+        case .reports: return "Reportes"
+        case .admin: return "Admin"
+        }
+    }
+    
+    var systemImage: String {
+        switch self {
+        case .dashboard: return "chart.bar.doc.horizontal"
+        case .business: return "building.2"
+        case .catalog: return "square.grid.2x2"
+        case .fiscalSri: return "doc.text.magnifyingglass"
+        case .reports: return "chart.xyaxis.line"
+        case .admin: return "person.crop.circle"
+        }
+    }
+}
+
 struct AdminShellView: View {
     @ObservedObject var sessionStore: AuthSessionStore
+    @State private var selectedTab: AdminShellTab = .dashboard
+    
     let dashboardRepository: any DashboardRepository
     let adminAccessRepository: any AdminAccessRepository
     let adminBusinessRepository: any AdminBusinessRepository
     let adminCatalogRepository: any AdminCatalogRepository
     let adminTaxSriRepository: any AdminTaxSriRepository
     let adminElectronicDocumentRepository: any AdminElectronicDocumentRepository
+    let adminOperationsRepository: any AdminOperationsRepository
     let onLogout: () -> Void
-
+    
     var body: some View {
-        TabView {
-            DashboardView(
-                viewModel: DashboardViewModel(
-                    getSummary: GetDashboardSummaryUseCase(repository: dashboardRepository),
-                    sessionStore: sessionStore
+        VStack(spacing: 0) {
+            selectedContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            Divider()
+            
+            bottomBar
+        }
+    }
+    
+    private var selectedContent: AnyView {
+        switch selectedTab {
+        case .dashboard:
+            return AnyView(
+                DashboardView(
+                    viewModel: DashboardViewModel(
+                        getSummary: GetDashboardSummaryUseCase(repository: dashboardRepository),
+                        sessionStore: sessionStore
+                    )
                 )
             )
-            .tabItem { Label("Inicio", systemImage: "chart.bar.doc.horizontal") }
-
-            AdminBusinessHomeView(
-                sessionStore: sessionStore,
-                repository: adminBusinessRepository
+            
+        case .business:
+            return AnyView(
+                AdminBusinessHomeView(
+                    sessionStore: sessionStore,
+                    repository: adminBusinessRepository
+                )
             )
-            .tabItem { Label("Negocio", systemImage: "building.2") }
-
-            AdminCatalogHomeView(
-                sessionStore: sessionStore,
-                repository: adminCatalogRepository
+            
+        case .catalog:
+            return AnyView(
+                AdminCatalogHomeView(
+                    sessionStore: sessionStore,
+                    repository: adminCatalogRepository
+                )
             )
-            .tabItem { Label("Catálogo", systemImage: "square.grid.2x2") }
-
-            FiscalSriShellView(
-                sessionStore: sessionStore,
-                taxSriRepository: adminTaxSriRepository,
-                electronicDocumentRepository: adminElectronicDocumentRepository
+            
+        case .fiscalSri:
+            return AnyView(
+                FiscalSriShellView(
+                    sessionStore: sessionStore,
+                    taxSriRepository: adminTaxSriRepository,
+                    electronicDocumentRepository: adminElectronicDocumentRepository
+                )
             )
-            .tabItem { Label("Fiscal/SRI", systemImage: "doc.text.magnifyingglass") }
-
-            AdminAccessHomeView(
-                sessionStore: sessionStore,
-                repository: adminAccessRepository,
-                onLogout: onLogout
+            
+        case .reports:
+            return AnyView(
+                AdminOperationsView(
+                    viewModel: AdminOperationsViewModel(
+                        repository: adminOperationsRepository,
+                        permissions: sessionStore.effectivePermissions
+                    )
+                )
             )
-            .tabItem { Label("Admin", systemImage: "person.crop.circle") }
+            
+        case .admin:
+            return AnyView(
+                AdminAccessHomeView(
+                    sessionStore: sessionStore,
+                    repository: adminAccessRepository,
+                    onLogout: onLogout
+                )
+            )
         }
+    }
+    
+    private var bottomBar: some View {
+        HStack(spacing: 0) {
+            ForEach(AdminShellTab.allCases, id: \.self) { tab in
+                Button {
+                    selectedTab = tab
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.systemImage)
+                            .font(.system(size: 18, weight: selectedTab == tab ? .semibold : .regular))
+                        
+                        Text(tab.title)
+                            .font(.caption2)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .background(.bar)
     }
 }
 
@@ -60,7 +149,7 @@ private struct FiscalSriShellView: View {
     @ObservedObject var sessionStore: AuthSessionStore
     let taxSriRepository: any AdminTaxSriRepository
     let electronicDocumentRepository: any AdminElectronicDocumentRepository
-
+    
     var body: some View {
         NavigationStack {
             List {
@@ -72,7 +161,7 @@ private struct FiscalSriShellView: View {
                 } label: {
                     Label("Tributario, firma y SRI", systemImage: "checklist.checked")
                 }
-
+                
                 NavigationLink {
                     AdminElectronicDocumentsView(
                         viewModel: AdminElectronicDocumentsViewModel(

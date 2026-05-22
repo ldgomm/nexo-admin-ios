@@ -21,6 +21,7 @@ final class AppContainer: ObservableObject {
     let adminCatalogRepository: any AdminCatalogRepository
     let adminTaxSriRepository: any AdminTaxSriRepository
     let adminElectronicDocumentRepository: any AdminElectronicDocumentRepository
+    let adminOperationsRepository: any AdminOperationsRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -37,6 +38,7 @@ final class AppContainer: ObservableObject {
         adminCatalogRepository: any AdminCatalogRepository,
         adminTaxSriRepository: any AdminTaxSriRepository,
         adminElectronicDocumentRepository: any AdminElectronicDocumentRepository,
+        adminOperationsRepository: any AdminOperationsRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -51,6 +53,7 @@ final class AppContainer: ObservableObject {
         self.adminCatalogRepository = adminCatalogRepository
         self.adminTaxSriRepository = adminTaxSriRepository
         self.adminElectronicDocumentRepository = adminElectronicDocumentRepository
+        self.adminOperationsRepository = adminOperationsRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -93,6 +96,9 @@ final class AppContainer: ObservableObject {
         let adminElectronicDocumentAPI = RemoteAdminElectronicDocumentAPI(apiClient: client)
         let adminElectronicDocumentRepository = RemoteAdminElectronicDocumentRepository(api: adminElectronicDocumentAPI)
 
+        let adminOperationsAPI = RemoteAdminOperationsAPI(apiClient: client)
+        let adminOperationsRepository = RemoteAdminOperationsRepository(api: adminOperationsAPI)
+
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
             organizationSelectionStore: organizationStore
@@ -116,6 +122,7 @@ final class AppContainer: ObservableObject {
             adminCatalogRepository: adminCatalogRepository,
             adminTaxSriRepository: adminTaxSriRepository,
             adminElectronicDocumentRepository: adminElectronicDocumentRepository,
+            adminOperationsRepository: adminOperationsRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )

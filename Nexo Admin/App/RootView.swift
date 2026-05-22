@@ -43,6 +43,7 @@ struct RootView: View {
                     adminCatalogRepository: container.adminCatalogRepository,
                     adminTaxSriRepository: container.adminTaxSriRepository,
                     adminElectronicDocumentRepository: container.adminElectronicDocumentRepository,
+                    adminOperationsRepository: container.adminOperationsRepository,
                     onLogout: { Task { await container.authCoordinator.logout() } }
                 )
 
@@ -104,7 +105,7 @@ private struct MandatoryPasswordChangePlaceholderView: View {
                 .foregroundStyle(.orange)
             Text("Cambio de contraseña requerido")
                 .font(.title.bold())
-            Text("El backend indicó que esta credencial debe cambiar su contraseña antes de continuar.")
+            Text("El backend indicó que esta credencial debe cambiar su contraseña antes de continuar. El flujo completo entra en el siguiente corte del módulo Auth.")
                 .foregroundStyle(.secondary)
             HPrimaryButton(title: "Cerrar sesión", action: onLogout)
         }

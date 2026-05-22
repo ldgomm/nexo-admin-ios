@@ -22,19 +22,24 @@ enum PermissionCatalog {
 
     static let organizationView = "organization.view"
     static let organizationUpdate = "organization.update"
+
     static let activitiesView = "activities.view"
     static let activitiesCreate = "activities.create"
     static let activitiesUpdate = "activities.update"
+
     static let branchesView = "branches.view"
     static let branchesCreate = "branches.create"
     static let branchesUpdate = "branches.update"
     static let branchLocationView = "branch.location.view"
     static let branchLocationUpdate = "branch.location.update"
+
     static let businessHoursView = "business_hours.view"
     static let businessHoursUpdate = "business_hours.update"
     static let businessHoursPublicVisibilityUpdate = "business_hours.public_visibility.update"
+
     static let settingsBranchesView = "settings.branches.view"
     static let settingsBranchesManage = "settings.branches.manage"
+
     static let settingsEmissionPointsView = "settings.emission_points.view"
     static let settingsEmissionPointsManage = "settings.emission_points.manage"
     static let emissionPointsView = settingsEmissionPointsView
@@ -51,6 +56,7 @@ enum PermissionCatalog {
     static let catalogPriceHistoryView = "catalog.price_history.view"
     static let catalogIdentifiersScan = "catalog.identifiers.scan"
     static let catalogMasterView = "catalog.master.view"
+
     static let catalogCopyFromMaster = catalogLocalCopyFromMaster
     static let catalogUpdateLocalCopy = catalogLocalUpdateLocalCopy
     static let catalogDisableLocalCopy = catalogLocalDisableLocalCopy
@@ -71,6 +77,7 @@ enum PermissionCatalog {
     static let cashSessionViewHistory = "cash.session.view_history"
     static let cashSessionOpen = "cash.session.open"
     static let cashSessionClose = "cash.session.close"
+
     static let cashViewCurrent = cashSessionViewCurrent
     static let cashViewHistory = cashSessionViewHistory
 
@@ -82,6 +89,7 @@ enum PermissionCatalog {
     static let documentsRetryAuthorization = "documents.retry_authorization"
     static let documentsViewTimeline = "documents.view_timeline"
     static let documentsViewSriErrors = "documents.view_sri_errors"
+
     static let documentsElectronicInvoiceView = "documents.electronic_invoice.view"
     static let documentsElectronicInvoiceList = "documents.electronic_invoice.list"
     static let documentsElectronicInvoiceDownloadXML = "documents.electronic_invoice.download_xml"
@@ -112,6 +120,7 @@ enum PermissionCatalog {
     static let electronicSignatureValidate = "electronic_signature.validate"
     static let electronicSignatureActivate = "electronic_signature.activate"
     static let electronicSignatureRevoke = "electronic_signature.revoke"
+
     static let signatureViewMetadata = electronicSignatureView
     static let signatureUpload = electronicSignatureUpload
     static let signatureReplace = "signature.replace"
@@ -126,6 +135,7 @@ enum PermissionCatalog {
     static let reportsCashView = "reports.cash.view"
     static let reportsTaxView = "reports.tax.view"
     static let reportsDocumentsView = "reports.documents.view"
+
     static let reportsToday = reportsDashboardView
     static let reportsSales = reportsSalesView
     static let reportsCash = reportsCashView
@@ -133,6 +143,7 @@ enum PermissionCatalog {
 
     static let auditView = "audit.view"
     static let supportView = "support.view"
+    static let supportDiagnosticsView = "support.diagnostics.view"
 }
 
 struct PermissionSet: Equatable, Sendable {
