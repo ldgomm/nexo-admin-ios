@@ -32,14 +32,14 @@ extension AdminTaxProfileResponseDTO {
             code: code,
             name: name,
             description: description ?? "",
-            status: status ?? "active",
-            taxName: taxName ?? "IVA",
-            rate: Decimal(string: rate ?? "0") ?? 0,
-            sriTaxCode: sriTaxCode ?? "",
-            sriRateCode: sriRateCode ?? "",
-            legalBasis: legalBasis,
-            effectiveFrom: effectiveFrom,
-            effectiveTo: effectiveTo,
+            status: status ?? taxRate?.status ?? "active",
+            taxName: taxName ?? taxRate?.name ?? "IVA",
+            rate: Decimal(string: rate ?? taxRate?.rate ?? "0") ?? 0,
+            sriTaxCode: sriTaxCode ?? taxRate?.sriTaxCode ?? "",
+            sriRateCode: sriRateCode ?? taxRate?.sriRateCode ?? "",
+            legalBasis: legalBasis ?? taxRate?.legalBasis,
+            effectiveFrom: effectiveFrom ?? taxRate?.effectiveFrom,
+            effectiveTo: effectiveTo ?? taxRate?.effectiveTo,
             editable: editable ?? false
         )
     }
