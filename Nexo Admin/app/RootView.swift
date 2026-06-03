@@ -1,10 +1,3 @@
-//
-//  RootView.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import SwiftUI
 
 struct RootView: View {
@@ -53,6 +46,7 @@ struct RootView: View {
                     adminFoundationRepository: container.adminFoundationRepository,
                     adminPublicProjectionRepository: container.adminPublicProjectionRepository,
                     adminSupportRepository: container.adminSupportRepository,
+                    adminRoleTemplateRepository: container.adminRoleTemplateRepository,
                     onChangeOrganization: {
                         Task { await container.authCoordinator.requestOrganizationSelection() }
                     },

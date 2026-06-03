@@ -1,10 +1,3 @@
-//
-//  AppContainer.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import Combine
 
 @MainActor
@@ -25,6 +18,7 @@ final class AppContainer: ObservableObject {
     let adminFoundationRepository: any AdminFoundationRepository
     let adminPublicProjectionRepository: any AdminPublicProjectionRepository
     let adminSupportRepository: any AdminSupportRepository
+    let adminRoleTemplateRepository: any AdminRoleTemplateRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -45,6 +39,7 @@ final class AppContainer: ObservableObject {
         adminFoundationRepository: any AdminFoundationRepository,
         adminPublicProjectionRepository: any AdminPublicProjectionRepository,
         adminSupportRepository: any AdminSupportRepository,
+        adminRoleTemplateRepository: any AdminRoleTemplateRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -63,6 +58,7 @@ final class AppContainer: ObservableObject {
         self.adminFoundationRepository = adminFoundationRepository
         self.adminPublicProjectionRepository = adminPublicProjectionRepository
         self.adminSupportRepository = adminSupportRepository
+        self.adminRoleTemplateRepository = adminRoleTemplateRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -124,6 +120,8 @@ final class AppContainer: ObservableObject {
         let supportAPI = RemoteAdminSupportAPI(apiClient: client)
         let supportRepository = RemoteAdminSupportRepository(api: supportAPI)
 
+        let roleTemplateRepository = RemoteAdminRoleTemplateRepository(apiClient: client)
+
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
             organizationSelectionStore: organizationStore
@@ -151,6 +149,7 @@ final class AppContainer: ObservableObject {
             adminFoundationRepository: adminFoundationRepository,
             adminPublicProjectionRepository: publicProjectionRepository,
             adminSupportRepository: supportRepository,
+            adminRoleTemplateRepository: roleTemplateRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )

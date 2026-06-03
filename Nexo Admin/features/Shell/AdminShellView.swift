@@ -1,10 +1,3 @@
-//
-//  AdminShellView.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import SwiftUI
 
 private enum AdminShellTab: CaseIterable, Hashable {
@@ -52,6 +45,7 @@ struct AdminShellView: View {
     let adminFoundationRepository: any AdminFoundationRepository
     let adminPublicProjectionRepository: any AdminPublicProjectionRepository
     let adminSupportRepository: any AdminSupportRepository
+    let adminRoleTemplateRepository: any AdminRoleTemplateRepository
     let onChangeOrganization: () -> Void
     let onLogout: () -> Void
 
@@ -112,6 +106,7 @@ struct AdminShellView: View {
                 adminOperationsRepository: adminOperationsRepository,
                 adminPublicProjectionRepository: adminPublicProjectionRepository,
                 adminSupportRepository: adminSupportRepository,
+                adminRoleTemplateRepository: adminRoleTemplateRepository,
                 onChangeOrganization: onChangeOrganization,
                 onLogout: onLogout
             )

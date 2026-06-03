@@ -1,10 +1,3 @@
-//
-//  AdminControlCenterView.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import SwiftUI
 
 struct AdminControlCenterView: View {
@@ -13,6 +6,7 @@ struct AdminControlCenterView: View {
     let adminOperationsRepository: any AdminOperationsRepository
     let adminPublicProjectionRepository: any AdminPublicProjectionRepository
     let adminSupportRepository: any AdminSupportRepository
+    let adminRoleTemplateRepository: any AdminRoleTemplateRepository
     let onChangeOrganization: () -> Void
     let onLogout: () -> Void
 
@@ -22,6 +16,7 @@ struct AdminControlCenterView: View {
         adminOperationsRepository: any AdminOperationsRepository,
         adminPublicProjectionRepository: any AdminPublicProjectionRepository,
         adminSupportRepository: any AdminSupportRepository,
+        adminRoleTemplateRepository: any AdminRoleTemplateRepository,
         onChangeOrganization: @escaping () -> Void = {},
         onLogout: @escaping () -> Void
     ) {
@@ -30,6 +25,7 @@ struct AdminControlCenterView: View {
         self.adminOperationsRepository = adminOperationsRepository
         self.adminPublicProjectionRepository = adminPublicProjectionRepository
         self.adminSupportRepository = adminSupportRepository
+        self.adminRoleTemplateRepository = adminRoleTemplateRepository
         self.onChangeOrganization = onChangeOrganization
         self.onLogout = onLogout
     }
@@ -72,6 +68,20 @@ struct AdminControlCenterView: View {
                             title: "Usuarios, roles y permisos",
                             subtitle: "Cuentas, invitaciones, resets, bloqueos y permisos efectivos",
                             systemImage: "person.badge.key.fill"
+                        )
+                    }
+
+                    NavigationLink {
+                        AdminRoleTemplateProvisioningView(
+                            viewModel: AdminRoleTemplateProvisioningViewModel(
+                                repository: adminRoleTemplateRepository
+                            )
+                        )
+                    } label: {
+                        AdminControlRow(
+                            title: "Plantillas de roles",
+                            subtitle: "Crear roles locales por vertical para la organización activa",
+                            systemImage: "person.3.sequence.fill"
                         )
                     }
                 }
