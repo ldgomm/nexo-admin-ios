@@ -1,10 +1,3 @@
-//
-//  AdminTaxSriMapper.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import Foundation
 
 extension AdminTaxSettingsResponseDTO {
@@ -27,21 +20,58 @@ extension AdminTaxSettingsResponseDTO {
 
 extension AdminTaxProfileResponseDTO {
     func toDomain() -> AdminTaxProfile {
-        AdminTaxProfile(
+        let resolvedTaxKind = taxKind ?? kind ?? taxRate?.taxKind ?? taxRate?.kind ?? "IVA"
+        let resolvedTreatment = treatment ?? taxTreatment ?? taxRate?.treatment ?? taxRate?.taxTreatment ?? inferTreatment(from: code)
+
+        return AdminTaxProfile(
             id: id,
             code: code,
             name: name,
             description: description ?? "",
             status: status ?? taxRate?.status ?? "active",
-            taxName: taxName ?? taxRate?.name ?? "IVA",
+            taxName: taxName ?? taxRate?.name ?? resolvedTaxKind,
+            taxKind: resolvedTaxKind,
+            treatment: resolvedTreatment,
             rate: Decimal(string: rate ?? taxRate?.rate ?? "0") ?? 0,
             sriTaxCode: sriTaxCode ?? taxRate?.sriTaxCode ?? "",
             sriRateCode: sriRateCode ?? taxRate?.sriRateCode ?? "",
             legalBasis: legalBasis ?? taxRate?.legalBasis,
             effectiveFrom: effectiveFrom ?? taxRate?.effectiveFrom,
             effectiveTo: effectiveTo ?? taxRate?.effectiveTo,
-            editable: editable ?? false
+            editable: editable ?? false,
+            source: source ?? taxRate?.source,
+            requiresTourismEligibility: requiresTourismEligibility ?? taxRate?.requiresTourismEligibility ?? false,
+            requiresConstructionMaterialAuxiliaryCode: requiresConstructionMaterialAuxiliaryCode ?? taxRate?.requiresConstructionMaterialAuxiliaryCode ?? false,
+            requiresActiveWindow: requiresActiveWindow ?? taxRate?.requiresActiveWindow ?? false,
+            eligibilityWindowCode: eligibilityWindowCode ?? taxRate?.eligibilityWindowCode
         )
+    }
+
+    private func inferTreatment(from code: String) -> String {
+        let normalized = code.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        if normalized.contains("tourism") || normalized.contains("turismo") {
+            return "IVA_REDUCED_TOURISM"
+        }
+        if normalized.contains("construction") || normalized.contains("material") {
+            return "IVA_REDUCED_CONSTRUCTION_MATERIALS"
+        }
+        if normalized.contains("no_tax_internal") {
+            return "NO_TAX_INTERNAL"
+        }
+        if normalized.contains("iva_0") || normalized.contains("iva_zero") {
+            return "IVA_ZERO"
+        }
+        if normalized.contains("not_subject") {
+            return "NOT_SUBJECT_TO_IVA"
+        }
+        if normalized.contains("exempt") {
+            return "EXEMPT_IVA"
+        }
+        if normalized.contains("iva") {
+            return "IVA_FULL"
+        }
+        return "UNKNOWN"
     }
 }
 

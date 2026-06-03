@@ -1,10 +1,3 @@
-//
-//  AdminTaxSriModels.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import Foundation
 
 struct AdminTaxSettings: Equatable, Sendable {
@@ -28,6 +21,8 @@ struct AdminTaxProfile: Identifiable, Equatable, Sendable {
     let description: String
     let status: String
     let taxName: String
+    let taxKind: String
+    let treatment: String
     let rate: Decimal
     let sriTaxCode: String
     let sriRateCode: String
@@ -35,6 +30,76 @@ struct AdminTaxProfile: Identifiable, Equatable, Sendable {
     let effectiveFrom: String?
     let effectiveTo: String?
     let editable: Bool
+    let source: String?
+    let requiresTourismEligibility: Bool
+    let requiresConstructionMaterialAuxiliaryCode: Bool
+    let requiresActiveWindow: Bool
+    let eligibilityWindowCode: String?
+
+    var displayRate: String {
+        "\(NSDecimalNumber(decimal: rate).stringValue)%"
+    }
+
+    var displaySriCodes: String {
+        let taxCode = sriTaxCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rateCode = sriRateCode.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if taxCode.isEmpty && rateCode.isEmpty {
+            return "Sin códigos SRI"
+        }
+        if taxCode.isEmpty {
+            return "SRI —/\(rateCode)"
+        }
+        if rateCode.isEmpty {
+            return "SRI \(taxCode)/—"
+        }
+        return "SRI \(taxCode)/\(rateCode)"
+    }
+
+    var normalizedTreatment: String {
+        treatment.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    }
+
+    var normalizedCode: String {
+        code.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    var isTourismReducedIva: Bool {
+        normalizedTreatment == "IVA_REDUCED_TOURISM" || normalizedCode.contains("tourism")
+    }
+
+    var isConstructionReducedIva: Bool {
+        normalizedTreatment == "IVA_REDUCED_CONSTRUCTION_MATERIALS" || normalizedCode.contains("construction")
+    }
+
+    var isInternalOnly: Bool {
+        normalizedTreatment == "NO_TAX_INTERNAL" || normalizedCode.contains("no_tax_internal")
+    }
+
+    var isElectronicallyBillable: Bool {
+        !isInternalOnly && !sriTaxCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var requiresEligibilityNotice: Bool {
+        requiresTourismEligibility || requiresConstructionMaterialAuxiliaryCode || requiresActiveWindow
+    }
+
+    var eligibilitySummary: String? {
+        var items: [String] = []
+        if requiresTourismEligibility {
+            items.append("requiere elegibilidad turística")
+        }
+        if requiresConstructionMaterialAuxiliaryCode {
+            items.append("requiere código auxiliar de material")
+        }
+        if requiresActiveWindow {
+            items.append("requiere ventana/decreto vigente")
+        }
+        if let eligibilityWindowCode, !eligibilityWindowCode.isEmpty {
+            items.append("ventana: \(eligibilityWindowCode)")
+        }
+        return items.isEmpty ? nil : items.joined(separator: " • ")
+    }
 }
 
 struct AdminElectronicSignature: Identifiable, Equatable, Sendable {

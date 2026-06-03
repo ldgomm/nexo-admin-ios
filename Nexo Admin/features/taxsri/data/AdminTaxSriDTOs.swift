@@ -1,10 +1,3 @@
-//
-//  AdminTaxSriDTOs.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import Foundation
 
 struct AdminTaxSettingsResponseDTO: Decodable, Sendable {
@@ -43,6 +36,9 @@ struct AdminTaxRateEmbeddedDTO: Decodable, Sendable {
     let code: String?
     let name: String?
     let kind: String?
+    let taxKind: String?
+    let treatment: String?
+    let taxTreatment: String?
     let rate: String?
     let status: String?
     let sriTaxCode: String?
@@ -51,11 +47,15 @@ struct AdminTaxRateEmbeddedDTO: Decodable, Sendable {
     let effectiveFrom: String?
     let effectiveTo: String?
     let source: String?
+    let requiresTourismEligibility: Bool?
+    let requiresConstructionMaterialAuxiliaryCode: Bool?
+    let requiresActiveWindow: Bool?
+    let eligibilityWindowCode: String?
     let createdAt: String?
     let updatedAt: String?
     let version: Int?
     let schemaVersion: Int?
-    
+
     private enum CodingKeys: String, CodingKey {
         case id
         case mongoId = "_id"
@@ -64,6 +64,9 @@ struct AdminTaxRateEmbeddedDTO: Decodable, Sendable {
         case code
         case name
         case kind
+        case taxKind
+        case treatment
+        case taxTreatment
         case rate
         case status
         case sriTaxCode
@@ -72,29 +75,40 @@ struct AdminTaxRateEmbeddedDTO: Decodable, Sendable {
         case effectiveFrom
         case effectiveTo
         case source
+        case requiresTourismEligibility
+        case requiresConstructionMaterialAuxiliaryCode
+        case requiresActiveWindow
+        case eligibilityWindowCode
         case createdAt
         case updatedAt
         case version
         case schemaVersion
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .id)
-        ?? container.decodeIfPresent(String.self, forKey: .mongoId)
+            ?? container.decodeIfPresent(String.self, forKey: .mongoId)
         organizationId = try container.decodeIfPresent(String.self, forKey: .organizationId)
         countryCode = try container.decodeIfPresent(String.self, forKey: .countryCode)
         code = try container.decodeIfPresent(String.self, forKey: .code)
         name = try container.decodeIfPresent(String.self, forKey: .name)
         kind = try container.decodeIfPresent(String.self, forKey: .kind)
-        rate = try container.decodeIfPresent(String.self, forKey: .rate)
+        taxKind = try container.decodeIfPresent(String.self, forKey: .taxKind)
+        treatment = try container.decodeIfPresent(String.self, forKey: .treatment)
+        taxTreatment = try container.decodeIfPresent(String.self, forKey: .taxTreatment)
+        rate = try container.decodeFlexibleStringIfPresent(forKey: .rate)
         status = try container.decodeIfPresent(String.self, forKey: .status)
-        sriTaxCode = try container.decodeIfPresent(String.self, forKey: .sriTaxCode)
-        sriRateCode = try container.decodeIfPresent(String.self, forKey: .sriRateCode)
+        sriTaxCode = try container.decodeFlexibleStringIfPresent(forKey: .sriTaxCode)
+        sriRateCode = try container.decodeFlexibleStringIfPresent(forKey: .sriRateCode)
         legalBasis = try container.decodeIfPresent(String.self, forKey: .legalBasis)
         effectiveFrom = try container.decodeIfPresent(String.self, forKey: .effectiveFrom)
         effectiveTo = try container.decodeIfPresent(String.self, forKey: .effectiveTo)
         source = try container.decodeIfPresent(String.self, forKey: .source)
+        requiresTourismEligibility = try container.decodeIfPresent(Bool.self, forKey: .requiresTourismEligibility)
+        requiresConstructionMaterialAuxiliaryCode = try container.decodeIfPresent(Bool.self, forKey: .requiresConstructionMaterialAuxiliaryCode)
+        requiresActiveWindow = try container.decodeIfPresent(Bool.self, forKey: .requiresActiveWindow)
+        eligibilityWindowCode = try container.decodeIfPresent(String.self, forKey: .eligibilityWindowCode)
         createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
         updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
         version = try container.decodeIfPresent(Int.self, forKey: .version)
@@ -109,6 +123,10 @@ struct AdminTaxProfileResponseDTO: Decodable, Sendable {
     let description: String?
     let status: String?
     let taxName: String?
+    let taxKind: String?
+    let kind: String?
+    let treatment: String?
+    let taxTreatment: String?
     let rate: String?
     let sriTaxCode: String?
     let sriRateCode: String?
@@ -116,8 +134,13 @@ struct AdminTaxProfileResponseDTO: Decodable, Sendable {
     let effectiveFrom: String?
     let effectiveTo: String?
     let editable: Bool?
+    let source: String?
+    let requiresTourismEligibility: Bool?
+    let requiresConstructionMaterialAuxiliaryCode: Bool?
+    let requiresActiveWindow: Bool?
+    let eligibilityWindowCode: String?
     let taxRate: AdminTaxRateEmbeddedDTO?
-    
+
     private enum CodingKeys: String, CodingKey {
         case id
         case mongoId = "_id"
@@ -126,6 +149,10 @@ struct AdminTaxProfileResponseDTO: Decodable, Sendable {
         case description
         case status
         case taxName
+        case taxKind
+        case kind
+        case treatment
+        case taxTreatment
         case rate
         case sriTaxCode
         case sriRateCode
@@ -133,25 +160,39 @@ struct AdminTaxProfileResponseDTO: Decodable, Sendable {
         case effectiveFrom
         case effectiveTo
         case editable
+        case source
+        case requiresTourismEligibility
+        case requiresConstructionMaterialAuxiliaryCode
+        case requiresActiveWindow
+        case eligibilityWindowCode
         case taxRate
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .id)
-        ?? container.decode(String.self, forKey: .mongoId)
+            ?? container.decode(String.self, forKey: .mongoId)
         code = try container.decode(String.self, forKey: .code)
         name = try container.decode(String.self, forKey: .name)
         description = try container.decodeIfPresent(String.self, forKey: .description)
         status = try container.decodeIfPresent(String.self, forKey: .status)
         taxName = try container.decodeIfPresent(String.self, forKey: .taxName)
-        rate = try container.decodeIfPresent(String.self, forKey: .rate)
-        sriTaxCode = try container.decodeIfPresent(String.self, forKey: .sriTaxCode)
-        sriRateCode = try container.decodeIfPresent(String.self, forKey: .sriRateCode)
+        taxKind = try container.decodeIfPresent(String.self, forKey: .taxKind)
+        kind = try container.decodeIfPresent(String.self, forKey: .kind)
+        treatment = try container.decodeIfPresent(String.self, forKey: .treatment)
+        taxTreatment = try container.decodeIfPresent(String.self, forKey: .taxTreatment)
+        rate = try container.decodeFlexibleStringIfPresent(forKey: .rate)
+        sriTaxCode = try container.decodeFlexibleStringIfPresent(forKey: .sriTaxCode)
+        sriRateCode = try container.decodeFlexibleStringIfPresent(forKey: .sriRateCode)
         legalBasis = try container.decodeIfPresent(String.self, forKey: .legalBasis)
         effectiveFrom = try container.decodeIfPresent(String.self, forKey: .effectiveFrom)
         effectiveTo = try container.decodeIfPresent(String.self, forKey: .effectiveTo)
         editable = try container.decodeIfPresent(Bool.self, forKey: .editable)
+        source = try container.decodeIfPresent(String.self, forKey: .source)
+        requiresTourismEligibility = try container.decodeIfPresent(Bool.self, forKey: .requiresTourismEligibility)
+        requiresConstructionMaterialAuxiliaryCode = try container.decodeIfPresent(Bool.self, forKey: .requiresConstructionMaterialAuxiliaryCode)
+        requiresActiveWindow = try container.decodeIfPresent(Bool.self, forKey: .requiresActiveWindow)
+        eligibilityWindowCode = try container.decodeIfPresent(String.self, forKey: .eligibilityWindowCode)
         taxRate = try container.decodeIfPresent(AdminTaxRateEmbeddedDTO.self, forKey: .taxRate)
     }
 }
@@ -251,3 +292,21 @@ struct AdminSriHomologationRunResponseDTO: Decodable, Sendable {
 
 struct AdminReasonRequestDTO: Encodable, Sendable { let reason: String }
 struct RequestProductionEnableRequestDTO: Encodable, Sendable { let confirmationText: String; let reason: String }
+
+private extension KeyedDecodingContainer {
+    func decodeFlexibleStringIfPresent(forKey key: Key) throws -> String? {
+        if let value = try decodeIfPresent(String.self, forKey: key) {
+            return value
+        }
+        if let value = try decodeIfPresent(Int.self, forKey: key) {
+            return String(value)
+        }
+        if let value = try decodeIfPresent(Double.self, forKey: key) {
+            return Decimal(value).description
+        }
+        if let value = try decodeIfPresent(Decimal.self, forKey: key) {
+            return value.description
+        }
+        return nil
+    }
+}
