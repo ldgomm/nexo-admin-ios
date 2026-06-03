@@ -2,7 +2,7 @@
 //  AdminPermissionsViewModelTests.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import XCTest
@@ -19,8 +19,9 @@ final class AdminPermissionsViewModelTests: XCTestCase {
         guard case .loaded(let permissions) = viewModel.state else {
             return XCTFail("Expected permissions")
         }
-        XCTAssertEqual(permissions.count, 3)
+        XCTAssertGreaterThan(permissions.count, 10)
         XCTAssertTrue(viewModel.categories.contains("Credentials"))
+        XCTAssertTrue(viewModel.categories.contains("Cash"))
     }
 
     func testSearchFiltersPermissionsByRoleText() async {

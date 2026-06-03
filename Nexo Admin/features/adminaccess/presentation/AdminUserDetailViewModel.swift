@@ -2,7 +2,7 @@
 //  AdminUserDetailViewModel.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import Combine
@@ -40,7 +40,7 @@ final class AdminUserDetailViewModel: ObservableObject {
 
     var roles: [AdminAccessRole] {
         guard case .loaded(let roles) = rolesState else { return [] }
-        return roles
+        return roles.assignableFromAdmin
     }
 
     var canSaveUpdate: Bool {

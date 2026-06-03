@@ -2,7 +2,7 @@
 //  AdminUserDetailViewModelTests.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import XCTest
@@ -10,7 +10,7 @@ import XCTest
 
 @MainActor
 final class AdminUserDetailViewModelTests: XCTestCase {
-    func testLoadHydratesUpdateInput() async {
+    func testLoadHydratesUpdateInputAndOnlyAssignableRoles() async {
         let repository = AdminAccessTestRepository()
         let viewModel = AdminUserDetailViewModel(userId: "usr_cashier", repository: repository)
 
@@ -19,6 +19,7 @@ final class AdminUserDetailViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.user?.email, "cashier@nexo.test")
         XCTAssertEqual(viewModel.updateInput.displayName, "Cajero Demo")
         XCTAssertEqual(viewModel.updateInput.roleIds, ["role_cashier"])
+        XCTAssertEqual(viewModel.roles.map(\.id), ["role_cashier"])
     }
 
     func testBlockUserRequiresReason() async {

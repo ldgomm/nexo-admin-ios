@@ -2,7 +2,7 @@
 //  AdminUserDetailView.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import SwiftUI

@@ -2,7 +2,7 @@
 //  AdminUsersViewModel.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import Combine
@@ -38,7 +38,7 @@ final class AdminUsersViewModel: ObservableObject {
 
     var activeRoles: [AdminAccessRole] {
         guard case .loaded(let roles) = rolesState else { return [] }
-        return roles.filter(\.isActive)
+        return roles.assignableFromAdmin
     }
 
     var canSubmitTemporaryUser: Bool {
@@ -61,7 +61,7 @@ final class AdminUsersViewModel: ObservableObject {
             let (loadedUsers, loadedRoles) = try await (usersTask, rolesTask)
             state = loadedUsers.isEmpty ? .empty("No hay usuarios para este filtro.") : .loaded(loadedUsers)
             rolesState = loadedRoles.isEmpty ? .empty("No hay roles disponibles.") : .loaded(loadedRoles)
-            if createInput.roleIds.isEmpty, let firstRole = loadedRoles.first(where: { $0.isActive }) {
+            if createInput.roleIds.isEmpty, let firstRole = loadedRoles.assignableFromAdmin.first {
                 createInput.roleIds = [firstRole.id]
             }
         } catch {

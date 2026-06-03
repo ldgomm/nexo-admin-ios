@@ -2,7 +2,7 @@
 //  AdminAccessModels.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import Foundation
@@ -191,6 +191,77 @@ struct UpdateAdminRoleInput: Equatable, Sendable {
 
 struct AdminAccessActionDraft: Equatable, Sendable {
     var reason = ""
+}
+
+extension AdminAccessRole {
+    var isOrganizationScoped: Bool { scope.normalizedStatus == "organization" }
+
+    var isAssignableFromAdmin: Bool {
+        isActive &&
+        isOrganizationScoped &&
+        type.normalizedStatus != "platform" &&
+        !critical
+    }
+
+    var isProtectedFromMutation: Bool { systemRole || critical || !editable || !isCustom }
+
+    var editRestrictionMessage: String? {
+        if systemRole { return "Este rol pertenece al sistema. Puedes asignarlo si está activo, pero no editarlo desde la organización." }
+        if critical { return "Este rol es crítico. El backend protege su edición para no dejar la organización sin administradores." }
+        if !editable { return "Este rol no está marcado como editable por el backend." }
+        if !isCustom { return "Solo los roles custom de organización se editan desde Nexo Admin." }
+        return nil
+    }
+}
+
+extension AdminAccessPermission {
+    var isActive: Bool { status.normalizedStatus == "active" }
+    var isWildcard: Bool { code == PermissionCatalog.all }
+    var isBusinessFacing: Bool {
+        let prefixes = [
+            "sales.",
+            "payments.",
+            "receivables.",
+            "cash.",
+            "documents.",
+            "customers.",
+            "catalog.",
+            "activities.",
+            "branches.",
+            "reports.",
+            "tax.",
+            "sri.",
+            "electronic_signature.",
+            "signature.",
+            "settings.",
+            "modules.",
+            "organization."
+        ]
+        return prefixes.contains { code.hasPrefix($0) }
+    }
+
+    var isCredentialPermission: Bool { code.hasPrefix("credentials.") }
+    var isHighRisk: Bool {
+        let risk = riskLevel.normalizedStatus
+        return risk == "high" || risk == "critical" || requiresStepUp
+    }
+}
+
+extension Array where Element == AdminAccessRole {
+    var assignableFromAdmin: [AdminAccessRole] {
+        filter(\.isAssignableFromAdmin).sortedByName
+    }
+}
+
+extension Array where Element == AdminAccessPermission {
+    var activeWithoutWildcard: [AdminAccessPermission] {
+        filter { $0.isActive && !$0.isWildcard }
+    }
+
+    func existingCodes(from candidateCodes: Set<String>) -> Set<String> {
+        let available = Set(map(\.code))
+        return candidateCodes.intersection(available)
+    }
 }
 
 extension String {

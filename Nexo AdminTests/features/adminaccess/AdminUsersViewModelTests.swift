@@ -2,7 +2,7 @@
 //  AdminUsersViewModelTests.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import XCTest
@@ -10,7 +10,7 @@ import XCTest
 
 @MainActor
 final class AdminUsersViewModelTests: XCTestCase {
-    func testLoadPublishesUsersAndRoles() async {
+    func testLoadPublishesUsersAndAssignableRoles() async {
         let repository = AdminAccessTestRepository()
         let viewModel = AdminUsersViewModel(repository: repository)
 
@@ -20,8 +20,8 @@ final class AdminUsersViewModelTests: XCTestCase {
             return XCTFail("Expected loaded users")
         }
         XCTAssertEqual(users.count, 2)
-        XCTAssertEqual(viewModel.activeRoles.count, 2)
-        XCTAssertEqual(viewModel.createInput.roleIds, ["role_owner"])
+        XCTAssertEqual(viewModel.activeRoles.map(\.id), ["role_cashier"])
+        XCTAssertEqual(viewModel.createInput.roleIds, ["role_cashier"])
     }
 
     func testCreateTemporaryUserPublishesSecretAndRefreshesList() async {
@@ -29,7 +29,7 @@ final class AdminUsersViewModelTests: XCTestCase {
         let viewModel = AdminUsersViewModel(repository: repository)
         await viewModel.load()
         viewModel.createInput.email = "new@nexo.test"
-        viewModel.createInput.displayName = "Nuevo Admin"
+        viewModel.createInput.displayName = "Nuevo Operador"
         viewModel.createInput.roleIds = ["role_cashier"]
         viewModel.createInput.reason = "Prueba"
 

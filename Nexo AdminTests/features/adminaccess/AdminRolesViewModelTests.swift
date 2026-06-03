@@ -2,7 +2,7 @@
 //  AdminRolesViewModelTests.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import XCTest
@@ -20,27 +20,43 @@ final class AdminRolesViewModelTests: XCTestCase {
             return XCTFail("Expected loaded roles")
         }
         XCTAssertEqual(roles.count, 2)
-        XCTAssertEqual(viewModel.permissions.count, 3)
+        XCTAssertGreaterThan(viewModel.permissions.count, 10)
+        XCTAssertFalse(viewModel.permissions.contains { $0.code == PermissionCatalog.all })
     }
 
-    func testCreateRoleValidatesRequiredFields() async {
+    func testCreateRoleValidatesRequiredFieldsAndWildcard() async {
         let repository = AdminAccessTestRepository()
         let viewModel = AdminRolesViewModel(repository: repository)
+        viewModel.createInput.code = "bad"
+        viewModel.createInput.name = "Bad"
+        viewModel.createInput.description = "No debe usar wildcard"
+        viewModel.createInput.permissionKeys = [PermissionCatalog.all]
+        viewModel.createInput.reason = "Prueba"
 
         await viewModel.createRole()
 
-        XCTAssertEqual(viewModel.errorMessage, "Completa código, nombre, descripción, permisos y motivo.")
+        XCTAssertEqual(viewModel.errorMessage, "Completa código, nombre, descripción, permisos y motivo. No uses wildcard (*).")
+    }
+
+    func testApplyCashierTemplateUsesOnlyBackendAvailablePermissions() async {
+        let repository = AdminAccessTestRepository()
+        let viewModel = AdminRolesViewModel(repository: repository)
+        await viewModel.load()
+
+        viewModel.applyTemplate(.cashier)
+
+        XCTAssertEqual(viewModel.createInput.code, "cajero")
+        XCTAssertEqual(viewModel.createInput.name, "Cajero")
+        XCTAssertTrue(viewModel.createInput.permissionKeys.contains(PermissionCatalog.salesView))
+        XCTAssertTrue(viewModel.createInput.permissionKeys.contains(PermissionCatalog.cashSessionOpen))
+        XCTAssertFalse(viewModel.createInput.permissionKeys.contains(PermissionCatalog.all))
     }
 
     func testCreateRoleRefreshesRoles() async {
         let repository = AdminAccessTestRepository()
         let viewModel = AdminRolesViewModel(repository: repository)
         await viewModel.load()
-        viewModel.createInput.code = "supervisor"
-        viewModel.createInput.name = "Supervisor"
-        viewModel.createInput.description = "Puede supervisar operación"
-        viewModel.createInput.permissionKeys = [PermissionCatalog.credentialsUsersView]
-        viewModel.createInput.reason = "Prueba"
+        viewModel.applyTemplate(.supervisor)
 
         await viewModel.createRole()
 

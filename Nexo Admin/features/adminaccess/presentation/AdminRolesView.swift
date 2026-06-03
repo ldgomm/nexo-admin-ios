@@ -2,7 +2,7 @@
 //  AdminRolesView.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import SwiftUI
@@ -16,6 +16,8 @@ struct AdminRolesView: View {
             Section {
                 Toggle("Incluir roles del sistema", isOn: $viewModel.includeSystemTemplates)
                     .onChange(of: viewModel.includeSystemTemplates) { _, _ in Task { await viewModel.refresh() } }
+            } footer: {
+                Text("Los roles del sistema pueden visualizarse y asignarse si el backend los permite, pero no se editan desde la organización.")
             }
             content
         }
@@ -83,6 +85,7 @@ private struct AdminRoleRow: View {
                 AdminAccessStatusBadge(text: role.type.readableStatus)
                 if role.systemRole { AdminAccessStatusBadge(text: "Sistema") }
                 if role.critical { AdminAccessStatusBadge(text: "Crítico") }
+                if role.canBeEditedFromApp { AdminAccessStatusBadge(text: "Editable") }
                 AdminAccessStatusBadge(text: role.permissionCountLabel)
             }
         }
@@ -96,6 +99,13 @@ private struct CreateRoleView: View {
 
     var body: some View {
         Form {
+            BusinessRoleTemplatePicker(
+                previews: viewModel.templatePreviews,
+                selectedTemplate: viewModel.selectedTemplate,
+                apply: viewModel.applyTemplate,
+                clear: viewModel.clearTemplate
+            )
+
             Section("Datos") {
                 TextField("Código: cajero, supervisor", text: $viewModel.createInput.code)
                     .textInputAutocapitalization(.never)
@@ -105,10 +115,22 @@ private struct CreateRoleView: View {
                     .lineLimit(2...4)
             }
 
+            Section("Filtro de permisos") {
+                Toggle("Solo permisos operativos Business", isOn: $viewModel.showOnlyBusinessPermissions)
+                TextField("Buscar permiso", text: $viewModel.permissionSearchText)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                LabeledContent("Seleccionados", value: "\(viewModel.createInput.permissionKeys.count)")
+            }
+
             PermissionSelectionList(
-                permissions: viewModel.permissions,
+                permissions: viewModel.filteredPermissions,
                 selectedPermissionKeys: $viewModel.createInput.permissionKeys
             )
+
+            Section("Advertencias") {
+                AdminAccessWarningCallout(messages: viewModel.createWarnings)
+            }
 
             Section("Auditoría") {
                 TextField("Motivo", text: $viewModel.createInput.reason, axis: .vertical)
@@ -130,4 +152,3 @@ private struct CreateRoleView: View {
         }
     }
 }
-

@@ -2,7 +2,7 @@
 //  AdminAccessComponents.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import SwiftUI
@@ -24,6 +24,23 @@ struct AdminAccessStatusBadge: View {
         .padding(.vertical, 5)
         .background(.quaternary)
         .clipShape(Capsule())
+    }
+}
+
+struct AdminAccessWarningCallout: View {
+    let messages: [String]
+
+    var body: some View {
+        if !messages.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(messages, id: \.self) { message in
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                }
+            }
+            .padding(.vertical, 4)
+        }
     }
 }
 
@@ -68,19 +85,67 @@ struct AdminAccessReasonField: View {
     }
 }
 
+struct BusinessRoleTemplatePicker: View {
+    let previews: [BusinessRoleTemplatePreview]
+    let selectedTemplate: BusinessRoleTemplate?
+    let apply: (BusinessRoleTemplate) -> Void
+    let clear: () -> Void
+
+    var body: some View {
+        Section("Plantillas Business 17G") {
+            if previews.isEmpty {
+                Text("Carga permisos para aplicar plantillas.")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(previews) { preview in
+                    Button {
+                        apply(preview.template)
+                    } label: {
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: selectedTemplate == preview.template ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(selectedTemplate == preview.template ? Color.accentColor : .secondary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(preview.title)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                Text(preview.code)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                                Text(preview.summary)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!preview.canApply)
+                }
+                if selectedTemplate != nil {
+                    Button("Limpiar plantilla", action: clear)
+                }
+            }
+        }
+    }
+}
+
 struct RoleSelectionList: View {
     let roles: [AdminAccessRole]
     @Binding var selectedRoleIds: Set<String>
 
+    private var assignableRoles: [AdminAccessRole] {
+        roles.assignableFromAdmin
+    }
+
     var body: some View {
-        if roles.isEmpty {
+        if assignableRoles.isEmpty {
             EmptyStateView(
                 systemImage: "person.2.slash",
-                title: "Sin roles disponibles",
-                message: "Primero carga roles o crea un rol activo para poder asignarlo."
+                title: "Sin roles asignables",
+                message: "Primero carga o crea un rol activo de organización. Los roles inactivos o protegidos no se asignan desde este selector."
             )
         } else {
-            ForEach(roles.sortedByName) { role in
+            ForEach(assignableRoles) { role in
                 Button {
                     toggle(role.id)
                 } label: {
@@ -92,18 +157,13 @@ struct RoleSelectionList: View {
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
                             Text(role.code)
-                                .font(.caption)
+                                .font(.caption.monospaced())
                                 .foregroundStyle(.secondary)
-                            if !role.isActive {
-                                Text("Rol inactivo")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.orange)
-                            }
+                            Text(role.permissionCountLabel)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Text("\(role.permissionKeys.count)")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(.secondary)
                     }
                 }
                 .buttonStyle(.plain)
@@ -125,35 +185,46 @@ struct PermissionSelectionList: View {
     @Binding var selectedPermissionKeys: Set<String>
 
     var body: some View {
-        let groups = Dictionary(grouping: permissions.sortedByCategoryAndName, by: \.categoryLabel)
-        ForEach(groups.keys.sorted(), id: \.self) { category in
-            Section(category) {
-                ForEach(groups[category].orEmpty) { permission in
-                    Button {
-                        toggle(permission.code)
-                    } label: {
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: selectedPermissionKeys.contains(permission.code) ? "checkmark.square.fill" : "square")
-                                .foregroundStyle(selectedPermissionKeys.contains(permission.code) ? Color.accentColor : .secondary)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(permission.name)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                Text(permission.code)
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(.secondary)
-                                if permission.requiresReason || permission.requiresAudit || permission.requiresStepUp {
+        if permissions.isEmpty {
+            EmptyStateView(
+                systemImage: "checklist.unchecked",
+                title: "Sin permisos visibles",
+                message: "Ajusta el filtro o revisa que el backend publique permisos activos."
+            )
+        } else {
+            let groups = Dictionary(grouping: permissions.sortedByCategoryAndName, by: \.categoryLabel)
+            ForEach(groups.keys.sorted(), id: \.self) { category in
+                Section(category) {
+                    ForEach(groups[category].orEmpty) { permission in
+                        Button {
+                            toggle(permission.code)
+                        } label: {
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: selectedPermissionKeys.contains(permission.code) ? "checkmark.square.fill" : "square")
+                                    .foregroundStyle(selectedPermissionKeys.contains(permission.code) ? Color.accentColor : .secondary)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(permission.name)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                    Text(permission.code)
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(.secondary)
+                                    Text(permission.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
                                     HStack(spacing: 6) {
+                                        if permission.isHighRisk { AdminAccessStatusBadge(text: "Alto riesgo") }
                                         if permission.requiresReason { AdminAccessStatusBadge(text: "Motivo") }
                                         if permission.requiresAudit { AdminAccessStatusBadge(text: "Auditado") }
                                         if permission.requiresStepUp { AdminAccessStatusBadge(text: "Crítico") }
                                     }
                                 }
+                                Spacer()
                             }
-                            Spacer()
                         }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }

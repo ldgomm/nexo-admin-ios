@@ -2,7 +2,7 @@
 //  AdminRoleDetailView.swift
 //  Nexo Admin
 //
-//  Created by José Ruiz on 21/5/26.
+//  Created by José Ruiz on 2/6/26.
 //
 
 import SwiftUI
@@ -50,6 +50,11 @@ struct AdminRoleDetailView: View {
                 Toggle("Rol del sistema", isOn: .constant(role.systemRole)).disabled(true)
                 Toggle("Crítico", isOn: .constant(role.critical)).disabled(true)
                 Toggle("Editable", isOn: .constant(role.editable)).disabled(true)
+                if let message = role.editRestrictionMessage {
+                    Label(message, systemImage: "lock.shield")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Permisos") {
@@ -73,7 +78,7 @@ struct AdminRoleDetailView: View {
                         Button { selectedSheet = .activate } label: { Label("Activar", systemImage: "play.circle") }
                     }
                 } else {
-                    Text("Este rol no puede editarse desde la administración de la organización.")
+                    Text("Este rol no puede editarse desde la administración de la organización. El backend conserva la regla final.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -131,10 +136,22 @@ private struct AdminRoleEditView: View {
                     .lineLimit(2...4)
             }
 
+            Section("Filtro de permisos") {
+                Toggle("Solo permisos operativos Business", isOn: $viewModel.showOnlyBusinessPermissions)
+                TextField("Buscar permiso", text: $viewModel.permissionSearchText)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                LabeledContent("Seleccionados", value: "\(viewModel.updateInput.permissionKeys.count)")
+            }
+
             PermissionSelectionList(
-                permissions: viewModel.permissions,
+                permissions: viewModel.filteredPermissions,
                 selectedPermissionKeys: $viewModel.updateInput.permissionKeys
             )
+
+            Section("Advertencias") {
+                AdminAccessWarningCallout(messages: viewModel.updateWarnings)
+            }
 
             Section("Auditoría") {
                 TextField("Motivo", text: $viewModel.updateInput.reason, axis: .vertical)
