@@ -17,6 +17,8 @@ protocol AdminElectronicDocumentRepository: Sendable {
     func regenerateRide(documentId: String, reason: String) async throws -> AdminDocumentRideRegenerationResult
     func getRideArtifact(documentId: String) async throws -> AdminDocumentArtifact
     func getXmlArtifact(documentId: String, authorizedOnly: Bool) async throws -> AdminDocumentArtifact
+    func downloadRideFile(documentId: String) async throws -> AdminElectronicDocumentDownloadedFile
+    func downloadXmlFile(documentId: String, authorizedOnly: Bool) async throws -> AdminElectronicDocumentDownloadedFile
 }
 
 struct ListAdminElectronicDocumentsUseCase: Sendable {

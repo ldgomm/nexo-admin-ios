@@ -2,7 +2,7 @@ import XCTest
 @testable import Nexo_Admin
 
 final class RemoteAdminElectronicDocumentAPITests: XCTestCase {
-    func testAdminElectronicDocumentRoutesUseCanonicalNamespace() {
+    func testAdminElectronicDocumentRoutesUseAdminNamespaceForAdministrativeOperationsAndBusinessForBinaryFiles() {
         XCTAssertEqual(AdminElectronicDocumentRoutes.list(), "/api/v1/admin/electronic-documents")
         XCTAssertEqual(AdminElectronicDocumentRoutes.detail(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1")
         XCTAssertEqual(AdminElectronicDocumentRoutes.timeline(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1/timeline")
@@ -11,9 +11,10 @@ final class RemoteAdminElectronicDocumentAPITests: XCTestCase {
         XCTAssertEqual(AdminElectronicDocumentRoutes.resendEmail(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1/resend-email")
         XCTAssertEqual(AdminElectronicDocumentRoutes.ride(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1/ride")
         XCTAssertEqual(AdminElectronicDocumentRoutes.regenerateRide(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1/ride")
-        XCTAssertEqual(AdminElectronicDocumentRoutes.rideFile(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1/ride/file")
         XCTAssertEqual(AdminElectronicDocumentRoutes.xml(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1/xml")
-        XCTAssertEqual(AdminElectronicDocumentRoutes.xmlFile(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1/xml/file")
+
+        XCTAssertEqual(AdminElectronicDocumentRoutes.rideFile(documentId: "edoc_1"), "/api/v1/business/electronic-documents/edoc_1/ride/file")
+        XCTAssertEqual(AdminElectronicDocumentRoutes.xmlFile(documentId: "edoc_1"), "/api/v1/business/electronic-documents/edoc_1/xml/file")
     }
 
     func testAdminElectronicDocumentRoutesDoNotUseLegacyElectronicInvoicesNamespace() {
@@ -25,6 +26,7 @@ final class RemoteAdminElectronicDocumentAPITests: XCTestCase {
             AdminElectronicDocumentRoutes.retryAuthorization(documentId: "edoc_1"),
             AdminElectronicDocumentRoutes.resendEmail(documentId: "edoc_1"),
             AdminElectronicDocumentRoutes.ride(documentId: "edoc_1"),
+            AdminElectronicDocumentRoutes.regenerateRide(documentId: "edoc_1"),
             AdminElectronicDocumentRoutes.rideFile(documentId: "edoc_1"),
             AdminElectronicDocumentRoutes.xml(documentId: "edoc_1"),
             AdminElectronicDocumentRoutes.xmlFile(documentId: "edoc_1")
@@ -34,5 +36,16 @@ final class RemoteAdminElectronicDocumentAPITests: XCTestCase {
             XCTAssertFalse(route.contains("/api/v1/admin/electronic-invoices"))
             XCTAssertFalse(route.contains("/electronic-invoices"))
         }
+    }
+
+    func testBinaryFileRoutesDoNotUseMissingAdminFileRoutes() {
+        XCTAssertNotEqual(
+            AdminElectronicDocumentRoutes.rideFile(documentId: "edoc_1"),
+            "/api/v1/admin/electronic-documents/edoc_1/ride/file"
+        )
+        XCTAssertNotEqual(
+            AdminElectronicDocumentRoutes.xmlFile(documentId: "edoc_1"),
+            "/api/v1/admin/electronic-documents/edoc_1/xml/file"
+        )
     }
 }

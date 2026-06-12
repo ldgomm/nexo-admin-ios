@@ -162,6 +162,10 @@ struct AdminElectronicDocumentRetrySummary: Equatable, Sendable {
     let lastRetryAt: String?
     let message: String?
 
+    var safeMessage: String? {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(message)
+    }
+
     static let empty = AdminElectronicDocumentRetrySummary(
         canRetryReception: false,
         canRetryAuthorization: false,
@@ -301,6 +305,25 @@ struct AdminDocumentArtifact: Identifiable, Equatable, Sendable {
         guard let sizeBytes else { return "Tamaño no disponible" }
         return ByteCountFormatter.string(fromByteCount: Int64(sizeBytes), countStyle: .file)
     }
+
+    var safeFileName: String {
+        AdminElectronicDocumentTextSanitizer.sanitizedFileName(fileName, fallback: displayName)
+    }
+
+    var displayName: String {
+        switch kind.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "ride", "ridepdf", "ride_pdf":
+            return "RIDE PDF"
+        case "authorizedxml", "authorized_xml", "xml":
+            return "XML autorizado"
+        case "signedxml", "signed_xml":
+            return "XML firmado"
+        case "generatedxml", "generated_xml", "unsignedxml", "unsigned_xml":
+            return "XML generado"
+        default:
+            return "Archivo"
+        }
+    }
 }
 
 struct AdminElectronicDocumentEmailState: Equatable, Sendable {
@@ -332,6 +355,28 @@ struct AdminSriDocumentError: Identifiable, Equatable, Sendable {
     let occurredAt: String?
     let retryable: Bool
     let severity: AdminSriErrorSeverity
+
+    var safeCode: String {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(code) ?? "SIN_CODIGO"
+    }
+
+    var safeUserMessage: String {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(userMessage)
+            ?? AdminElectronicDocumentTextSanitizer.sanitizedMessage(rawMessage)
+            ?? "Error SRI"
+    }
+
+    var safeRawMessage: String? {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(rawMessage)
+    }
+
+    var safeTechnicalMessage: String? {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(technicalMessage)
+    }
+
+    var safeField: String? {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(field)
+    }
 }
 
 enum AdminSriErrorSeverity: String, CaseIterable, Sendable {
@@ -358,6 +403,18 @@ struct AdminElectronicDocumentTimelineEvent: Identifiable, Equatable, Sendable {
     let actor: String?
     let createdAt: String
     let severity: AdminSriErrorSeverity
+
+    var safeTitle: String {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(title) ?? "Evento documental"
+    }
+
+    var safeMessage: String {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(message) ?? "Evento documental registrado."
+    }
+
+    var safeActor: String? {
+        AdminElectronicDocumentTextSanitizer.sanitizedMessage(actor)
+    }
 }
 
 struct AdminDocumentRetryResult: Equatable, Sendable {
@@ -383,6 +440,53 @@ struct AdminDocumentRideRegenerationResult: Equatable, Sendable {
     let message: String
     let requestedAt: String
     let artifact: AdminDocumentArtifact?
+}
+
+enum AdminElectronicDocumentTextSanitizer {
+    static func sanitizedMessage(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let lowercased = trimmed.lowercased()
+        let forbiddenFragments = [
+            "electronic-invoicing/",
+            "ride_pdf/",
+            "signed_xml",
+            "authorized_xml",
+            "generated_xml",
+            "sri_request",
+            "sri_response",
+            "bucket",
+            "objectkey",
+            "storagekey",
+            "/var/",
+            "/tmp/",
+            ".p12",
+            ".pfx",
+            "secret",
+            "password",
+            "privatekey",
+            "token"
+        ]
+
+        guard forbiddenFragments.allSatisfy({ !lowercased.contains($0) }) else {
+            return nil
+        }
+
+        return trimmed
+    }
+
+    static func sanitizedFileName(_ fileName: String?, fallback: String = "Archivo") -> String {
+        guard let fileName else { return fallback }
+        let lastPathComponent = fileName
+            .replacingOccurrences(of: "\\", with: "/")
+            .split(separator: "/")
+            .last
+            .map(String.init) ?? fileName
+
+        return sanitizedMessage(lastPathComponent) ?? fallback
+    }
 }
 
 enum AdminElectronicDocumentText {

@@ -1,3 +1,4 @@
+
 //
 //  AdminElectronicDocumentsView.swift
 //  Nexo Admin
@@ -6,6 +7,7 @@
 //
 
 import SwiftUI
+import QuickLook
 
 struct AdminElectronicDocumentsView: View {
     @StateObject var viewModel: AdminElectronicDocumentsViewModel
@@ -14,32 +16,28 @@ struct AdminElectronicDocumentsView: View {
     @State private var showsRetryReceptionConfirmation = false
     @State private var showsRegenerateRideConfirmation = false
     @State private var showsEmailSheet = false
-    @State private var showsShareSheet = false
 
     var body: some View {
-        NavigationSplitView {
-            documentList
-                .navigationTitle("Comprobantes")
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            showsFilters = true
-                        } label: {
-                            Label("Filtros", systemImage: viewModel.filter.hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            Task { await viewModel.refresh() }
-                        } label: {
-                            Label("Actualizar", systemImage: "arrow.clockwise")
-                        }
+        documentList
+            .navigationTitle("Comprobantes")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showsFilters = true
+                    } label: {
+                        Label("Filtros", systemImage: viewModel.filter.hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                     }
                 }
-        } detail: {
-            documentDetail
-        }
-        .task { await viewModel.load() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await viewModel.refresh() }
+                    } label: {
+                        Label("Actualizar", systemImage: "arrow.clockwise")
+                    }
+                }
+            }
+            .task { await viewModel.load() }
         .sheet(isPresented: $showsFilters) {
             NavigationStack {
                 AdminElectronicDocumentFiltersView(viewModel: viewModel)
@@ -96,12 +94,8 @@ struct AdminElectronicDocumentsView: View {
         } message: {
             Text(viewModel.actionErrorMessage ?? "")
         }
-        .sheet(isPresented: Binding(get: { viewModel.artifactToShare != nil && showsShareSheet }, set: { showsShareSheet = $0 })) {
-            if let artifact = viewModel.artifactToShare, let url = artifact.downloadURL {
-                ShareSheet(items: [url])
-            } else {
-                EmptyStateView(systemImage: "link.badge.plus", title: "Archivo no disponible", message: "El backend no devolvió una URL temporal para compartir este archivo.")
-            }
+        .sheet(item: $viewModel.previewFile) { file in
+            AdminElectronicDocumentQuickLookPreview(fileURL: file.localURL)
         }
     }
 
@@ -125,17 +119,23 @@ struct AdminElectronicDocumentsView: View {
                 }
 
             case .loaded(let documents):
-                List(documents, selection: $viewModel.selectedDocumentId) { document in
-                    Button {
-                        Task { await viewModel.select(document: document) }
+                List(documents) { document in
+                    NavigationLink {
+                        documentDestination(for: document)
                     } label: {
                         AdminElectronicDocumentRow(document: document)
                     }
-                    .buttonStyle(.plain)
                 }
                 .refreshable { await viewModel.refresh() }
             }
         }
+    }
+
+    private func documentDestination(for document: AdminElectronicDocumentSummary) -> some View {
+        documentDetail
+            .task(id: document.id) {
+                await viewModel.select(document: document)
+            }
     }
 
     private var documentDetail: some View {
@@ -167,20 +167,10 @@ struct AdminElectronicDocumentsView: View {
                     viewModel: viewModel,
                     onRetryReception: { showsRetryReceptionConfirmation = true },
                     onRetryAuthorization: { showsRetryAuthorizationConfirmation = true },
-                    onRegenerateRide: { showsRegenerateRideConfirmation = true },
+                    onRegenerateRide: { Task { await viewModel.regenerateSelectedRide() } },
                     onEmail: { showsEmailSheet = true },
-                    onShareRide: {
-                        Task {
-                            await viewModel.prepareRideShare()
-                            showsShareSheet = true
-                        }
-                    },
-                    onShareXml: {
-                        Task {
-                            await viewModel.prepareXmlShare()
-                            showsShareSheet = true
-                        }
-                    }
+                    onShareRide: { Task { await viewModel.prepareRideShare() } },
+                    onShareXml: { Task { await viewModel.prepareXmlShare() } }
                 )
             }
         }
@@ -336,7 +326,7 @@ private struct AdminElectronicDocumentDetailView: View {
             LabeledContent("Reintentos autorización", value: "\(detail.retrySummary.authorizationRetryCount)")
             LabeledContent("Intentos email", value: "\(detail.retrySummary.emailAttempts)")
             LabeledContent("Regeneraciones RIDE", value: "\(detail.retrySummary.rideRegenerationCount)")
-            if let message = detail.retrySummary.message, !message.isEmpty {
+            if let message = detail.retrySummary.safeMessage {
                 Label(message, systemImage: "info.circle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -412,20 +402,22 @@ private struct AdminElectronicDocumentDetailView: View {
             ForEach(detail.errors) { error in
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        StatusPill(title: error.code, systemImage: "number", tint: .orange)
+                        StatusPill(title: error.safeCode, systemImage: "number", tint: .orange)
                         if error.retryable {
                             StatusPill(title: "Reintentable", systemImage: "arrow.clockwise", tint: .blue)
                         }
                     }
-                    Text(error.userMessage)
+                    Text(error.safeUserMessage)
                         .font(.subheadline.bold())
                     DisclosureGroup("Detalle técnico") {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(error.rawMessage)
-                            if let technical = error.technicalMessage {
+                            if let raw = error.safeRawMessage {
+                                Text(raw)
+                            }
+                            if let technical = error.safeTechnicalMessage {
                                 Text(technical)
                             }
-                            if let field = error.field {
+                            if let field = error.safeField {
                                 Text("Campo: \(field)")
                             }
                         }
@@ -518,9 +510,9 @@ private struct AdminElectronicDocumentDetailView: View {
                         Image(systemName: timelineIcon(event.severity))
                             .foregroundStyle(timelineTint(event.severity))
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(event.title)
+                            Text(event.safeTitle)
                                 .font(.subheadline.bold())
-                            Text(event.message)
+                            Text(event.safeMessage)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text(event.createdAt)
@@ -700,7 +692,7 @@ private struct ArtifactRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline.bold())
-                Text(artifact?.fileName ?? "No disponible")
+                Text(artifact?.safeFileName ?? "No disponible")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -712,12 +704,38 @@ private struct ArtifactRow: View {
     }
 }
 
-private struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
+private struct AdminElectronicDocumentQuickLookPreview: UIViewControllerRepresentable {
+    let fileURL: URL
 
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    func makeCoordinator() -> Coordinator {
+        Coordinator(fileURL: fileURL)
     }
 
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let controller = QLPreviewController()
+        controller.dataSource = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {
+        context.coordinator.fileURL = fileURL
+        uiViewController.reloadData()
+    }
+
+    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        var fileURL: URL
+
+        init(fileURL: URL) {
+            self.fileURL = fileURL
+        }
+
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
+            1
+        }
+
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+            fileURL as NSURL
+        }
+    }
 }
+

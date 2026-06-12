@@ -166,4 +166,82 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.actionErrorMessage, "No puedes actualizar el timeline en el estado actual.")
     }
 
+
+    func testPrepareRideDownloadsBinaryFileInsteadOfArtifactMetadata() async {
+        let repository = MockAdminElectronicDocumentRepository()
+        let viewModel = AdminElectronicDocumentsViewModel(
+            repository: repository,
+            permissions: [
+                PermissionCatalog.documentsView,
+                PermissionCatalog.documentsDownloadRide
+            ]
+        )
+
+        await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
+        await viewModel.prepareRideShare()
+
+        XCTAssertEqual(viewModel.previewFile?.contentType, "application/pdf")
+        XCTAssertEqual(viewModel.previewFile?.kind, "ride")
+        XCTAssertTrue(viewModel.previewFile?.localURL.isFileURL == true)
+        XCTAssertNil(viewModel.actionErrorMessage)
+    }
+
+    func testPrepareXmlDownloadsBinaryFileInsteadOfArtifactMetadata() async {
+        let repository = MockAdminElectronicDocumentRepository()
+        let viewModel = AdminElectronicDocumentsViewModel(
+            repository: repository,
+            permissions: [
+                PermissionCatalog.documentsView,
+                PermissionCatalog.documentsDownloadXML
+            ]
+        )
+
+        await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
+        await viewModel.prepareXmlShare()
+
+        XCTAssertEqual(viewModel.previewFile?.contentType, "application/xml")
+        XCTAssertEqual(viewModel.previewFile?.kind, "authorizedXml")
+        XCTAssertTrue(viewModel.previewFile?.localURL.isFileURL == true)
+        XCTAssertNil(viewModel.actionErrorMessage)
+    }
+
+
+    func testRegenerateRideIsHiddenForAuthorizedDocumentThatAlreadyHasRide() async {
+        let repository = MockAdminElectronicDocumentRepository()
+        let viewModel = AdminElectronicDocumentsViewModel(
+            repository: repository,
+            permissions: [
+                PermissionCatalog.documentsView,
+                PermissionCatalog.documentsDownloadRide,
+                PermissionCatalog.taxManage
+            ]
+        )
+
+        await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
+
+        let actions = viewModel.selectedDetail.map { viewModel.visibleActions(on: $0) } ?? []
+        XCTAssertTrue(actions.contains(.downloadRide))
+        XCTAssertFalse(actions.contains(.regenerateRide))
+    }
+
+    func testRegenerateRideShowsContractMessageForAuthorizedDocumentThatAlreadyHasRide() async {
+        let repository = MockAdminElectronicDocumentRepository()
+        let viewModel = AdminElectronicDocumentsViewModel(
+            repository: repository,
+            permissions: [
+                PermissionCatalog.documentsView,
+                PermissionCatalog.documentsDownloadRide,
+                PermissionCatalog.taxManage
+            ]
+        )
+
+        await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
+        await viewModel.regenerateSelectedRide()
+
+        XCTAssertEqual(
+            viewModel.actionErrorMessage,
+            "Este comprobante ya tiene RIDE disponible. Usa Ver RIDE o Reenviar email. El backend no acepta regeneración para documentos autorizados/entregados con RIDE existente."
+        )
+    }
+
 }

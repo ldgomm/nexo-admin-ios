@@ -78,4 +78,50 @@ final class MockAdminElectronicDocumentRepository: AdminElectronicDocumentReposi
         if let authorizedXml = artifacts.authorizedXml { return authorizedXml }
         throw AppError.notFound
     }
+
+    func downloadRideFile(documentId: String) async throws -> AdminElectronicDocumentDownloadedFile {
+        if shouldFail { throw AppError.server("No se pudo descargar RIDE.") }
+        guard details[documentId]?.artifacts.ride != nil else { throw AppError.notFound }
+
+        return try writeMockFile(
+            name: "\(documentId)_RIDE.pdf",
+            contentType: "application/pdf",
+            kind: "ride",
+            body: "%PDF-1.4\n% Mock RIDE\n"
+        )
+    }
+
+    func downloadXmlFile(documentId: String, authorizedOnly: Bool) async throws -> AdminElectronicDocumentDownloadedFile {
+        if shouldFail { throw AppError.server("No se pudo descargar XML.") }
+        guard details[documentId]?.artifacts.authorizedXml != nil || details[documentId]?.artifacts.signedXml != nil else { throw AppError.notFound }
+
+        return try writeMockFile(
+            name: authorizedOnly ? "\(documentId)_authorized.xml" : "\(documentId)_signed.xml",
+            contentType: "application/xml",
+            kind: authorizedOnly ? "authorizedXml" : "signedXml",
+            body: "<factura id=\"mock\"/>"
+        )
+    }
+
+    private func writeMockFile(
+        name: String,
+        contentType: String,
+        kind: String,
+        body: String
+    ) throws -> AdminElectronicDocumentDownloadedFile {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("nexo-admin-mock-electronic-documents", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
+        let url = directory.appendingPathComponent("\(UUID().uuidString)-\(name)")
+        let data = Data(body.utf8)
+        try data.write(to: url, options: [.atomic])
+        return AdminElectronicDocumentDownloadedFile(
+            localURL: url,
+            fileName: name,
+            contentType: contentType,
+            sizeBytes: data.count,
+            sha256: nil,
+            kind: kind
+        )
+    }
+
 }

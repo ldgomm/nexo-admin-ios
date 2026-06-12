@@ -21,7 +21,7 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
     @Published var emailReason = "Reenvío solicitado desde Admin iOS"
     @Published var rideRegenerationReason = "Regeneración de RIDE solicitada desde Admin iOS"
     @Published var recipientOverride = ""
-    @Published var artifactToShare: AdminDocumentArtifact?
+    @Published var previewFile: AdminElectronicDocumentDownloadedFile?
 
     private let listDocuments: ListAdminElectronicDocumentsUseCase
     private let getDocument: GetAdminElectronicDocumentUseCase
@@ -62,7 +62,13 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
             .retryAuthorization,
             .regenerateRide
         ]
-        return supported.filter { detail.allows($0) }
+        return supported.filter { action in
+            guard detail.allows(action) else { return false }
+            if action == .regenerateRide {
+                return canRegenerateRideForCurrentBackendContract(detail)
+            }
+            return true
+        }
     }
 
     var canViewDocuments: Bool {
@@ -121,10 +127,62 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
         case .resendEmail:
             return canResendEmail && detail.retrySummary.canResendEmail
         case .regenerateRide:
-            return canRegenerateRide && detail.retrySummary.canRegenerateRide
+            return canRegenerateRide && canRegenerateRideForCurrentBackendContract(detail)
         case .unknown:
             return false
         }
+    }
+
+    private func canRegenerateRideForCurrentBackendContract(_ detail: AdminElectronicDocumentDetail) -> Bool {
+        guard detail.retrySummary.canRegenerateRide else { return false }
+
+        let statusValues = [
+            detail.summary.status,
+            detail.summary.sriStatus,
+            detail.sri.receptionStatus,
+            detail.sri.authorizationStatus
+        ]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+
+        let isFinalOrDelivered = statusValues.contains { value in
+            value == "authorized" ||
+            value == "delivered" ||
+            value.contains("autoriz") ||
+            value.contains("entreg") ||
+            value.contains("deliver")
+        }
+
+        let hasRideArtifact = detail.summary.hasRide || detail.artifacts.ride != nil
+
+        // Backend currently rejects RIDE regeneration for final/delivered documents that already have a RIDE.
+        // Keeping the button hidden avoids advertising an action that returns domain_rule_violation 422.
+        if isFinalOrDelivered && hasRideArtifact { return false }
+
+        return true
+    }
+
+    private func regenerateRideUnavailableMessage(for detail: AdminElectronicDocumentDetail) -> String {
+        let statusValues = [
+            detail.summary.status,
+            detail.summary.sriStatus,
+            detail.sri.receptionStatus,
+            detail.sri.authorizationStatus
+        ]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+        let isFinalOrDelivered = statusValues.contains { value in
+            value == "authorized" ||
+            value == "delivered" ||
+            value.contains("autoriz") ||
+            value.contains("entreg") ||
+            value.contains("deliver")
+        }
+        let hasRideArtifact = detail.summary.hasRide || detail.artifacts.ride != nil
+
+        if isFinalOrDelivered && hasRideArtifact {
+            return "Este comprobante ya tiene RIDE disponible. Usa Ver RIDE o Reenviar email. El backend no acepta regeneración para documentos autorizados/entregados con RIDE existente."
+        }
+
+        return "No puedes regenerar el RIDE en el estado actual."
     }
 
     func load() async {
@@ -253,43 +311,39 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
     func regenerateSelectedRide() async {
         guard let id = selectedDocumentId, let detail = selectedDetail else { return }
         guard canPerform(.regenerateRide, on: detail) else {
-            actionErrorMessage = "No puedes regenerar el RIDE en el estado actual."
+            actionErrorMessage = regenerateRideUnavailableMessage(for: detail)
             return
         }
 
         await performAction(.regenerateRide) {
             let result = try await self.regenerateRideUseCase.execute(documentId: id, reason: self.rideRegenerationReason)
             self.lastActionMessage = result.message
-            if let artifact = result.artifact {
-                self.artifactToShare = artifact
-            }
             await self.loadDetail(id: id)
+            await self.load()
         }
     }
 
     func prepareRideShare() async {
         guard let id = selectedDocumentId, let detail = selectedDetail else { return }
         guard canPerform(.downloadRide, on: detail) else {
-            actionErrorMessage = "No puedes descargar o compartir RIDE en el estado actual."
+            actionErrorMessage = "No puedes descargar o abrir el RIDE en el estado actual."
             return
         }
 
         await performAction(.downloadRide) {
-            self.artifactToShare = try await self.repository.getRideArtifact(documentId: id)
-            self.lastActionMessage = "RIDE listo para compartir."
+            self.previewFile = try await self.repository.downloadRideFile(documentId: id)
         }
     }
 
     func prepareXmlShare() async {
         guard let id = selectedDocumentId, let detail = selectedDetail else { return }
         guard canPerform(.downloadXml, on: detail) else {
-            actionErrorMessage = "No puedes descargar XML en el estado actual."
+            actionErrorMessage = "No puedes descargar o abrir el XML en el estado actual."
             return
         }
 
         await performAction(.downloadXml) {
-            self.artifactToShare = try await self.repository.getXmlArtifact(documentId: id, authorizedOnly: true)
-            self.lastActionMessage = "XML autorizado listo para compartir."
+            self.previewFile = try await self.repository.downloadXmlFile(documentId: id, authorizedOnly: true)
         }
     }
 

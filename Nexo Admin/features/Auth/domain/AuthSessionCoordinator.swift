@@ -27,34 +27,25 @@ final class AuthSessionCoordinator {
     }
 
     func restoreSession() async {
-        print("RESTORE: start")
         sessionStore.markRestoring()
 
         do {
-            print("RESTORE: reading tokens")
             guard let tokens = try tokenStore.readTokens() else {
-                print("RESTORE: no tokens -> unauthenticated")
                 sessionStore.markUnauthenticated()
                 return
             }
 
-            print("RESTORE: has tokens, mustChangePassword=\(tokens.mustChangePassword)")
-
             if tokens.mustChangePassword {
-                print("RESTORE: needs password change")
                 let context = try? await repository.loadMe(organizationId: nil)
                 sessionStore.markNeedsPasswordChange(user: context?.user)
                 return
             }
 
-            print("RESTORE: loading me")
             try await loadMeAndResolveNavigation(
                 preferredOrganizationId: organizationSelectionStore.selectedOrganizationId,
                 source: .sessionRestore
             )
-            print("RESTORE: done")
         } catch {
-            print("RESTORE: failed \(error)")
             sessionStore.markFailed(error.userFriendlyMessage)
         }
     }

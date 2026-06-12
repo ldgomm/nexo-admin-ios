@@ -10,37 +10,42 @@ protocol AdminElectronicDocumentAPI: Sendable {
     func regenerateRide(documentId: String, reason: String) async throws -> AdminDocumentRideRegenerationResponseDTO
     func getRideArtifact(documentId: String) async throws -> AdminDocumentArtifactResponseDTO
     func getXmlArtifact(documentId: String, authorizedOnly: Bool) async throws -> AdminDocumentArtifactResponseDTO
-    func getRideFile(documentId: String) async throws -> AdminDocumentArtifactResponseDTO
-    func getXmlFile(documentId: String, authorizedOnly: Bool) async throws -> AdminDocumentArtifactResponseDTO
+}
+
+protocol AdminElectronicDocumentFileAPI: AdminElectronicDocumentAPI {
+    func downloadRideFile(documentId: String) async throws -> APIDataResponse
+    func downloadXmlFile(documentId: String, authorizedOnly: Bool) async throws -> APIDataResponse
 }
 
 enum AdminElectronicDocumentRoutes {
     static let base = "/api/v1/admin/electronic-documents"
+    static let adminBase = base
+    static let businessBase = "/api/v1/business/electronic-documents"
 
-    static func list() -> String { base }
+    static func list() -> String { adminBase }
 
-    static func detail(documentId: String) -> String { "\(base)/\(documentId)" }
+    static func detail(documentId: String) -> String { "\(adminBase)/\(documentId)" }
 
-    static func timeline(documentId: String) -> String { "\(base)/\(documentId)/timeline" }
+    static func timeline(documentId: String) -> String { "\(adminBase)/\(documentId)/timeline" }
 
-    static func retryReception(documentId: String) -> String { "\(base)/\(documentId)/retry-reception" }
+    static func retryReception(documentId: String) -> String { "\(adminBase)/\(documentId)/retry-reception" }
 
-    static func retryAuthorization(documentId: String) -> String { "\(base)/\(documentId)/retry-authorization" }
+    static func retryAuthorization(documentId: String) -> String { "\(adminBase)/\(documentId)/retry-authorization" }
 
-    static func resendEmail(documentId: String) -> String { "\(base)/\(documentId)/resend-email" }
+    static func resendEmail(documentId: String) -> String { "\(adminBase)/\(documentId)/resend-email" }
 
-    static func regenerateRide(documentId: String) -> String { "\(base)/\(documentId)/ride" }
+    static func regenerateRide(documentId: String) -> String { "\(adminBase)/\(documentId)/ride" }
 
-    static func ride(documentId: String) -> String { "\(base)/\(documentId)/ride" }
+    static func ride(documentId: String) -> String { "\(adminBase)/\(documentId)/ride" }
 
-    static func rideFile(documentId: String) -> String { "\(base)/\(documentId)/ride/file" }
+    static func rideFile(documentId: String) -> String { "\(businessBase)/\(documentId)/ride/file" }
 
-    static func xml(documentId: String) -> String { "\(base)/\(documentId)/xml" }
+    static func xml(documentId: String) -> String { "\(adminBase)/\(documentId)/xml" }
 
-    static func xmlFile(documentId: String) -> String { "\(base)/\(documentId)/xml/file" }
+    static func xmlFile(documentId: String) -> String { "\(businessBase)/\(documentId)/xml/file" }
 }
 
-struct RemoteAdminElectronicDocumentAPI: AdminElectronicDocumentAPI {
+struct RemoteAdminElectronicDocumentAPI: AdminElectronicDocumentAPI, AdminElectronicDocumentFileAPI {
     let apiClient: APIClient
 
     init(apiClient: APIClient) {
@@ -88,7 +93,8 @@ struct RemoteAdminElectronicDocumentAPI: AdminElectronicDocumentAPI {
 
     func regenerateRide(documentId: String, reason: String) async throws -> AdminDocumentRideRegenerationResponseDTO {
         try await apiClient.send(
-            endpoint(AdminElectronicDocumentRoutes.regenerateRide(documentId: documentId), .post),
+            endpoint(AdminElectronicDocumentRoutes.regenerateRide(documentId: documentId), .post)
+                .withIdempotencyKey(Self.idempotencyKey(action: "admin-regenerate-ride", documentId: documentId)),
             body: AdminDocumentRideRegenerationRequestDTO(reason: reason, forceRegenerateRide: true)
         )
     }
@@ -107,22 +113,49 @@ struct RemoteAdminElectronicDocumentAPI: AdminElectronicDocumentAPI {
         )
     }
 
-    func getRideFile(documentId: String) async throws -> AdminDocumentArtifactResponseDTO {
-        try await apiClient.send(endpoint(AdminElectronicDocumentRoutes.rideFile(documentId: documentId), .get))
-    }
+    func downloadRideFile(documentId: String) async throws -> APIDataResponse {
+        guard let dataClient = apiClient as? APIDataClient else {
+            throw AppError.transport("El cliente HTTP no soporta descarga de archivos.")
+        }
 
-    func getXmlFile(documentId: String, authorizedOnly: Bool) async throws -> AdminDocumentArtifactResponseDTO {
-        try await apiClient.send(
+        return try await dataClient.sendData(
             endpoint(
-                AdminElectronicDocumentRoutes.xmlFile(documentId: documentId),
+                AdminElectronicDocumentRoutes.rideFile(documentId: documentId),
                 .get,
-                queryItems: [URLQueryItem(name: "authorizedOnly", value: authorizedOnly ? "true" : "false")]
+                headers: ["Accept": "*/*"]
             )
         )
     }
 
-    private func endpoint(_ path: String, _ method: HTTPMethod, queryItems: [URLQueryItem] = []) -> APIEndpoint {
-        APIEndpoint(path: path, method: method, queryItems: queryItems, requiresAuth: true, requiresOrganization: true)
+    func downloadXmlFile(documentId: String, authorizedOnly: Bool) async throws -> APIDataResponse {
+        guard let dataClient = apiClient as? APIDataClient else {
+            throw AppError.transport("El cliente HTTP no soporta descarga de archivos.")
+        }
+
+        return try await dataClient.sendData(
+            endpoint(
+                AdminElectronicDocumentRoutes.xmlFile(documentId: documentId),
+                .get,
+                queryItems: [URLQueryItem(name: "authorizedOnly", value: authorizedOnly ? "true" : "false")],
+                headers: ["Accept": "*/*"]
+            )
+        )
+    }
+
+    private func endpoint(
+        _ path: String,
+        _ method: HTTPMethod,
+        queryItems: [URLQueryItem] = [],
+        headers: [String: String] = [:]
+    ) -> APIEndpoint {
+        APIEndpoint(path: path, method: method, queryItems: queryItems, headers: headers, requiresAuth: true, requiresOrganization: true)
+    }
+
+    private static func idempotencyKey(action: String, documentId: String) -> String {
+        let safeDocumentId = documentId
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: " ", with: "-")
+        return "\(action)-\(safeDocumentId)-\(UUID().uuidString.lowercased())"
     }
 }
 
