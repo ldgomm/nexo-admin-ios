@@ -30,7 +30,9 @@ enum MockAdminElectronicDocumentData {
         hasRide: true,
         hasXml: true,
         emailSentAt: "2026-05-21T14:02:00Z",
-        lastErrorMessage: nil
+        lastErrorMessage: nil,
+        availableActions: [.viewDetail, .viewTimeline, .downloadRide, .downloadXml, .resendEmail, .regenerateRide],
+        retrySummary: AdminElectronicDocumentRetrySummary(canRetryReception: false, canRetryAuthorization: false, canResendEmail: true, canRegenerateRide: true, receptionRetryCount: 0, authorizationRetryCount: 0, emailAttempts: 1, rideRegenerationCount: 0, nextRetryAt: nil, lastRetryAt: nil, message: nil)
     )
 
     static let rejected = AdminElectronicDocumentSummary(
@@ -55,7 +57,9 @@ enum MockAdminElectronicDocumentData {
         hasRide: false,
         hasXml: true,
         emailSentAt: nil,
-        lastErrorMessage: "La firma electrónica no corresponde al RUC del emisor."
+        lastErrorMessage: "La firma electrónica no corresponde al RUC del emisor.",
+        availableActions: [.viewDetail, .viewTimeline, .downloadXml, .retryReception, .retryAuthorization, .resendEmail],
+        retrySummary: AdminElectronicDocumentRetrySummary(canRetryReception: true, canRetryAuthorization: true, canResendEmail: true, canRegenerateRide: false, receptionRetryCount: 1, authorizationRetryCount: 0, emailAttempts: 0, rideRegenerationCount: 0, nextRetryAt: nil, lastRetryAt: "2026-05-21T14:31:00Z", message: "Estado recuperable")
     )
 
     static let list = AdminElectronicDocumentList(documents: [authorized, rejected], total: 2, hasMore: false)
@@ -152,7 +156,9 @@ enum MockAdminElectronicDocumentData {
             AdminElectronicDocumentTimelineEvent(id: "evt_3", type: "authorized", title: "Autorizado por SRI", message: "El SRI autorizó el comprobante.", actor: "SRI", createdAt: "2026-05-21T14:01:00Z", severity: .info)
         ],
         errors: [],
-        warnings: []
+        warnings: [],
+        availableActions: [.viewDetail, .viewTimeline, .downloadRide, .downloadXml, .resendEmail, .regenerateRide],
+        retrySummary: AdminElectronicDocumentRetrySummary(canRetryReception: false, canRetryAuthorization: false, canResendEmail: true, canRegenerateRide: true, receptionRetryCount: 0, authorizationRetryCount: 0, emailAttempts: 1, rideRegenerationCount: 0, nextRetryAt: nil, lastRetryAt: nil, message: nil)
     )
 
     static let rejectedDetail = AdminElectronicDocumentDetail(
@@ -172,6 +178,8 @@ enum MockAdminElectronicDocumentData {
         errors: [
             AdminSriDocumentError(id: "err_1", code: "FIRMA_INVALIDA", type: "sri", rawMessage: "La firma electrónica no corresponde al RUC del emisor.", userMessage: "Hay un problema con la firma electrónica. Valida que la firma esté activa, vigente y configurada para este RUC.", technicalMessage: nil, field: "Signature", occurredAt: "2026-05-21T14:31:00Z", retryable: false, severity: .error)
         ],
-        warnings: []
+        warnings: [],
+        availableActions: [.viewDetail, .viewTimeline, .downloadXml, .retryReception, .retryAuthorization, .resendEmail],
+        retrySummary: AdminElectronicDocumentRetrySummary(canRetryReception: true, canRetryAuthorization: true, canResendEmail: true, canRegenerateRide: false, receptionRetryCount: 1, authorizationRetryCount: 0, emailAttempts: 0, rideRegenerationCount: 0, nextRetryAt: nil, lastRetryAt: "2026-05-21T14:31:00Z", message: "Estado recuperable")
     )
 }

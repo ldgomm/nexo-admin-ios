@@ -10,7 +10,9 @@ import SwiftUI
 struct AdminElectronicDocumentsView: View {
     @StateObject var viewModel: AdminElectronicDocumentsViewModel
     @State private var showsFilters = false
-    @State private var showsRetryConfirmation = false
+    @State private var showsRetryAuthorizationConfirmation = false
+    @State private var showsRetryReceptionConfirmation = false
+    @State private var showsRegenerateRideConfirmation = false
     @State private var showsEmailSheet = false
     @State private var showsShareSheet = false
 
@@ -50,7 +52,7 @@ struct AdminElectronicDocumentsView: View {
         }
         .confirmationDialog(
             "Reintentar autorización",
-            isPresented: $showsRetryConfirmation,
+            isPresented: $showsRetryAuthorizationConfirmation,
             titleVisibility: .visible
         ) {
             Button("Reintentar autorización") {
@@ -58,7 +60,31 @@ struct AdminElectronicDocumentsView: View {
             }
             Button("Cancelar", role: .cancel) {}
         } message: {
-            Text("El backend volverá a procesar el comprobante y registrará auditoría. Úsalo solo para errores técnicos o estados recuperables.")
+            Text("El backend volverá a consultar la autorización y registrará auditoría. Úsalo solo para estados recuperables.")
+        }
+        .confirmationDialog(
+            "Reintentar recepción",
+            isPresented: $showsRetryReceptionConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reintentar recepción") {
+                Task { await viewModel.retrySelectedReception() }
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("El backend volverá a enviar el XML firmado al servicio de recepción del SRI sin generar nueva clave ni nuevo secuencial.")
+        }
+        .confirmationDialog(
+            "Regenerar RIDE",
+            isPresented: $showsRegenerateRideConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Regenerar RIDE") {
+                Task { await viewModel.regenerateSelectedRide() }
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Solo se regenerará la representación imprimible. No se modifica XML, clave de acceso ni autorización.")
         }
         .alert("Listo", isPresented: Binding(get: { viewModel.lastActionMessage != nil }, set: { _ in viewModel.dismissActionMessages() })) {
             Button("OK", role: .cancel) { viewModel.dismissActionMessages() }
@@ -139,7 +165,9 @@ struct AdminElectronicDocumentsView: View {
                 AdminElectronicDocumentDetailView(
                     detail: detail,
                     viewModel: viewModel,
-                    onRetry: { showsRetryConfirmation = true },
+                    onRetryReception: { showsRetryReceptionConfirmation = true },
+                    onRetryAuthorization: { showsRetryAuthorizationConfirmation = true },
+                    onRegenerateRide: { showsRegenerateRideConfirmation = true },
                     onEmail: { showsEmailSheet = true },
                     onShareRide: {
                         Task {
@@ -214,7 +242,9 @@ private struct AdminElectronicDocumentRow: View {
 private struct AdminElectronicDocumentDetailView: View {
     let detail: AdminElectronicDocumentDetail
     @ObservedObject var viewModel: AdminElectronicDocumentsViewModel
-    let onRetry: () -> Void
+    let onRetryReception: () -> Void
+    let onRetryAuthorization: () -> Void
+    let onRegenerateRide: () -> Void
     let onEmail: () -> Void
     let onShareRide: () -> Void
     let onShareXml: () -> Void
@@ -224,6 +254,7 @@ private struct AdminElectronicDocumentDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 actionBar
+                operationalState
                 sriState
                 if !detail.errors.isEmpty { errorsSection }
                 artifactsSection
@@ -269,15 +300,92 @@ private struct AdminElectronicDocumentDetailView: View {
         HCard {
             Text("Acciones")
                 .font(.headline)
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                ButtonActionCard(title: "RIDE", systemImage: "doc.richtext", enabled: viewModel.canDownloadRide && detail.artifacts.ride != nil, action: onShareRide)
-                ButtonActionCard(title: "XML", systemImage: "chevron.left.forwardslash.chevron.right", enabled: viewModel.canDownloadXML && (detail.artifacts.authorizedXml != nil || detail.artifacts.signedXml != nil), action: onShareXml)
-                ButtonActionCard(title: "Reenviar email", systemImage: "paperplane", enabled: viewModel.canResendEmail, action: onEmail)
-                ButtonActionCard(title: "Reintentar SRI", systemImage: "arrow.triangle.2.circlepath", enabled: viewModel.canRetryAuthorization && detail.summary.canRetry, action: onRetry)
+            let visibleActions = viewModel.visibleActions(on: detail)
+            if visibleActions.isEmpty {
+                Text("No hay acciones operativas disponibles para este comprobante en este momento.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    ForEach(visibleActions, id: \.publicRawValue) { action in
+                        ButtonActionCard(
+                            title: action.title,
+                            systemImage: actionIcon(action),
+                            enabled: actionIsEnabled(action),
+                            isLoading: viewModel.isLoadingAction(action),
+                            action: actionHandler(action)
+                        )
+                    }
+                }
             }
-            if viewModel.isPerformingAction {
-                ProgressView("Procesando…")
+            if let title = viewModel.loadingActionTitle {
+                ProgressView("Procesando: \(title)…")
             }
+        }
+    }
+
+    private var operationalState: some View {
+        HCard {
+            Text("Resumen operativo")
+                .font(.headline)
+            if !detail.availableActions.isEmpty {
+                LabeledContent("Acciones backend", value: detail.availableActions.map(\.title).joined(separator: " · "))
+                    .font(.caption)
+            }
+            LabeledContent("Reintentos recepción", value: "\(detail.retrySummary.receptionRetryCount)")
+            LabeledContent("Reintentos autorización", value: "\(detail.retrySummary.authorizationRetryCount)")
+            LabeledContent("Intentos email", value: "\(detail.retrySummary.emailAttempts)")
+            LabeledContent("Regeneraciones RIDE", value: "\(detail.retrySummary.rideRegenerationCount)")
+            if let message = detail.retrySummary.message, !message.isEmpty {
+                Label(message, systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func actionIcon(_ action: AdminElectronicDocumentAction) -> String {
+        switch action {
+        case .downloadRide: "doc.richtext"
+        case .downloadXml: "chevron.left.forwardslash.chevron.right"
+        case .resendEmail: "paperplane"
+        case .retryReception: "arrow.up.doc"
+        case .retryAuthorization: "arrow.triangle.2.circlepath"
+        case .regenerateRide: "doc.badge.gearshape"
+        case .viewDetail: "doc.text.magnifyingglass"
+        case .viewTimeline: "clock.arrow.circlepath"
+        case .unknown: "questionmark.circle"
+        }
+    }
+
+    private func actionIsEnabled(_ action: AdminElectronicDocumentAction) -> Bool {
+        guard !viewModel.isPerformingAction else { return false }
+        switch action {
+        case .downloadRide:
+            return viewModel.canPerform(.downloadRide, on: detail) && detail.artifacts.ride != nil
+        case .downloadXml:
+            return viewModel.canPerform(.downloadXml, on: detail) && (detail.artifacts.authorizedXml != nil || detail.artifacts.signedXml != nil)
+        default:
+            return viewModel.canPerform(action, on: detail)
+        }
+    }
+
+    private func actionHandler(_ action: AdminElectronicDocumentAction) -> () -> Void {
+        switch action {
+        case .downloadRide:
+            return onShareRide
+        case .downloadXml:
+            return onShareXml
+        case .resendEmail:
+            return onEmail
+        case .retryReception:
+            return onRetryReception
+        case .retryAuthorization:
+            return onRetryAuthorization
+        case .regenerateRide:
+            return onRegenerateRide
+        default:
+            return {}
         }
     }
 
@@ -423,6 +531,17 @@ private struct AdminElectronicDocumentDetailView: View {
                     Divider()
                 }
             }
+
+            Button {
+                Task { await viewModel.refreshSelectedTimeline() }
+            } label: {
+                if viewModel.isLoadingAction(.viewTimeline) {
+                    ProgressView()
+                } else {
+                    Label("Actualizar timeline", systemImage: "clock.arrow.circlepath")
+                }
+            }
+            .disabled(!viewModel.canPerform(.viewTimeline, on: detail) || viewModel.isPerformingAction)
         }
     }
 
@@ -546,13 +665,18 @@ private struct ButtonActionCard: View {
     let title: String
     let systemImage: String
     let enabled: Bool
+    var isLoading: Bool = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .font(.title3)
+                if isLoading {
+                    ProgressView()
+                } else {
+                    Image(systemName: systemImage)
+                        .font(.title3)
+                }
                 Text(title)
                     .font(.caption.bold())
                     .multilineTextAlignment(.center)
@@ -562,7 +686,7 @@ private struct ButtonActionCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
-        .disabled(!enabled)
+        .disabled(!enabled || isLoading)
         .opacity(enabled ? 1 : 0.45)
     }
 }

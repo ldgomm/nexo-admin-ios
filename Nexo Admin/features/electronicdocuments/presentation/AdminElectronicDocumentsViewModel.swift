@@ -14,31 +14,55 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
     @Published private(set) var selectedDetailState: LoadableViewState<AdminElectronicDocumentDetail> = .idle
     @Published private(set) var lastActionMessage: String?
     @Published private(set) var actionErrorMessage: String?
-    @Published private(set) var isPerformingAction = false
+    @Published private(set) var loadingAction: AdminElectronicDocumentAction?
     @Published var filter = AdminElectronicDocumentListFilter()
     @Published var selectedDocumentId: String?
     @Published var retryReason = "Reintento solicitado desde Admin iOS"
     @Published var emailReason = "Reenvío solicitado desde Admin iOS"
+    @Published var rideRegenerationReason = "Regeneración de RIDE solicitada desde Admin iOS"
     @Published var recipientOverride = ""
     @Published var artifactToShare: AdminDocumentArtifact?
 
     private let listDocuments: ListAdminElectronicDocumentsUseCase
     private let getDocument: GetAdminElectronicDocumentUseCase
+    private let getTimelineUseCase: GetAdminElectronicDocumentTimelineUseCase
+    private let retryReceptionUseCase: RetryAdminElectronicDocumentReceptionUseCase
     private let retryAuthorizationUseCase: RetryAdminElectronicDocumentAuthorizationUseCase
     private let resendEmailUseCase: ResendAdminElectronicDocumentEmailUseCase
+    private let regenerateRideUseCase: RegenerateAdminElectronicDocumentRideUseCase
     private let repository: any AdminElectronicDocumentRepository
     private let permissions: PermissionSet
 
-    init(
-        repository: any AdminElectronicDocumentRepository,
-        permissions: Set<String>
-    ) {
+    init(repository: any AdminElectronicDocumentRepository, permissions: Set<String>) {
         self.repository = repository
         self.permissions = PermissionSet(values: permissions)
         self.listDocuments = ListAdminElectronicDocumentsUseCase(repository: repository)
         self.getDocument = GetAdminElectronicDocumentUseCase(repository: repository)
+        self.getTimelineUseCase = GetAdminElectronicDocumentTimelineUseCase(repository: repository)
+        self.retryReceptionUseCase = RetryAdminElectronicDocumentReceptionUseCase(repository: repository)
         self.retryAuthorizationUseCase = RetryAdminElectronicDocumentAuthorizationUseCase(repository: repository)
         self.resendEmailUseCase = ResendAdminElectronicDocumentEmailUseCase(repository: repository)
+        self.regenerateRideUseCase = RegenerateAdminElectronicDocumentRideUseCase(repository: repository)
+    }
+
+    var isPerformingAction: Bool { loadingAction != nil }
+
+    var loadingActionTitle: String? { loadingAction?.title }
+
+    func isLoadingAction(_ action: AdminElectronicDocumentAction) -> Bool {
+        loadingAction == action
+    }
+
+    func visibleActions(on detail: AdminElectronicDocumentDetail) -> [AdminElectronicDocumentAction] {
+        let supported: [AdminElectronicDocumentAction] = [
+            .downloadRide,
+            .downloadXml,
+            .resendEmail,
+            .retryReception,
+            .retryAuthorization,
+            .regenerateRide
+        ]
+        return supported.filter { detail.allows($0) }
     }
 
     var canViewDocuments: Bool {
@@ -53,8 +77,16 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
         permissions.canAny([PermissionCatalog.documentsDownloadXML])
     }
 
+    var canRetryReception: Bool {
+        permissions.canAny(["documents.retry_reception", "documents.electronic_invoice.retry_reception", PermissionCatalog.taxManage])
+    }
+
     var canRetryAuthorization: Bool {
-        permissions.canAny([PermissionCatalog.documentsRetryAuthorization, PermissionCatalog.taxManage])
+        permissions.canAny([PermissionCatalog.documentsRetryAuthorization, "documents.electronic_invoice.retry_authorization", PermissionCatalog.taxManage])
+    }
+
+    var canRegenerateRide: Bool {
+        permissions.canAny(["documents.regenerate_ride", "documents.electronic_invoice.regenerate_ride", PermissionCatalog.documentsDownloadRide, PermissionCatalog.taxManage])
     }
 
     var canResendEmail: Bool {
@@ -69,6 +101,30 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
     var selectedDetail: AdminElectronicDocumentDetail? {
         if case .loaded(let value) = selectedDetailState { return value }
         return nil
+    }
+
+    func canPerform(_ action: AdminElectronicDocumentAction, on detail: AdminElectronicDocumentDetail) -> Bool {
+        guard detail.allows(action) else { return false }
+        switch action {
+        case .viewDetail:
+            return canViewDocuments
+        case .viewTimeline:
+            return canViewDocuments
+        case .downloadRide:
+            return canDownloadRide
+        case .downloadXml:
+            return canDownloadXML
+        case .retryReception:
+            return canRetryReception && detail.retrySummary.canRetryReception
+        case .retryAuthorization:
+            return canRetryAuthorization && detail.retrySummary.canRetryAuthorization
+        case .resendEmail:
+            return canResendEmail && detail.retrySummary.canResendEmail
+        case .regenerateRide:
+            return canRegenerateRide && detail.retrySummary.canRegenerateRide
+        case .unknown:
+            return false
+        }
     }
 
     func load() async {
@@ -95,9 +151,7 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
         }
     }
 
-    func applyFilters() async {
-        await load()
-    }
+    func applyFilters() async { await load() }
 
     func clearFilters() async {
         filter = AdminElectronicDocumentListFilter()
@@ -118,14 +172,62 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
         }
     }
 
-    func retrySelectedAuthorization() async {
-        guard let id = selectedDocumentId else { return }
-        guard canRetryAuthorization else {
-            actionErrorMessage = "No tienes permiso para reintentar autorización."
+    func refreshSelectedTimeline() async {
+        guard let id = selectedDocumentId, let detail = selectedDetail else { return }
+        guard canPerform(.viewTimeline, on: detail) else {
+            actionErrorMessage = "No puedes actualizar el timeline en el estado actual."
+            return
+        }
+        await performAction(.viewTimeline) {
+            let timeline = try await self.getTimelineUseCase.execute(documentId: id)
+            if let detail = self.selectedDetail {
+                self.selectedDetailState = .loaded(AdminElectronicDocumentDetail(
+                    id: detail.id,
+                    summary: detail.summary,
+                    branchName: detail.branchName,
+                    emissionPointName: detail.emissionPointName,
+                    legalName: detail.legalName,
+                    commercialName: detail.commercialName,
+                    taxId: detail.taxId,
+                    totals: detail.totals,
+                    lines: detail.lines,
+                    sri: detail.sri,
+                    artifacts: detail.artifacts,
+                    email: detail.email,
+                    timeline: timeline,
+                    errors: detail.errors,
+                    warnings: detail.warnings,
+                    availableActions: detail.availableActions,
+                    retrySummary: detail.retrySummary
+                ))
+            }
+            self.lastActionMessage = "Timeline actualizado."
+        }
+    }
+
+    func retrySelectedReception() async {
+        guard let id = selectedDocumentId, let detail = selectedDetail else { return }
+        guard canPerform(.retryReception, on: detail) else {
+            actionErrorMessage = "No puedes reintentar recepción en el estado actual."
             return
         }
 
-        await performAction {
+        await performAction(.retryReception) {
+            let result = try await self.retryReceptionUseCase.execute(documentId: id, reason: self.retryReason)
+            self.lastActionMessage = result.message
+            await self.loadDetail(id: id)
+            await self.load()
+        }
+    }
+
+    func retrySelectedAuthorization() async {
+        guard let id = selectedDocumentId, let detail = selectedDetail else { return }
+        guard canPerform(.retryAuthorization, on: detail) else {
+            actionErrorMessage = "No puedes reintentar autorización en el estado actual."
+            return
+        }
+
+        await performAction(.retryAuthorization) {
             let result = try await self.retryAuthorizationUseCase.execute(documentId: id, reason: self.retryReason)
             self.lastActionMessage = result.message
             await self.loadDetail(id: id)
@@ -134,41 +236,58 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
     }
 
     func resendSelectedEmail() async {
-        guard let id = selectedDocumentId else { return }
-        guard canResendEmail else {
-            actionErrorMessage = "No tienes permiso para reenviar email."
+        guard let id = selectedDocumentId, let detail = selectedDetail else { return }
+        guard canPerform(.resendEmail, on: detail) else {
+            actionErrorMessage = "No puedes reenviar email en el estado actual."
             return
         }
 
         let recipient = recipientOverride.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
-        await performAction {
+        await performAction(.resendEmail) {
             let result = try await self.resendEmailUseCase.execute(documentId: id, recipientOverride: recipient, reason: self.emailReason)
             self.lastActionMessage = result.message
             await self.loadDetail(id: id)
         }
     }
 
-    func prepareRideShare() async {
-        guard let id = selectedDocumentId else { return }
-        guard canDownloadRide else {
-            actionErrorMessage = "No tienes permiso para descargar o compartir RIDE."
+    func regenerateSelectedRide() async {
+        guard let id = selectedDocumentId, let detail = selectedDetail else { return }
+        guard canPerform(.regenerateRide, on: detail) else {
+            actionErrorMessage = "No puedes regenerar el RIDE en el estado actual."
             return
         }
 
-        await performAction {
+        await performAction(.regenerateRide) {
+            let result = try await self.regenerateRideUseCase.execute(documentId: id, reason: self.rideRegenerationReason)
+            self.lastActionMessage = result.message
+            if let artifact = result.artifact {
+                self.artifactToShare = artifact
+            }
+            await self.loadDetail(id: id)
+        }
+    }
+
+    func prepareRideShare() async {
+        guard let id = selectedDocumentId, let detail = selectedDetail else { return }
+        guard canPerform(.downloadRide, on: detail) else {
+            actionErrorMessage = "No puedes descargar o compartir RIDE en el estado actual."
+            return
+        }
+
+        await performAction(.downloadRide) {
             self.artifactToShare = try await self.repository.getRideArtifact(documentId: id)
             self.lastActionMessage = "RIDE listo para compartir."
         }
     }
 
     func prepareXmlShare() async {
-        guard let id = selectedDocumentId else { return }
-        guard canDownloadXML else {
-            actionErrorMessage = "No tienes permiso para descargar XML."
+        guard let id = selectedDocumentId, let detail = selectedDetail else { return }
+        guard canPerform(.downloadXml, on: detail) else {
+            actionErrorMessage = "No puedes descargar XML en el estado actual."
             return
         }
 
-        await performAction {
+        await performAction(.downloadXml) {
             self.artifactToShare = try await self.repository.getXmlArtifact(documentId: id, authorizedOnly: true)
             self.lastActionMessage = "XML autorizado listo para compartir."
         }
@@ -179,8 +298,9 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
         actionErrorMessage = nil
     }
 
-    private func performAction(_ action: () async throws -> Void) async {
-        isPerformingAction = true
+    private func performAction(_ actionKind: AdminElectronicDocumentAction, _ action: () async throws -> Void) async {
+        guard loadingAction == nil else { return }
+        loadingAction = actionKind
         actionErrorMessage = nil
         lastActionMessage = nil
         do {
@@ -188,6 +308,6 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
         } catch {
             actionErrorMessage = error.userFriendlyMessage
         }
-        isPerformingAction = false
+        loadingAction = nil
     }
 }

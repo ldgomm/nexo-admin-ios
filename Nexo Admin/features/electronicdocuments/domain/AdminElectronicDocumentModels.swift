@@ -94,6 +94,89 @@ struct AdminElectronicDocumentList: Equatable, Sendable {
     let hasMore: Bool
 }
 
+enum AdminElectronicDocumentAction: Equatable, Hashable, Sendable {
+    case viewDetail
+    case viewTimeline
+    case downloadRide
+    case downloadXml
+    case retryReception
+    case retryAuthorization
+    case resendEmail
+    case regenerateRide
+    case unknown(String)
+
+    init(rawValue: String) {
+        switch rawValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "view_detail", "viewdetail": self = .viewDetail
+        case "view_timeline", "viewtimeline": self = .viewTimeline
+        case "download_ride", "downloadride": self = .downloadRide
+        case "download_xml", "downloadxml": self = .downloadXml
+        case "retry_reception", "retryreception": self = .retryReception
+        case "retry_authorization", "retryauthorization": self = .retryAuthorization
+        case "resend_email", "resendemail": self = .resendEmail
+        case "regenerate_ride", "regenerateride": self = .regenerateRide
+        case let value where value.isEmpty: self = .unknown("unknown")
+        case let value: self = .unknown(value)
+        }
+    }
+
+    var publicRawValue: String {
+        switch self {
+        case .viewDetail: "view_detail"
+        case .viewTimeline: "view_timeline"
+        case .downloadRide: "download_ride"
+        case .downloadXml: "download_xml"
+        case .retryReception: "retry_reception"
+        case .retryAuthorization: "retry_authorization"
+        case .resendEmail: "resend_email"
+        case .regenerateRide: "regenerate_ride"
+        case .unknown(let value): value
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .viewDetail: "Ver detalle"
+        case .viewTimeline: "Ver timeline"
+        case .downloadRide: "Ver RIDE"
+        case .downloadXml: "Ver XML"
+        case .retryReception: "Reintentar recepción"
+        case .retryAuthorization: "Reintentar autorización"
+        case .resendEmail: "Reenviar email"
+        case .regenerateRide: "Regenerar RIDE"
+        case .unknown: "Acción no disponible"
+        }
+    }
+}
+
+struct AdminElectronicDocumentRetrySummary: Equatable, Sendable {
+    let canRetryReception: Bool
+    let canRetryAuthorization: Bool
+    let canResendEmail: Bool
+    let canRegenerateRide: Bool
+    let receptionRetryCount: Int
+    let authorizationRetryCount: Int
+    let emailAttempts: Int
+    let rideRegenerationCount: Int
+    let nextRetryAt: String?
+    let lastRetryAt: String?
+    let message: String?
+
+    static let empty = AdminElectronicDocumentRetrySummary(
+        canRetryReception: false,
+        canRetryAuthorization: false,
+        canResendEmail: false,
+        canRegenerateRide: false,
+        receptionRetryCount: 0,
+        authorizationRetryCount: 0,
+        emailAttempts: 0,
+        rideRegenerationCount: 0,
+        nextRetryAt: nil,
+        lastRetryAt: nil,
+        message: nil
+    )
+}
+
 struct AdminElectronicDocumentSummary: Identifiable, Equatable, Sendable {
     let id: String
     let organizationId: String
@@ -117,6 +200,12 @@ struct AdminElectronicDocumentSummary: Identifiable, Equatable, Sendable {
     let hasXml: Bool
     let emailSentAt: String?
     let lastErrorMessage: String?
+    let availableActions: [AdminElectronicDocumentAction]
+    let retrySummary: AdminElectronicDocumentRetrySummary
+
+    func allows(_ action: AdminElectronicDocumentAction) -> Bool {
+        availableActions.contains(action)
+    }
 
     var statusTitle: String { AdminElectronicDocumentText.statusTitle(status) }
     var sriStatusTitle: String { AdminElectronicDocumentText.sriStatusTitle(sriStatus) }
@@ -142,6 +231,12 @@ struct AdminElectronicDocumentDetail: Identifiable, Equatable, Sendable {
     let timeline: [AdminElectronicDocumentTimelineEvent]
     let errors: [AdminSriDocumentError]
     let warnings: [String]
+    let availableActions: [AdminElectronicDocumentAction]
+    let retrySummary: AdminElectronicDocumentRetrySummary
+
+    func allows(_ action: AdminElectronicDocumentAction) -> Bool {
+        availableActions.contains(action)
+    }
 }
 
 struct AdminElectronicDocumentTotals: Equatable, Sendable {
@@ -279,6 +374,15 @@ struct AdminDocumentEmailResendResult: Equatable, Sendable {
     let recipient: String?
     let message: String
     let requestedAt: String
+}
+
+struct AdminDocumentRideRegenerationResult: Equatable, Sendable {
+    let documentId: String
+    let accepted: Bool
+    let status: String
+    let message: String
+    let requestedAt: String
+    let artifact: AdminDocumentArtifact?
 }
 
 enum AdminElectronicDocumentText {

@@ -41,6 +41,16 @@ final class MockAdminElectronicDocumentRepository: AdminElectronicDocumentReposi
         return detail
     }
 
+    func getTimeline(documentId: String, limit: Int) async throws -> [AdminElectronicDocumentTimelineEvent] {
+        if shouldFail { throw AppError.server("No se pudo cargar timeline.") }
+        return details[documentId]?.timeline ?? []
+    }
+
+    func retryReception(documentId: String, reason: String) async throws -> AdminDocumentRetryResult {
+        if shouldFail { throw AppError.server("No se pudo reintentar recepción.") }
+        return AdminDocumentRetryResult(documentId: documentId, accepted: true, status: "queued", message: "Reintento de recepción encolado correctamente.", requestedAt: "2026-05-21T15:00:00Z")
+    }
+
     func retryAuthorization(documentId: String, reason: String) async throws -> AdminDocumentRetryResult {
         if shouldFail { throw AppError.server("No se pudo reintentar.") }
         return AdminDocumentRetryResult(documentId: documentId, accepted: true, status: "queued", message: "Reintento encolado correctamente.", requestedAt: "2026-05-21T15:00:00Z")
@@ -49,6 +59,11 @@ final class MockAdminElectronicDocumentRepository: AdminElectronicDocumentReposi
     func resendEmail(documentId: String, recipientOverride: String?, reason: String) async throws -> AdminDocumentEmailResendResult {
         if shouldFail { throw AppError.server("No se pudo reenviar email.") }
         return AdminDocumentEmailResendResult(documentId: documentId, accepted: true, recipient: recipientOverride ?? "cliente@nexo.ec", message: "Email encolado correctamente.", requestedAt: "2026-05-21T15:00:00Z")
+    }
+
+    func regenerateRide(documentId: String, reason: String) async throws -> AdminDocumentRideRegenerationResult {
+        if shouldFail { throw AppError.server("No se pudo regenerar RIDE.") }
+        return AdminDocumentRideRegenerationResult(documentId: documentId, accepted: true, status: "queued", message: "Regeneración de RIDE encolada correctamente.", requestedAt: "2026-05-21T15:00:00Z", artifact: details[documentId]?.artifacts.ride)
     }
 
     func getRideArtifact(documentId: String) async throws -> AdminDocumentArtifact {

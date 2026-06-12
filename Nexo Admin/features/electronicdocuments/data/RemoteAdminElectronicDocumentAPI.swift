@@ -3,38 +3,41 @@ import Foundation
 protocol AdminElectronicDocumentAPI: Sendable {
     func listDocuments(filter: AdminElectronicDocumentListFilter) async throws -> AdminElectronicDocumentListResponseDTO
     func getDocument(id: String) async throws -> AdminElectronicDocumentDetailResponseDTO
+    func getTimeline(documentId: String, limit: Int) async throws -> AdminElectronicDocumentTimelineResponseDTO
+    func retryReception(documentId: String, reason: String) async throws -> AdminDocumentRetryResponseDTO
     func retryAuthorization(documentId: String, reason: String) async throws -> AdminDocumentRetryResponseDTO
     func resendEmail(documentId: String, recipientOverride: String?, reason: String) async throws -> AdminDocumentEmailResendResponseDTO
+    func regenerateRide(documentId: String, reason: String) async throws -> AdminDocumentRideRegenerationResponseDTO
     func getRideArtifact(documentId: String) async throws -> AdminDocumentArtifactResponseDTO
     func getXmlArtifact(documentId: String, authorizedOnly: Bool) async throws -> AdminDocumentArtifactResponseDTO
+    func getRideFile(documentId: String) async throws -> AdminDocumentArtifactResponseDTO
+    func getXmlFile(documentId: String, authorizedOnly: Bool) async throws -> AdminDocumentArtifactResponseDTO
 }
 
 enum AdminElectronicDocumentRoutes {
     static let base = "/api/v1/admin/electronic-documents"
 
-    static func list() -> String {
-        base
-    }
+    static func list() -> String { base }
 
-    static func detail(documentId: String) -> String {
-        "\(base)/\(documentId)"
-    }
+    static func detail(documentId: String) -> String { "\(base)/\(documentId)" }
 
-    static func retryAuthorization(documentId: String) -> String {
-        "\(base)/\(documentId)/retry-authorization"
-    }
+    static func timeline(documentId: String) -> String { "\(base)/\(documentId)/timeline" }
 
-    static func resendEmail(documentId: String) -> String {
-        "\(base)/\(documentId)/resend-email"
-    }
+    static func retryReception(documentId: String) -> String { "\(base)/\(documentId)/retry-reception" }
 
-    static func ride(documentId: String) -> String {
-        "\(base)/\(documentId)/ride"
-    }
+    static func retryAuthorization(documentId: String) -> String { "\(base)/\(documentId)/retry-authorization" }
 
-    static func xml(documentId: String) -> String {
-        "\(base)/\(documentId)/xml"
-    }
+    static func resendEmail(documentId: String) -> String { "\(base)/\(documentId)/resend-email" }
+
+    static func regenerateRide(documentId: String) -> String { "\(base)/\(documentId)/ride" }
+
+    static func ride(documentId: String) -> String { "\(base)/\(documentId)/ride" }
+
+    static func rideFile(documentId: String) -> String { "\(base)/\(documentId)/ride/file" }
+
+    static func xml(documentId: String) -> String { "\(base)/\(documentId)/xml" }
+
+    static func xmlFile(documentId: String) -> String { "\(base)/\(documentId)/xml/file" }
 }
 
 struct RemoteAdminElectronicDocumentAPI: AdminElectronicDocumentAPI {
@@ -45,54 +48,53 @@ struct RemoteAdminElectronicDocumentAPI: AdminElectronicDocumentAPI {
     }
 
     func listDocuments(filter: AdminElectronicDocumentListFilter) async throws -> AdminElectronicDocumentListResponseDTO {
+        try await apiClient.send(endpoint(AdminElectronicDocumentRoutes.list(), .get, queryItems: filter.toQueryItems()))
+    }
+
+    func getDocument(id: String) async throws -> AdminElectronicDocumentDetailResponseDTO {
+        try await apiClient.send(endpoint(AdminElectronicDocumentRoutes.detail(documentId: id), .get))
+    }
+
+    func getTimeline(documentId: String, limit: Int) async throws -> AdminElectronicDocumentTimelineResponseDTO {
         try await apiClient.send(
             endpoint(
-                AdminElectronicDocumentRoutes.list(),
+                AdminElectronicDocumentRoutes.timeline(documentId: documentId),
                 .get,
-                queryItems: filter.toQueryItems()
+                queryItems: [URLQueryItem(name: "limit", value: String(max(1, min(limit, 250))))]
             )
         )
     }
 
-    func getDocument(id: String) async throws -> AdminElectronicDocumentDetailResponseDTO {
+    func retryReception(documentId: String, reason: String) async throws -> AdminDocumentRetryResponseDTO {
         try await apiClient.send(
-            endpoint(
-                AdminElectronicDocumentRoutes.detail(documentId: id),
-                .get
-            )
+            endpoint(AdminElectronicDocumentRoutes.retryReception(documentId: documentId), .post),
+            body: AdminDocumentActionRequestDTO(reason: reason)
         )
     }
 
     func retryAuthorization(documentId: String, reason: String) async throws -> AdminDocumentRetryResponseDTO {
         try await apiClient.send(
-            endpoint(
-                AdminElectronicDocumentRoutes.retryAuthorization(documentId: documentId),
-                .post
-            ),
+            endpoint(AdminElectronicDocumentRoutes.retryAuthorization(documentId: documentId), .post),
             body: AdminDocumentActionRequestDTO(reason: reason)
         )
     }
 
     func resendEmail(documentId: String, recipientOverride: String?, reason: String) async throws -> AdminDocumentEmailResendResponseDTO {
         try await apiClient.send(
-            endpoint(
-                AdminElectronicDocumentRoutes.resendEmail(documentId: documentId),
-                .post
-            ),
-            body: AdminDocumentEmailResendRequestDTO(
-                recipientOverride: recipientOverride,
-                reason: reason
-            )
+            endpoint(AdminElectronicDocumentRoutes.resendEmail(documentId: documentId), .post),
+            body: AdminDocumentEmailResendRequestDTO(recipientOverride: recipientOverride, reason: reason)
+        )
+    }
+
+    func regenerateRide(documentId: String, reason: String) async throws -> AdminDocumentRideRegenerationResponseDTO {
+        try await apiClient.send(
+            endpoint(AdminElectronicDocumentRoutes.regenerateRide(documentId: documentId), .post),
+            body: AdminDocumentRideRegenerationRequestDTO(reason: reason, forceRegenerateRide: true)
         )
     }
 
     func getRideArtifact(documentId: String) async throws -> AdminDocumentArtifactResponseDTO {
-        try await apiClient.send(
-            endpoint(
-                AdminElectronicDocumentRoutes.ride(documentId: documentId),
-                .get
-            )
-        )
+        try await apiClient.send(endpoint(AdminElectronicDocumentRoutes.ride(documentId: documentId), .get))
     }
 
     func getXmlArtifact(documentId: String, authorizedOnly: Bool) async throws -> AdminDocumentArtifactResponseDTO {
@@ -100,36 +102,40 @@ struct RemoteAdminElectronicDocumentAPI: AdminElectronicDocumentAPI {
             endpoint(
                 AdminElectronicDocumentRoutes.xml(documentId: documentId),
                 .get,
-                queryItems: authorizedOnly
-                    ? [URLQueryItem(name: "authorizedOnly", value: "true")]
-                    : []
+                queryItems: [URLQueryItem(name: "authorizedOnly", value: authorizedOnly ? "true" : "false")]
             )
         )
     }
 
-    private func endpoint(
-        _ path: String,
-        _ method: HTTPMethod,
-        queryItems: [URLQueryItem] = []
-    ) -> APIEndpoint {
-        APIEndpoint(
-            path: path,
-            method: method,
-            queryItems: queryItems,
-            requiresAuth: true,
-            requiresOrganization: true
+    func getRideFile(documentId: String) async throws -> AdminDocumentArtifactResponseDTO {
+        try await apiClient.send(endpoint(AdminElectronicDocumentRoutes.rideFile(documentId: documentId), .get))
+    }
+
+    func getXmlFile(documentId: String, authorizedOnly: Bool) async throws -> AdminDocumentArtifactResponseDTO {
+        try await apiClient.send(
+            endpoint(
+                AdminElectronicDocumentRoutes.xmlFile(documentId: documentId),
+                .get,
+                queryItems: [URLQueryItem(name: "authorizedOnly", value: authorizedOnly ? "true" : "false")]
+            )
         )
+    }
+
+    private func endpoint(_ path: String, _ method: HTTPMethod, queryItems: [URLQueryItem] = []) -> APIEndpoint {
+        APIEndpoint(path: path, method: method, queryItems: queryItems, requiresAuth: true, requiresOrganization: true)
     }
 }
 
 private extension AdminElectronicDocumentListFilter {
     func toQueryItems() -> [URLQueryItem] {
         var items: [URLQueryItem] = []
-
-        if status != .all {
-            items.append(URLQueryItem(name: "status", value: status.rawValue))
-        }
-
+        if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { items.append(URLQueryItem(name: "query", value: query)) }
+        if status != .all { items.append(URLQueryItem(name: "status", value: status.rawValue)) }
+        if sriStatus != .all { items.append(URLQueryItem(name: "sriStatus", value: sriStatus.rawValue)) }
+        if !documentType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { items.append(URLQueryItem(name: "documentType", value: documentType)) }
+        if !customer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { items.append(URLQueryItem(name: "customer", value: customer)) }
+        if !number.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { items.append(URLQueryItem(name: "number", value: number)) }
+        items.append(URLQueryItem(name: "limit", value: String(max(1, min(limit, 250)))))
         return items
     }
 }

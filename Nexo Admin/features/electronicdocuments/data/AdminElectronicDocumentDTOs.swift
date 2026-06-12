@@ -45,6 +45,8 @@ struct AdminElectronicDocumentSummaryDTO: Decodable, Sendable {
     let hasXml: Bool?
     let emailSentAt: String?
     let lastErrorMessage: String?
+    let availableActions: [AdminElectronicDocumentActionDTO]?
+    let retrySummary: AdminElectronicDocumentRetrySummaryDTO?
 }
 
 struct AdminElectronicDocumentDetailResponseDTO: Decodable, Sendable {
@@ -85,6 +87,8 @@ struct AdminElectronicDocumentDetailDTO: Decodable, Sendable {
     let timeline: [AdminElectronicDocumentTimelineEventDTO]?
     let errors: [AdminSriDocumentErrorDTO]?
     let warnings: [String]?
+    let availableActions: [AdminElectronicDocumentActionDTO]?
+    let retrySummary: AdminElectronicDocumentRetrySummaryDTO?
 }
 
 struct AdminElectronicDocumentTotalsDTO: Decodable, Sendable {
@@ -168,14 +172,47 @@ struct AdminSriDocumentErrorDTO: Decodable, Sendable {
     let severity: String?
 }
 
+struct AdminElectronicDocumentTimelineResponseDTO: Decodable, Sendable {
+    let documentId: String?
+    let events: [AdminElectronicDocumentTimelineEventDTO]?
+    let timeline: [AdminElectronicDocumentTimelineEventDTO]?
+}
+
 struct AdminElectronicDocumentTimelineEventDTO: Decodable, Sendable {
     let id: String?
     let type: String?
+    let action: String?
     let title: String?
     let message: String?
     let actor: String?
+    let actorUserId: String?
     let createdAt: String?
+    let occurredAt: String?
     let severity: String?
+    let status: String?
+}
+
+struct AdminElectronicDocumentActionDTO: Decodable, Sendable {
+    let rawValue: String
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        rawValue = (try? container.decode(String.self)) ?? "unknown"
+    }
+}
+
+struct AdminElectronicDocumentRetrySummaryDTO: Decodable, Sendable {
+    let canRetryReception: Bool?
+    let canRetryAuthorization: Bool?
+    let canResendEmail: Bool?
+    let canRegenerateRide: Bool?
+    let receptionRetryCount: Int?
+    let authorizationRetryCount: Int?
+    let emailAttempts: Int?
+    let rideRegenerationCount: Int?
+    let nextRetryAt: String?
+    let lastRetryAt: String?
+    let message: String?
 }
 
 struct AdminDocumentActionRequestDTO: Encodable, Sendable {
@@ -187,12 +224,23 @@ struct AdminDocumentEmailResendRequestDTO: Encodable, Sendable {
     let reason: String
 }
 
+struct AdminDocumentRideRegenerationRequestDTO: Encodable, Sendable {
+    let reason: String
+    let forceRegenerateRide: Bool
+
+    init(reason: String, forceRegenerateRide: Bool = true) {
+        self.reason = reason
+        self.forceRegenerateRide = forceRegenerateRide
+    }
+}
+
 struct AdminDocumentRetryResponseDTO: Decodable, Sendable {
     let documentId: String?
     let accepted: Bool?
     let status: String?
     let message: String?
     let requestedAt: String?
+    let retrySummary: AdminElectronicDocumentRetrySummaryDTO?
 }
 
 struct AdminDocumentEmailResendResponseDTO: Decodable, Sendable {
@@ -207,6 +255,21 @@ struct AdminDocumentArtifactResponseDTO: Decodable, Sendable {
     let artifact: AdminDocumentArtifactDTO?
     let ride: AdminDocumentArtifactDTO?
     let xml: AdminDocumentArtifactDTO?
+    let documentId: String?
+    let accepted: Bool?
+    let status: String?
+    let message: String?
+    let requestedAt: String?
+}
+
+struct AdminDocumentRideRegenerationResponseDTO: Decodable, Sendable {
+    let documentId: String?
+    let accepted: Bool?
+    let status: String?
+    let message: String?
+    let requestedAt: String?
+    let artifact: AdminDocumentArtifactDTO?
+    let ride: AdminDocumentArtifactDTO?
 }
 
 struct FlexibleDecimal: Decodable, Equatable, Sendable {
