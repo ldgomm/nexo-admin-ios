@@ -17,7 +17,7 @@ final class AdminTaxSriViewModelTests: XCTestCase {
         await viewModel.load()
 
         XCTAssertEqual(viewModel.taxSettings?.organizationId, "org_altos")
-        XCTAssertEqual(viewModel.taxProfiles.count, 2)
+        XCTAssertEqual(viewModel.taxProfiles.count, 5)
         XCTAssertEqual(viewModel.signatures.count, 1)
         XCTAssertEqual(viewModel.readiness?.status, "blocked")
         XCTAssertEqual(viewModel.homologationRuns.count, 1)
