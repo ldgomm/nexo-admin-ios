@@ -16,32 +16,32 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
             repository: repository,
             permissions: [PermissionCatalog.documentsView]
         )
-
+        
         await viewModel.load()
-
+        
         guard case .loaded(let documents) = viewModel.documentsState else {
             XCTFail("Expected loaded documents")
             return
         }
         XCTAssertEqual(documents.count, 2)
     }
-
+    
     func testLoadDocumentsWithoutPermissionFails() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
             repository: repository,
             permissions: []
         )
-
+        
         await viewModel.load()
-
+        
         guard case .failed(let message) = viewModel.documentsState else {
             XCTFail("Expected failed state")
             return
         }
         XCTAssertTrue(message.contains("permiso"))
     }
-
+    
     func testFilterDocumentsReturnsEmptyWhenNoMatches() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
@@ -49,68 +49,68 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
             permissions: [PermissionCatalog.documentsView]
         )
         viewModel.filter.query = "no-existe"
-
+        
         await viewModel.load()
-
+        
         guard case .empty(let message) = viewModel.documentsState else {
             XCTFail("Expected empty state")
             return
         }
         XCTAssertTrue(message.contains("filtros"))
     }
-
+    
     func testSelectDocumentLoadsDetail() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
             repository: repository,
             permissions: [PermissionCatalog.documentsView]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
-
+        
         XCTAssertEqual(viewModel.selectedDocumentId, MockAdminElectronicDocumentData.authorized.id)
         XCTAssertEqual(viewModel.selectedDetail?.summary.displayNumber, "001-001-000000123")
     }
-
+    
     func testRetryRequiresPermission() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
             repository: repository,
             permissions: [PermissionCatalog.documentsView]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.rejected)
         await viewModel.retrySelectedAuthorization()
-
+        
         XCTAssertEqual(viewModel.actionErrorMessage, "No puedes reintentar autorización en el estado actual.")
     }
-
+    
     func testRetryWithPermissionSetsMessage() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
             repository: repository,
             permissions: [PermissionCatalog.documentsView, PermissionCatalog.documentsRetryAuthorization]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.rejected)
         await viewModel.retrySelectedAuthorization()
-
+        
         XCTAssertEqual(viewModel.lastActionMessage, "Reintento encolado correctamente.")
     }
-
+    
     func testResendEmailWithPermissionSetsMessage() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
             repository: repository,
             permissions: [PermissionCatalog.documentsView, PermissionCatalog.documentsResendEmail]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
         await viewModel.resendSelectedEmail()
-
+        
         XCTAssertEqual(viewModel.lastActionMessage, "Email encolado correctamente.")
     }
-
+    
     func testVisibleActionsComeFromBackendAvailableActions() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
@@ -123,9 +123,9 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
                 PermissionCatalog.documentsRetryAuthorization
             ]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.rejected)
-
+        
         let actions = viewModel.selectedDetail.map { viewModel.visibleActions(on: $0) } ?? []
         XCTAssertTrue(actions.contains(.retryReception))
         XCTAssertTrue(actions.contains(.retryAuthorization))
@@ -133,7 +133,7 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
         XCTAssertFalse(actions.contains(.downloadRide))
         XCTAssertFalse(actions.contains(.regenerateRide))
     }
-
+    
     func testRefreshTimelineRequiresBackendAction() async {
         let detailWithoutTimeline = AdminElectronicDocumentDetail(
             id: MockAdminElectronicDocumentData.detail.id,
@@ -159,14 +159,14 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
             repository: repository,
             permissions: [PermissionCatalog.documentsView]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
         await viewModel.refreshSelectedTimeline()
-
+        
         XCTAssertEqual(viewModel.actionErrorMessage, "No puedes actualizar el timeline en el estado actual.")
     }
-
-
+    
+    
     func testPrepareRideDownloadsBinaryFileInsteadOfArtifactMetadata() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
@@ -176,16 +176,16 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
                 PermissionCatalog.documentsDownloadRide
             ]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
         await viewModel.prepareRideShare()
-
+        
         XCTAssertEqual(viewModel.previewFile?.contentType, "application/pdf")
         XCTAssertEqual(viewModel.previewFile?.kind, "ride")
         XCTAssertTrue(viewModel.previewFile?.localURL.isFileURL == true)
         XCTAssertNil(viewModel.actionErrorMessage)
     }
-
+    
     func testPrepareXmlDownloadsBinaryFileInsteadOfArtifactMetadata() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
@@ -195,18 +195,18 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
                 PermissionCatalog.documentsDownloadXML
             ]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
         await viewModel.prepareXmlShare()
-
+        
         XCTAssertEqual(viewModel.previewFile?.contentType, "application/xml")
         XCTAssertEqual(viewModel.previewFile?.kind, "authorizedXml")
         XCTAssertTrue(viewModel.previewFile?.localURL.isFileURL == true)
         XCTAssertNil(viewModel.actionErrorMessage)
     }
-
-
-    func testRegenerateRideIsHiddenForAuthorizedDocumentThatAlreadyHasRide() async {
+    
+    
+    func testRegenerateRideIsVisibleForAuthorizedDocumentThatAlreadyHasRideWhenBackendAllowsIt() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
             repository: repository,
@@ -216,15 +216,15 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
                 PermissionCatalog.taxManage
             ]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
-
+        
         let actions = viewModel.selectedDetail.map { viewModel.visibleActions(on: $0) } ?? []
         XCTAssertTrue(actions.contains(.downloadRide))
-        XCTAssertFalse(actions.contains(.regenerateRide))
+        XCTAssertTrue(actions.contains(.regenerateRide))
     }
-
-    func testRegenerateRideShowsContractMessageForAuthorizedDocumentThatAlreadyHasRide() async {
+    
+    func testRegenerateRideWithPermissionFollowsBackendContractAndSetsMessage() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
             repository: repository,
@@ -234,14 +234,12 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
                 PermissionCatalog.taxManage
             ]
         )
-
+        
         await viewModel.select(document: MockAdminElectronicDocumentData.authorized)
         await viewModel.regenerateSelectedRide()
-
-        XCTAssertEqual(
-            viewModel.actionErrorMessage,
-            "Este comprobante ya tiene RIDE disponible. Usa Ver RIDE o Reenviar email. El backend no acepta regeneración para documentos autorizados/entregados con RIDE existente."
-        )
+        
+        XCTAssertEqual(viewModel.lastActionMessage, "Regeneración de RIDE encolada correctamente.")
+        XCTAssertNil(viewModel.actionErrorMessage)
     }
-
+    
 }

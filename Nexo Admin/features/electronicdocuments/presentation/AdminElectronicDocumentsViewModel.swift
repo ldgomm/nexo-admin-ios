@@ -134,55 +134,15 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
     }
 
     private func canRegenerateRideForCurrentBackendContract(_ detail: AdminElectronicDocumentDetail) -> Bool {
-        guard detail.retrySummary.canRegenerateRide else { return false }
-
-        let statusValues = [
-            detail.summary.status,
-            detail.summary.sriStatus,
-            detail.sri.receptionStatus,
-            detail.sri.authorizationStatus
-        ]
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-
-        let isFinalOrDelivered = statusValues.contains { value in
-            value == "authorized" ||
-            value == "delivered" ||
-            value.contains("autoriz") ||
-            value.contains("entreg") ||
-            value.contains("deliver")
-        }
-
-        let hasRideArtifact = detail.summary.hasRide || detail.artifacts.ride != nil
-
-        // Backend currently rejects RIDE regeneration for final/delivered documents that already have a RIDE.
-        // Keeping the button hidden avoids advertising an action that returns domain_rule_violation 422.
-        if isFinalOrDelivered && hasRideArtifact { return false }
-
-        return true
+        detail.retrySummary.canRegenerateRide
     }
 
     private func regenerateRideUnavailableMessage(for detail: AdminElectronicDocumentDetail) -> String {
-        let statusValues = [
-            detail.summary.status,
-            detail.summary.sriStatus,
-            detail.sri.receptionStatus,
-            detail.sri.authorizationStatus
-        ]
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-        let isFinalOrDelivered = statusValues.contains { value in
-            value == "authorized" ||
-            value == "delivered" ||
-            value.contains("autoriz") ||
-            value.contains("entreg") ||
-            value.contains("deliver")
-        }
-        let hasRideArtifact = detail.summary.hasRide || detail.artifacts.ride != nil
-
-        if isFinalOrDelivered && hasRideArtifact {
-            return "Este comprobante ya tiene RIDE disponible. Usa Ver RIDE o Reenviar email. El backend no acepta regeneración para documentos autorizados/entregados con RIDE existente."
+        if !detail.retrySummary.canRegenerateRide {
+            return "La regeneración de RIDE no está disponible para este comprobante según el estado publicado por el backend."
         }
 
-        return "No puedes regenerar el RIDE en el estado actual."
+        return "No se pudo regenerar el RIDE en este momento. Actualiza el detalle del comprobante e inténtalo nuevamente."
     }
 
     func load() async {
