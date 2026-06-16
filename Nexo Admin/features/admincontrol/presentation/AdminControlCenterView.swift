@@ -34,150 +34,207 @@ struct AdminControlCenterView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("Usuario") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(sessionStore.currentUser?.displayName ?? "Admin")
-                            .font(.headline)
-                        Text(sessionStore.currentUser?.email ?? "—")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(sessionStore.activeOrganization?.commercialName ?? sessionStore.activeOrganization?.legalName ?? "Organización activa")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    adminHero
+                    accountActions
+                    accessSection
+                    operationsSection
+                    supportSection
+                }
+                .padding(16)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Admin")
+        }
+    }
 
-                    Button(action: onChangeOrganization) {
-                        Label("Cambiar organización", systemImage: "building.2.crop.circle")
-                    }
+    private var adminHero: some View {
+        NexoAdminUXHeroCard(
+            eyebrow: "Centro de control",
+            title: sessionStore.currentUser?.displayName ?? "Admin",
+            subtitle: "\(sessionStore.currentUser?.email ?? "—") · \(organizationName)",
+            systemImage: "person.badge.key.fill",
+            badgeTitle: "\(sessionStore.effectivePermissions.count) permisos",
+            badgeSystemImage: "key.fill"
+        )
+    }
 
-                    Button(role: .destructive, action: onLogout) {
-                        Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
-                    }
+    private var accountActions: some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Sesión y organización",
+                subtitle: "Acciones visibles, directas y sin mezclarlas con configuración técnica.",
+                systemImage: "person.crop.circle"
+            )
+
+            HStack(spacing: 10) {
+                Button(action: onChangeOrganization) {
+                    Label("Cambiar organización", systemImage: "building.2.crop.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button(role: .destructive, action: onLogout) {
+                    Label("Salir", systemImage: "rectangle.portrait.and.arrow.right")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    private var accessSection: some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Acceso y seguridad",
+                subtitle: "Usuarios, roles y plantillas humanas. Los permisos técnicos siguen existiendo, pero no deben ser el lenguaje del usuario.",
+                systemImage: "lock.shield"
+            )
+
+            VStack(spacing: 10) {
+                NexoAdminUXNavigationTile(
+                    title: "Usuarios, roles y permisos",
+                    subtitle: "Cuentas, invitaciones, resets, bloqueos y permisos efectivos",
+                    systemImage: "person.badge.key.fill"
+                ) {
+                    AdminAccessHomeView(
+                        sessionStore: sessionStore,
+                        repository: adminAccessRepository,
+                        onLogout: onLogout
+                    )
                 }
 
-                Section("Acceso y seguridad") {
-                    NavigationLink {
-                        AdminAccessHomeView(
-                            sessionStore: sessionStore,
-                            repository: adminAccessRepository,
-                            onLogout: onLogout
+                NexoAdminUXNavigationTile(
+                    title: "Plantillas de roles",
+                    subtitle: "Crear roles locales por vertical para la organización activa",
+                    systemImage: "person.3.sequence.fill"
+                ) {
+                    AdminRoleTemplateProvisioningView(
+                        viewModel: AdminRoleTemplateProvisioningViewModel(
+                            repository: adminRoleTemplateRepository
                         )
-                    } label: {
-                        AdminControlRow(
-                            title: "Usuarios, roles y permisos",
-                            subtitle: "Cuentas, invitaciones, resets, bloqueos y permisos efectivos",
-                            systemImage: "person.badge.key.fill"
-                        )
-                    }
-
-                    NavigationLink {
-                        AdminRoleTemplateProvisioningView(
-                            viewModel: AdminRoleTemplateProvisioningViewModel(
-                                repository: adminRoleTemplateRepository
-                            )
-                        )
-                    } label: {
-                        AdminControlRow(
-                            title: "Plantillas de roles",
-                            subtitle: "Crear roles locales por vertical para la organización activa",
-                            systemImage: "person.3.sequence.fill"
-                        )
-                    }
+                    )
                 }
+            }
+        }
+    }
 
-                Section("Operación y auditoría") {
-                    if permissions.canAny([PermissionCatalog.reportsDashboardView, PermissionCatalog.reportsSalesView, PermissionCatalog.cashView, PermissionCatalog.auditView]) {
-                        NavigationLink {
+    @ViewBuilder
+    private var operationsSection: some View {
+        if canViewOperations || canViewPublicProjection {
+            NexoAdminUXCard {
+                NexoAdminUXSectionHeader(
+                    "Operación y publicación",
+                    subtitle: "Diagnóstico administrativo sin reemplazar la Business App.",
+                    systemImage: "chart.xyaxis.line"
+                )
+
+                VStack(spacing: 10) {
+                    if canViewOperations {
+                        NexoAdminUXNavigationTile(
+                            title: "Reportes, caja y auditoría",
+                            subtitle: "Consulta administrativa; no reemplaza venta, cobro ni cierre desde Business",
+                            systemImage: "chart.xyaxis.line"
+                        ) {
                             AdminOperationsView(
                                 viewModel: AdminOperationsViewModel(
                                     repository: adminOperationsRepository,
                                     permissions: sessionStore.effectivePermissions
                                 )
                             )
-                        } label: {
-                            AdminControlRow(
-                                title: "Reportes, caja y auditoría",
-                                subtitle: "Consulta administrativa; no reemplaza la Business App",
-                                systemImage: "chart.xyaxis.line"
-                            )
                         }
                     }
 
-                    if permissions.canAny([PermissionCatalog.publicProjectionView, PermissionCatalog.publicProjectionManage, PermissionCatalog.publicStorefrontView, PermissionCatalog.publicStorefrontManage]) {
-                        NavigationLink {
+                    if canViewPublicProjection {
+                        NexoAdminUXNavigationTile(
+                            title: "Public Projection",
+                            subtitle: "Storefront futuro, privado por defecto y publicación controlada",
+                            systemImage: "globe.badge.chevron.backward"
+                        ) {
                             AdminPublicProjectionView(
                                 viewModel: AdminPublicProjectionViewModel(
                                     repository: adminPublicProjectionRepository,
                                     permissions: sessionStore.effectivePermissions
                                 )
                             )
-                        } label: {
-                            AdminControlRow(
-                                title: "Public Projection",
-                                subtitle: "Storefront futuro, privado por defecto y publicación controlada",
-                                systemImage: "globe.badge.chevron.backward"
-                            )
                         }
-                    }
-                }
-
-                Section("Soporte") {
-                    if permissions.canAny([PermissionCatalog.supportView, PermissionCatalog.supportDiagnosticsView, PermissionCatalog.healthView, PermissionCatalog.observabilityView, PermissionCatalog.devicesView]) {
-                        NavigationLink {
-                            AdminSupportDiagnosticsView(
-                                viewModel: AdminSupportDiagnosticsViewModel(
-                                    repository: adminSupportRepository,
-                                    permissions: sessionStore.effectivePermissions,
-                                    buildInfoProvider: { BuildInfo.current() }
-                                )
-                            )
-                        } label: {
-                            AdminControlRow(
-                                title: "Diagnóstico y dispositivos",
-                                subtitle: "Health, versión API, device registry y trazabilidad móvil",
-                                systemImage: "stethoscope"
-                            )
-                        }
-                    }
-
-                    NavigationLink {
-                        ReleaseReadinessView(
-                            viewModel: ReleaseReadinessViewModel(sessionStore: sessionStore)
-                        )
-                    } label: {
-                        AdminControlRow(
-                            title: "Hardening y TestFlight",
-                            subtitle: "Checklist local del corte interno",
-                            systemImage: "checkmark.seal.fill"
-                        )
                     }
                 }
             }
-            .navigationTitle("Admin")
         }
     }
-}
 
-private struct AdminControlRow: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String
+    @ViewBuilder
+    private var supportSection: some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Soporte y salida a piloto",
+                subtitle: "Health, versión, dispositivos y checklist TestFlight en una zona clara.",
+                systemImage: "stethoscope"
+            )
 
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.title3.weight(.semibold))
-                .frame(width: 34)
-                .foregroundStyle(Color.accentColor)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            VStack(spacing: 10) {
+                if canViewSupport {
+                    NexoAdminUXNavigationTile(
+                        title: "Diagnóstico y dispositivos",
+                        subtitle: "Health, versión API, device registry y trazabilidad móvil",
+                        systemImage: "stethoscope"
+                    ) {
+                        AdminSupportDiagnosticsView(
+                            viewModel: AdminSupportDiagnosticsViewModel(
+                                repository: adminSupportRepository,
+                                permissions: sessionStore.effectivePermissions,
+                                buildInfoProvider: { BuildInfo.current() }
+                            )
+                        )
+                    }
+                }
+
+                NexoAdminUXNavigationTile(
+                    title: "Hardening y TestFlight",
+                    subtitle: "Checklist local del corte interno antes de vender o pilotear",
+                    systemImage: "checkmark.seal.fill"
+                ) {
+                    ReleaseReadinessView(
+                        viewModel: ReleaseReadinessViewModel(sessionStore: sessionStore)
+                    )
+                }
             }
         }
-        .padding(.vertical, 4)
+    }
+
+    private var organizationName: String {
+        sessionStore.activeOrganization?.commercialName
+        ?? sessionStore.activeOrganization?.legalName
+        ?? "Organización activa"
+    }
+
+    private var canViewOperations: Bool {
+        permissions.canAny([
+            PermissionCatalog.reportsDashboardView,
+            PermissionCatalog.reportsSalesView,
+            PermissionCatalog.cashView,
+            PermissionCatalog.auditView
+        ])
+    }
+
+    private var canViewPublicProjection: Bool {
+        permissions.canAny([
+            PermissionCatalog.publicProjectionView,
+            PermissionCatalog.publicProjectionManage,
+            PermissionCatalog.publicStorefrontView,
+            PermissionCatalog.publicStorefrontManage
+        ])
+    }
+
+    private var canViewSupport: Bool {
+        permissions.canAny([
+            PermissionCatalog.supportView,
+            PermissionCatalog.supportDiagnosticsView,
+            PermissionCatalog.healthView,
+            PermissionCatalog.observabilityView,
+            PermissionCatalog.devicesView
+        ])
     }
 }

@@ -1,39 +1,30 @@
-//
-//  AdminFoundationHomeView.swift
-//  Nexo Admin
-//
-//  Created by José Ruiz on 21/5/26.
-//
-
 import SwiftUI
 
 struct AdminFoundationHomeView: View {
     @StateObject var viewModel: AdminFoundationViewModel
     @State private var moduleForAction: AdminResolvedModule?
+    @State private var selectedSurface: AdminFoundationSurface = .overview
 
     var body: some View {
-        List {
-            content
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                content
+            }
+            .padding(16)
         }
-        .navigationTitle("Foundation v2.4")
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Foundation")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { Task { await viewModel.refresh() } } label: {
-                    Image(systemName: "arrow.clockwise")
+                NexoAdminUXRefreshButton(isLoading: isLoading) {
+                    Task { await viewModel.refresh() }
                 }
             }
         }
         .task { await viewModel.load() }
         .refreshable { await viewModel.refresh() }
-        .alert("Error", isPresented: errorBinding) {
-            Button("OK") { viewModel.errorMessage = nil }
-        } message: {
-            Text(viewModel.errorMessage ?? "")
-        }
-        .alert("Listo", isPresented: successBinding) {
-            Button("OK") { viewModel.successMessage = nil }
-        } message: {
-            Text(viewModel.successMessage ?? "")
+        .safeAreaInset(edge: .top) {
+            messageBanner
         }
         .sheet(item: $moduleForAction) { module in
             NavigationStack {
@@ -55,64 +46,139 @@ struct AdminFoundationHomeView: View {
         }
     }
 
-    @ViewBuilder private var content: some View {
+    @ViewBuilder
+    private var messageBanner: some View {
+        if let message = viewModel.errorMessage {
+            NexoAdminUXInlineMessage(title: "Error", message: message, tone: .danger)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial)
+                .onTapGesture { viewModel.errorMessage = nil }
+        } else if let message = viewModel.successMessage {
+            NexoAdminUXInlineMessage(title: "Listo", message: message, tone: .success)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(.ultraThinMaterial)
+                .onTapGesture { viewModel.successMessage = nil }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch viewModel.state {
         case .idle, .loading:
-            Section {
-                ProgressView("Cargando foundation v2.4…")
-            }
+            NexoAdminUXLoadingState(
+                title: "Cargando foundation…",
+                message: "Leyendo contexto operativo, módulos, dependencias, readiness y realtime."
+            )
+            .frame(minHeight: 420)
 
         case .empty(let message):
-            Section {
-                EmptyStateView(systemImage: "puzzlepiece.extension", title: "Sin datos", message: message)
+            NexoAdminUXEmptyState(
+                systemImage: "puzzlepiece.extension",
+                title: "Sin datos",
+                message: message,
+                actionTitle: "Actualizar"
+            ) {
+                Task { await viewModel.refresh() }
             }
 
         case .failed(let message):
-            Section {
-                ErrorStateView(title: "No se pudo cargar foundation", message: message, retry: { Task { await viewModel.refresh() } })
+            NexoAdminUXEmptyState(
+                systemImage: "wifi.exclamationmark",
+                title: "No se pudo cargar foundation",
+                message: message,
+                actionTitle: "Reintentar"
+            ) {
+                Task { await viewModel.refresh() }
             }
 
         case .loaded(let snapshot):
-            Section {
-                BusinessContextSummaryCard(snapshot: snapshot)
-            }
+            FoundationHero(snapshot: snapshot)
+            surfacePicker(snapshot: snapshot)
+            selectedContent(snapshot)
+        }
+    }
 
-            if !snapshot.blockedModules.isEmpty {
-                Section("Bloqueos") {
+    private func surfacePicker(snapshot: AdminFoundationSnapshot) -> some View {
+        Picker("Vista", selection: $selectedSurface) {
+            ForEach(AdminFoundationSurface.allCases) { surface in
+                Text(surface.title).tag(surface)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityLabel("Secciones foundation")
+    }
+
+    @ViewBuilder
+    private func selectedContent(_ snapshot: AdminFoundationSnapshot) -> some View {
+        switch selectedSurface {
+        case .overview:
+            BusinessContextSummaryCard(snapshot: snapshot)
+            FoundationModulesMetrics(snapshot: snapshot)
+        case .active:
+            moduleListCard(title: "Módulos activos", subtitle: "Lo que el negocio tiene encendido hoy.", modules: snapshot.activeModules, snapshot: snapshot)
+        case .available:
+            moduleListCard(title: "Módulos disponibles", subtitle: "Pueden activarse si cumplen dependencias y permisos.", modules: snapshot.inactiveModules, snapshot: snapshot)
+        case .blocked:
+            blockedModulesCard(snapshot: snapshot)
+        case .all:
+            BusinessContextSummaryCard(snapshot: snapshot)
+            FoundationModulesMetrics(snapshot: snapshot)
+            blockedModulesCard(snapshot: snapshot)
+            moduleListCard(title: "Módulos activos", subtitle: "Lo que el negocio tiene encendido hoy.", modules: snapshot.activeModules, snapshot: snapshot)
+            moduleListCard(title: "Módulos disponibles", subtitle: "Pueden activarse si cumplen dependencias y permisos.", modules: snapshot.inactiveModules, snapshot: snapshot)
+        }
+    }
+
+    private func moduleListCard(
+        title: String,
+        subtitle: String,
+        modules: [AdminResolvedModule],
+        snapshot: AdminFoundationSnapshot
+    ) -> some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(title, subtitle: subtitle, systemImage: "puzzlepiece.extension")
+            if modules.isEmpty {
+                NexoAdminUXInlineMessage(
+                    title: "Nada por aquí",
+                    message: title.contains("activos") ? "No hay módulos activos adicionales." : "No hay módulos inactivos para mostrar.",
+                    tone: .info
+                )
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(modules) { module in
+                        ModuleRow(
+                            module: module,
+                            readiness: snapshot.readinessByCode[module.code],
+                            canManage: viewModel.canManageModules,
+                            action: { presentToggle(module) }
+                        )
+                        if module.id != modules.last?.id { Divider() }
+                    }
+                }
+            }
+        }
+    }
+
+    private func blockedModulesCard(snapshot: AdminFoundationSnapshot) -> some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Bloqueos",
+                subtitle: "Dependencias o readiness que impiden activar módulos con seguridad.",
+                systemImage: "xmark.octagon"
+            )
+            if snapshot.blockedModules.isEmpty {
+                NexoAdminUXInlineMessage(
+                    title: "Sin bloqueos visibles",
+                    message: "No hay módulos bloqueados según el snapshot actual.",
+                    tone: .success
+                )
+            } else {
+                VStack(spacing: 12) {
                     ForEach(snapshot.blockedModules) { module in
                         ModuleProblemRow(module: module, readiness: snapshot.readinessByCode[module.code])
-                    }
-                }
-            }
-
-            Section("Módulos activos") {
-                if snapshot.activeModules.isEmpty {
-                    Text("No hay módulos activos adicionales.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(snapshot.activeModules) { module in
-                        ModuleRow(
-                            module: module,
-                            readiness: snapshot.readinessByCode[module.code],
-                            canManage: viewModel.canManageModules,
-                            action: { presentToggle(module) }
-                        )
-                    }
-                }
-            }
-
-            Section("Módulos disponibles") {
-                if snapshot.inactiveModules.isEmpty {
-                    Text("No hay módulos inactivos.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(snapshot.inactiveModules) { module in
-                        ModuleRow(
-                            module: module,
-                            readiness: snapshot.readinessByCode[module.code],
-                            canManage: viewModel.canManageModules,
-                            action: { presentToggle(module) }
-                        )
+                        if module.id != snapshot.blockedModules.last?.id { Divider() }
                     }
                 }
             }
@@ -124,12 +190,90 @@ struct AdminFoundationHomeView: View {
         moduleForAction = module
     }
 
-    private var errorBinding: Binding<Bool> {
-        Binding(get: { viewModel.errorMessage != nil }, set: { if !$0 { viewModel.errorMessage = nil } })
+    private var isLoading: Bool {
+        switch viewModel.state {
+        case .idle, .loading: return true
+        default: return viewModel.isMutating
+        }
     }
+}
 
-    private var successBinding: Binding<Bool> {
-        Binding(get: { viewModel.successMessage != nil }, set: { if !$0 { viewModel.successMessage = nil } })
+private enum AdminFoundationSurface: String, CaseIterable, Identifiable {
+    case overview
+    case active
+    case available
+    case blocked
+    case all
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .overview: return "Estado"
+        case .active: return "Activos"
+        case .available: return "Disponibles"
+        case .blocked: return "Bloqueos"
+        case .all: return "Todo"
+        }
+    }
+}
+
+private struct FoundationHero: View {
+    let snapshot: AdminFoundationSnapshot
+
+    var body: some View {
+        NexoAdminUXHeroCard(
+            eyebrow: "Foundation v2.4",
+            title: snapshot.context.displayName,
+            subtitle: snapshot.operationalSummary,
+            systemImage: "puzzlepiece.extension.fill",
+            badgeTitle: snapshot.context.realtime.enabled ? "Realtime ON" : "Realtime listo",
+            badgeSystemImage: snapshot.context.realtime.enabled ? "bolt.fill" : "bolt.slash"
+        )
+    }
+}
+
+private struct FoundationModulesMetrics: View {
+    let snapshot: AdminFoundationSnapshot
+
+    var body: some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Módulos",
+                subtitle: "Resumen rápido de activación, disponibilidad y bloqueos.",
+                systemImage: "square.grid.2x2"
+            )
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                NexoAdminUXMetricTile(
+                    title: "Activos",
+                    value: "\(snapshot.activeModules.count)",
+                    subtitle: "Encendidos ahora",
+                    systemImage: "checkmark.circle",
+                    tint: .green
+                )
+                NexoAdminUXMetricTile(
+                    title: "Disponibles",
+                    value: "\(snapshot.inactiveModules.count)",
+                    subtitle: "Listos o pendientes",
+                    systemImage: "circle.grid.2x2",
+                    tint: .blue
+                )
+                NexoAdminUXMetricTile(
+                    title: "Bloqueados",
+                    value: "\(snapshot.blockedModules.count)",
+                    subtitle: "Requieren acción",
+                    systemImage: "xmark.octagon",
+                    tint: snapshot.blockedModules.isEmpty ? .green : .orange
+                )
+                NexoAdminUXMetricTile(
+                    title: "Realtime",
+                    value: snapshot.context.realtime.enabled ? "ON" : "Preparado",
+                    subtitle: "SSE/contexto",
+                    systemImage: "antenna.radiowaves.left.and.right",
+                    tint: .accentColor
+                )
+            }
+        }
     }
 }
 
@@ -137,31 +281,30 @@ private struct BusinessContextSummaryCard: View {
     let snapshot: AdminFoundationSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(snapshot.context.displayName)
-                        .font(.headline)
-                    Text(snapshot.operationalSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                AdminFoundationBadge(
-                    text: snapshot.context.realtime.enabled ? "Realtime ON" : "Realtime preparado",
-                    systemImage: snapshot.context.realtime.enabled ? "bolt.fill" : "bolt.slash"
-                )
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Contexto Business",
+                subtitle: "Lo que Business recibe para operar: sucursal, revisiones, realtime y módulos.",
+                systemImage: "iphone.gen2"
+            )
+
+            VStack(spacing: 10) {
+                NexoAdminUXPlainRow(title: "Sucursal activa", value: snapshot.context.activeBranch?.name ?? "No definida", systemImage: "mappin.and.ellipse")
+                NexoAdminUXPlainRow(title: "Catalog revision", value: "\(snapshot.context.catalogRevision)", systemImage: "tag")
+                NexoAdminUXPlainRow(title: "Tax revision", value: "\(snapshot.context.taxConfigurationRevision)", systemImage: "percent")
             }
 
-            Divider()
-
-            Label("Sucursal activa: \(snapshot.context.activeBranch?.name ?? "No definida")", systemImage: "mappin.and.ellipse")
-            Label("Catalog revision: \(snapshot.context.catalogRevision)", systemImage: "tag")
-            Label("Tax revision: \(snapshot.context.taxConfigurationRevision)", systemImage: "percent")
-            Label("SSE: \(snapshot.context.realtime.sseUrl)", systemImage: "antenna.radiowaves.left.and.right")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("SSE")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(snapshot.context.realtime.sseUrl)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
-        .font(.subheadline)
-        .padding(.vertical, 4)
     }
 }
 
@@ -172,40 +315,55 @@ private struct ModuleRow: View {
     let action: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: module.active ? "checkmark.circle.fill" : "circle")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(module.active ? .green : .secondary)
+                    .frame(width: 34, height: 34)
+                    .background((module.active ? Color.green : Color.secondary).opacity(0.10), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
                     Text(module.name)
                         .font(.headline)
                     Text(module.code)
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
+                    Text("\(module.categoryTitle) · \(module.source.nexoReadableKey) · \(module.statusTitle)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                Spacer()
-                AdminFoundationBadge(
-                    text: module.activeTitle,
-                    systemImage: module.active ? "checkmark.circle.fill" : "circle"
+
+                Spacer(minLength: 8)
+
+                NexoAdminUXStatusBadge(
+                    title: module.activeTitle,
+                    systemImage: module.active ? "checkmark.circle.fill" : "circle",
+                    tint: module.active ? .green : .secondary
                 )
             }
-
-            Text("\(module.categoryTitle) · \(module.source.nexoReadableKey) · \(module.statusTitle)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
 
             if let readiness, readiness.hasProblems {
                 ModuleReadinessProblemsView(readiness: readiness)
             }
 
             if !module.dependencies.isEmpty {
-                Text("Depende de: \(module.dependencies.joined(separator: ", "))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                NexoAdminUXInlineMessage(
+                    title: "Dependencias",
+                    message: module.dependencies.joined(separator: ", "),
+                    tone: .info
+                )
             }
 
             if canManage {
-                Button(module.active ? "Desactivar módulo" : "Activar módulo", action: action)
-                    .buttonStyle(.bordered)
-                    .disabled(!module.active && !module.canBeEnabled)
+                Button {
+                    action()
+                } label: {
+                    Label(module.active ? "Desactivar módulo" : "Activar módulo", systemImage: module.active ? "pause.circle" : "play.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .disabled(!module.active && !module.canBeEnabled)
             }
         }
         .padding(.vertical, 4)
@@ -217,12 +375,22 @@ private struct ModuleProblemRow: View {
     let readiness: AdminModuleReadinessItem?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(module.name)
-                .font(.headline)
-            Text(module.code)
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "xmark.octagon.fill")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .frame(width: 34, height: 34)
+                    .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(module.name)
+                        .font(.headline)
+                    Text(module.code)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             ForEach(module.blockedReasons, id: \.self) { reason in
                 Label(reason, systemImage: "exclamationmark.triangle.fill")
@@ -234,6 +402,7 @@ private struct ModuleProblemRow: View {
                 ModuleReadinessProblemsView(readiness: readiness)
             }
         }
+        .padding(.vertical, 4)
     }
 }
 
@@ -241,7 +410,7 @@ private struct ModuleReadinessProblemsView: View {
     let readiness: AdminModuleReadinessItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             ForEach(readiness.missingDependencies, id: \.self) { value in
                 Label("Falta dependencia: \(value)", systemImage: "link.badge.plus")
             }
@@ -254,23 +423,9 @@ private struct ModuleReadinessProblemsView: View {
         }
         .font(.caption)
         .foregroundStyle(.orange)
-    }
-}
-
-private struct AdminFoundationBadge: View {
-    let text: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: systemImage)
-            Text(text)
-        }
-        .font(.caption.weight(.semibold))
-        .padding(.horizontal, 9)
-        .padding(.vertical, 5)
-        .background(.quaternary)
-        .clipShape(Capsule())
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
@@ -293,7 +448,7 @@ private struct AdminModuleToggleView: View {
             if !module.blockedReasons.isEmpty && enable {
                 Section("Bloqueos") {
                     ForEach(module.blockedReasons, id: \.self) { reason in
-                        Text(reason)
+                        Label(reason, systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
                     }
                 }
@@ -301,10 +456,11 @@ private struct AdminModuleToggleView: View {
 
             Section("Auditoría") {
                 TextField("Motivo obligatorio", text: $reason, axis: .vertical)
-                    .lineLimit(2...4)
+                    .lineLimit(3...5)
             }
         }
         .navigationTitle(enable ? "Activar módulo" : "Desactivar módulo")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancelar", action: onCancel)

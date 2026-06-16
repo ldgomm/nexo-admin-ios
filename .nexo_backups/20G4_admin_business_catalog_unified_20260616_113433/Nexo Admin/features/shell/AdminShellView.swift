@@ -3,6 +3,7 @@ import SwiftUI
 private enum AdminShellTab: CaseIterable, Hashable {
     case dashboard
     case business
+    case catalog
     case fiscalSri
     case modules
     case admin
@@ -11,6 +12,7 @@ private enum AdminShellTab: CaseIterable, Hashable {
         switch self {
         case .dashboard: return "Inicio"
         case .business: return "Negocio"
+        case .catalog: return "Catálogo"
         case .fiscalSri: return "Fiscal/SRI"
         case .modules: return "Módulos"
         case .admin: return "Admin"
@@ -21,6 +23,7 @@ private enum AdminShellTab: CaseIterable, Hashable {
         switch self {
         case .dashboard: return "chart.bar.doc.horizontal"
         case .business: return "building.2"
+        case .catalog: return "square.grid.2x2"
         case .fiscalSri: return "doc.text.magnifyingglass"
         case .modules: return "puzzlepiece.extension"
         case .admin: return "person.crop.circle"
@@ -62,13 +65,21 @@ struct AdminShellView: View {
             AdminBusinessHomeView(
                 sessionStore: sessionStore,
                 repository: adminBusinessRepository,
-                catalogRepository: adminCatalogRepository,
                 foundationRepository: adminFoundationRepository
             )
             .tabItem {
                 Label(AdminShellTab.business.title, systemImage: AdminShellTab.business.systemImage)
             }
             .tag(AdminShellTab.business)
+
+            AdminCatalogHomeView(
+                sessionStore: sessionStore,
+                repository: adminCatalogRepository
+            )
+            .tabItem {
+                Label(AdminShellTab.catalog.title, systemImage: AdminShellTab.catalog.systemImage)
+            }
+            .tag(AdminShellTab.catalog)
 
             FiscalSriShellView(
                 sessionStore: sessionStore,
