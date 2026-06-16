@@ -162,27 +162,12 @@ struct RemoteAdminElectronicDocumentAPI: AdminElectronicDocumentAPI, AdminElectr
 private extension AdminElectronicDocumentListFilter {
     func toQueryItems() -> [URLQueryItem] {
         var items: [URLQueryItem] = []
-        let queryValue = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        let customerValue = customer.trimmingCharacters(in: .whitespacesAndNewlines)
-        let numberValue = number.trimmingCharacters(in: .whitespacesAndNewlines)
-        let documentTypeValue = documentType.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if !queryValue.isEmpty {
-            items.append(URLQueryItem(name: "q", value: queryValue))
-            items.append(URLQueryItem(name: "query", value: queryValue))
-        } else if !customerValue.isEmpty {
-            items.append(URLQueryItem(name: "q", value: customerValue))
-            items.append(URLQueryItem(name: "query", value: customerValue))
-        }
-
+        if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { items.append(URLQueryItem(name: "query", value: query)) }
         if status != .all { items.append(URLQueryItem(name: "status", value: status.rawValue)) }
         if sriStatus != .all { items.append(URLQueryItem(name: "sriStatus", value: sriStatus.rawValue)) }
-        if !documentTypeValue.isEmpty { items.append(URLQueryItem(name: "documentType", value: documentTypeValue)) }
-        if !customerValue.isEmpty { items.append(URLQueryItem(name: "customer", value: customerValue)) }
-        if !numberValue.isEmpty {
-            items.append(URLQueryItem(name: "number", value: numberValue))
-            items.append(URLQueryItem(name: "documentNumber", value: numberValue))
-        }
+        if !documentType.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { items.append(URLQueryItem(name: "documentType", value: documentType)) }
+        if !customer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { items.append(URLQueryItem(name: "customer", value: customer)) }
+        if !number.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { items.append(URLQueryItem(name: "number", value: number)) }
         items.append(URLQueryItem(name: "limit", value: String(max(1, min(limit, 250)))))
         return items
     }

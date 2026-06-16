@@ -1,3 +1,4 @@
+
 //
 //  AdminElectronicDocumentsView.swift
 //  Nexo Admin
@@ -562,7 +563,7 @@ private struct AdminElectronicDocumentFiltersView: View {
     var body: some View {
         Form {
             Section("Búsqueda") {
-                TextField("Factura, cliente, clave o total", text: $viewModel.filter.query)
+                TextField("Cliente, número o clave", text: $viewModel.filter.query)
                 TextField("Cliente", text: $viewModel.filter.customer)
                 TextField("Número", text: $viewModel.filter.number)
                 TextField("Tipo", text: $viewModel.filter.documentType)
@@ -737,3 +738,4 @@ private struct AdminElectronicDocumentQuickLookPreview: UIViewControllerRepresen
         }
     }
 }
+

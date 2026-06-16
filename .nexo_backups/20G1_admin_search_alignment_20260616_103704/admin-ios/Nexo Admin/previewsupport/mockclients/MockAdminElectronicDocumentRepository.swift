@@ -27,7 +27,7 @@ final class MockAdminElectronicDocumentRepository: AdminElectronicDocumentReposi
         if shouldFail { throw AppError.server("Error simulado de comprobantes.") }
         let filtered = listResult.documents.filter { document in
             let query = filter.query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            let matchesQuery = matchesSearchQuery(document, rawQuery: filter.query)
+            let matchesQuery = query.isEmpty || document.displayNumber.lowercased().contains(query) || document.customerName.lowercased().contains(query) || (document.accessKey ?? "").contains(query)
             let matchesStatus = filter.status == .all || document.status.lowercased() == filter.status.rawValue
             let matchesSri = filter.sriStatus == .all || document.sriStatus.lowercased() == filter.sriStatus.rawValue
             return matchesQuery && matchesStatus && matchesSri
@@ -101,63 +101,6 @@ final class MockAdminElectronicDocumentRepository: AdminElectronicDocumentReposi
             kind: authorizedOnly ? "authorizedXml" : "signedXml",
             body: "<factura id=\"mock\"/>"
         )
-    }
-
-    private func matchesSearchQuery(_ document: AdminElectronicDocumentSummary, rawQuery: String) -> Bool {
-        let query = normalizedSearchValue(rawQuery)
-        guard !query.isEmpty else { return true }
-
-        let searchableValues = [
-            document.id,
-            document.saleId ?? "",
-            document.documentType,
-            document.displayNumber,
-            document.customerName,
-            document.customerIdentification ?? "",
-            document.customerEmail ?? "",
-            document.accessKey ?? "",
-            document.authorizationNumber ?? "",
-            document.status,
-            document.sriStatus,
-            document.environment,
-            document.moneyText,
-            document.currency,
-        ] + amountSearchValues(document.total, currency: document.currency)
-
-        return searchableValues
-            .map(normalizedSearchValue)
-            .contains { $0.contains(query) }
-    }
-
-    private func amountSearchValues(_ amount: Decimal, currency: String) -> [String] {
-        let number = NSDecimalNumber(decimal: amount)
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        formatter.usesGroupingSeparator = false
-
-        let fixed = formatter.string(from: number) ?? number.stringValue
-        return [
-            number.stringValue,
-            fixed,
-            fixed.replacingOccurrences(of: ".", with: ","),
-            "\(currency) \(fixed)",
-            "\(currency) \(fixed.replacingOccurrences(of: ".", with: ","))",
-        ]
-    }
-
-    private func normalizedSearchValue(_ value: String) -> String {
-        value
-            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
-            .lowercased()
-            .replacingOccurrences(of: "usd", with: "")
-            .replacingOccurrences(of: "$", with: "")
-            .replacingOccurrences(of: ",", with: ".")
-            .components(separatedBy: .whitespacesAndNewlines)
-            .joined()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func writeMockFile(

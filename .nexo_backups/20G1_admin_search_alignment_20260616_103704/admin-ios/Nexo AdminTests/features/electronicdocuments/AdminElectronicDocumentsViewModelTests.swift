@@ -58,33 +58,7 @@ final class AdminElectronicDocumentsViewModelTests: XCTestCase {
         }
         XCTAssertTrue(message.contains("filtros"))
     }
-
-    func testFilterDocumentsMatchesAuthorizationAndAmount() async {
-        let repository = MockAdminElectronicDocumentRepository()
-        let viewModel = AdminElectronicDocumentsViewModel(
-            repository: repository,
-            permissions: [PermissionCatalog.documentsView]
-        )
-        viewModel.filter.query = "23.50"
-
-        await viewModel.load()
-
-        guard case .loaded(let documents) = viewModel.documentsState else {
-            XCTFail("Expected loaded documents")
-            return
-        }
-        XCTAssertEqual(documents.map(\.displayNumber), ["001-001-000000123"])
-
-        viewModel.filter.query = MockAdminElectronicDocumentData.authorized.authorizationNumber ?? ""
-        await viewModel.load()
-
-        guard case .loaded(let authorizedDocuments) = viewModel.documentsState else {
-            XCTFail("Expected authorization search to load documents")
-            return
-        }
-        XCTAssertEqual(authorizedDocuments.map(\.displayNumber), ["001-001-000000123"])
-    }
-
+    
     func testSelectDocumentLoadsDetail() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(
