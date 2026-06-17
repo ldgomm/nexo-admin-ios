@@ -1,3 +1,10 @@
+//
+//  AdminRoleTemplateModelsDecodingTests.swift
+//  Nexo Admin
+//
+//  Created by José Ruiz on 2/6/26.
+//
+
 import XCTest
 @testable import Nexo_Admin
 

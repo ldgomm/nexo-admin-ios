@@ -1,3 +1,10 @@
+//
+//  AdminShellView.swift
+//  Nexo Admin
+//
+//  Created by José Ruiz on 2/6/26.
+//
+
 import SwiftUI
 
 private enum AdminShellTab: CaseIterable, Hashable {
