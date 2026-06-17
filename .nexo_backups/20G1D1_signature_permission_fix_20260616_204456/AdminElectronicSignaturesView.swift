@@ -44,11 +44,15 @@ struct AdminElectronicSignaturesView: View {
                 }
             }
 
-            AdminSignatureUploadPermissionAction(
-                canUpload: PermissionSet(permissions).can(PermissionCatalog.signatureUpload),
-                isBusy: viewModel.isMutating,
-                onUpload: { showUpload = true }
-            )
+            if PermissionSet(permissions).can(PermissionCatalog.signatureUpload) {
+                Button {
+                    showUpload = true
+                } label: {
+                    Label("Cargar nueva firma", systemImage: "doc.badge.plus")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(viewModel.isMutating)
+            }
         }
         .sheet(isPresented: $showUpload) {
             UploadSignatureSheet(viewModel: viewModel) { showUpload = false }
@@ -86,31 +90,6 @@ struct AdminElectronicSignaturesView: View {
                 }
             }
         }
-    }
-}
-
-private struct AdminSignatureUploadPermissionAction: View {
-    let canUpload: Bool
-    let isBusy: Bool
-    let onUpload: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button {
-                onUpload()
-            } label: {
-                Label("Cargar nueva firma", systemImage: "doc.badge.plus")
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(isBusy || !canUpload)
-
-            if !canUpload {
-                Label("Tu usuario no tiene permiso para cargar firmas electrónicas. Pide que agreguen el permiso ‘Cargar firma electrónica’ al rol dueño/Super Empresa.", systemImage: "lock.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.top, 4)
     }
 }
 
