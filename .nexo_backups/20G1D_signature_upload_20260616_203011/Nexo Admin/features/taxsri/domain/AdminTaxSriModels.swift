@@ -129,129 +129,16 @@ struct AdminElectronicSignature: Identifiable, Equatable, Sendable {
     let lastValidatedAt: String?
     let createdAt: String?
 
-    var normalizedStatus: String {
-        status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-    }
-
-    var normalizedEffectiveStatus: String {
-        effectiveStatus.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-    }
-
-    var lifecycleStatus: String {
-        let values = [normalizedEffectiveStatus, normalizedStatus]
-
-        if values.contains("ACTIVE") || values.contains("ACTIVA") { return "ACTIVE" }
-        if values.contains("REVOKED") || values.contains("REVOCADA") { return "REVOKED" }
-        if values.contains("EXPIRED") || values.contains("VENCIDA") { return "EXPIRED" }
-        if values.contains("INVALID") || values.contains("INVALIDA") || values.contains("INVÁLIDA") { return "INVALID" }
-        if values.contains("FAILED") || values.contains("ERROR") || values.contains("FALLIDA") { return "FAILED" }
-        if values.contains("VALID") || values.contains("VALIDA") || values.contains("VÁLIDA") { return "VALID" }
-        if values.contains("UPLOADED") || values.contains("LOADED") || values.contains("CARGADA") { return "UPLOADED" }
-        if values.contains("PENDING") || values.contains("PENDIENTE") { return "PENDING" }
-        if values.contains("INACTIVE") || values.contains("INACTIVA") { return "INACTIVE" }
-
-        if usable { return "ACTIVE" }
-        return normalizedEffectiveStatus.isEmpty ? "UNKNOWN" : normalizedEffectiveStatus
-    }
-
     var isActive: Bool {
-        lifecycleStatus == "ACTIVE" || usable
-    }
+        if usable { return true }
 
-    var isValid: Bool {
-        lifecycleStatus == "VALID" || isActive
-    }
+        let normalizedStatus = status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let normalizedEffectiveStatus = effectiveStatus.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
 
-    var isUploaded: Bool {
-        lifecycleStatus == "UPLOADED" || lifecycleStatus == "PENDING" || lifecycleStatus == "INACTIVE"
-    }
-
-    var isRevoked: Bool { lifecycleStatus == "REVOKED" }
-    var isExpired: Bool { lifecycleStatus == "EXPIRED" }
-    var isInvalid: Bool { lifecycleStatus == "INVALID" }
-    var isFailed: Bool { lifecycleStatus == "FAILED" }
-
-    var requiresNewUpload: Bool {
-        isRevoked || isExpired || isInvalid || isFailed
-    }
-
-    var canValidate: Bool {
-        !requiresNewUpload && !isActive && (isUploaded || lifecycleStatus == "UNKNOWN")
-    }
-
-    var canActivate: Bool {
-        isValid && !isActive && !requiresNewUpload
-    }
-
-    var canRevoke: Bool {
-        !isRevoked && !isExpired && (isActive || isValid || isUploaded)
-    }
-
-    var displayStatusTitle: String {
-        switch lifecycleStatus {
-        case "ACTIVE": return "Activa"
-        case "VALID": return "Válida"
-        case "UPLOADED": return "Cargada"
-        case "PENDING": return "Pendiente"
-        case "INACTIVE": return "Inactiva"
-        case "REVOKED": return "Revocada"
-        case "EXPIRED": return "Vencida"
-        case "INVALID": return "Inválida"
-        case "FAILED": return "Fallida"
-        default: return "Sin validar"
-        }
-    }
-
-    var displaySubject: String {
-        let cleanSubject = subject.trimmingCharacters(in: .whitespacesAndNewlines)
-        if cleanSubject.isEmpty || cleanSubject == "Sin sujeto" {
-            return "Sin detalle del certificado"
-        }
-        return cleanSubject
-    }
-
-    var displayExpiration: String {
-        guard let validTo, !validTo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return "Sin vencimiento informado"
-        }
-        return validTo
-    }
-
-    var humanStatusMessage: String {
-        switch lifecycleStatus {
-        case "ACTIVE":
-            return "Esta firma puede usarse para emitir comprobantes electrónicos, si el resto de la configuración está lista."
-        case "VALID":
-            return "Esta firma fue validada. Puedes activarla para usarla como firma principal del negocio."
-        case "UPLOADED", "PENDING", "INACTIVE":
-            return "La firma está cargada. Valídala antes de activarla para emisión electrónica."
-        case "REVOKED":
-            return "Esta firma fue revocada y ya no puede usarse. Carga una nueva firma electrónica."
-        case "EXPIRED":
-            return "Esta firma está vencida y ya no puede usarse. Carga una firma vigente."
-        case "INVALID":
-            return "Esta firma no pasó la validación. Revisa el archivo, la contraseña o carga una nueva."
-        case "FAILED":
-            return "No se pudo procesar esta firma. Carga nuevamente el archivo correcto."
-        default:
-            return "No hay suficiente información para usar esta firma. Valídala o carga una nueva."
-        }
-    }
-
-    var blockedActionHint: String? {
-        if requiresNewUpload {
-            return "Acción recomendada: cargar nueva firma."
-        }
-        if isActive {
-            return "Acciones disponibles: ver detalle, cargar nueva firma o revocar si corresponde."
-        }
-        if isValid {
-            return "Acción recomendada: activar esta firma."
-        }
-        if canValidate {
-            return "Acción recomendada: validar la firma."
-        }
-        return nil
+        return normalizedStatus == "ACTIVE"
+            || normalizedStatus == "VALID"
+            || normalizedEffectiveStatus == "ACTIVE"
+            || normalizedEffectiveStatus == "VALID"
     }
 }
 

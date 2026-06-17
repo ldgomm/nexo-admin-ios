@@ -66,66 +66,27 @@ final class AdminTaxSriViewModel: ObservableObject {
     }
 
     func uploadSignature(alias: String, fileName: String, fileData: Data, password: String, reason: String) async {
-        let cleanAlias = alias.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanFileName = fileName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleanReason = reason.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !cleanAlias.isEmpty else {
-            errorMessage = "Ingresa un alias para identificar la firma."
-            return
-        }
-
-        guard cleanFileName.lowercased().hasSuffix(".p12") || cleanFileName.lowercased().hasSuffix(".pfx") else {
-            errorMessage = "Selecciona un archivo de firma .p12 o .pfx."
-            return
-        }
-
-        guard !fileData.isEmpty else {
-            errorMessage = "El archivo de firma está vacío."
-            return
-        }
-
-        guard !password.isEmpty else {
-            errorMessage = "Ingresa la contraseña de la firma."
-            return
-        }
-
-        guard !cleanReason.isEmpty else {
-            errorMessage = "Ingresa un motivo de auditoría."
-            return
-        }
-
         let input = UploadAdminElectronicSignatureInput(
-            alias: cleanAlias,
-            fileName: cleanFileName,
+            alias: alias,
+            fileName: fileName,
             fileBase64: fileData.base64EncodedString(),
             password: password,
-            reason: cleanReason
+            reason: reason
         )
-        await mutate(success: "Firma electrónica cargada. Valídala antes de activarla.") {
+        await mutate(success: "Firma electrónica subida de forma segura.") {
             let signature = try await repository.uploadSignature(input)
             upsertSignature(signature)
         }
     }
 
     func validateSignature(id: String, reason: String) async {
-        guard let signature = signatures.first(where: { $0.id == id }), signature.canValidate else {
-            errorMessage = "Esta firma no está en un estado que permita validarla."
-            return
-        }
-
-        await mutate(success: "Firma validada. Puedes activarla si será la firma principal.") {
+        await mutate(success: "Firma validada.") {
             let signature = try await repository.validateSignature(AdminSignatureActionInput(signatureId: id, reason: reason))
             upsertSignature(signature)
         }
     }
 
     func activateSignature(id: String, reason: String) async {
-        guard let signature = signatures.first(where: { $0.id == id }), signature.canActivate else {
-            errorMessage = "Solo una firma válida puede activarse."
-            return
-        }
-
         await mutate(success: "Firma activa actualizada.") {
             let signature = try await repository.activateSignature(AdminSignatureActionInput(signatureId: id, reason: reason))
             signatures = try await repository.listSignatures()
@@ -134,12 +95,7 @@ final class AdminTaxSriViewModel: ObservableObject {
     }
 
     func revokeSignature(id: String, reason: String) async {
-        guard let signature = signatures.first(where: { $0.id == id }), signature.canRevoke else {
-            errorMessage = "Esta firma ya no puede revocarse desde su estado actual."
-            return
-        }
-
-        await mutate(success: "Firma revocada. Carga una nueva si necesitas emitir comprobantes.") {
+        await mutate(success: "Firma revocada.") {
             let signature = try await repository.revokeSignature(AdminSignatureActionInput(signatureId: id, reason: reason))
             upsertSignature(signature)
         }

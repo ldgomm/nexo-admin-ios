@@ -394,21 +394,9 @@ final class DefaultAPIClient: APIDataClient, @unchecked Sendable {
             || normalizedKey == "apikey"
             || normalizedKey == "api_key"
             || normalizedKey == "authorization"
-            || normalizedKey == "filebase64"
-            || normalizedKey == "contentbase64"
-            || normalizedKey == "certificate"
-            || normalizedKey == "cert"
-            || normalizedKey == "keystore"
-            || normalizedKey == "privatekey"
             || normalizedKey.contains("password")
             || normalizedKey.contains("token")
             || normalizedKey.contains("secret")
-            || normalizedKey.contains("base64")
-            || normalizedKey.contains("certificate")
-            || normalizedKey.contains("keystore")
-            || normalizedKey.contains("privatekey")
-            || normalizedKey.contains("p12")
-            || normalizedKey.contains("pfx")
     }
     #endif
 }

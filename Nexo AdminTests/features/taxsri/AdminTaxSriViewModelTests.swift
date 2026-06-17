@@ -51,3 +51,76 @@ final class AdminTaxSriViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.signatures.first?.alias, "Nueva")
     }
 }
+
+@MainActor
+final class AdminElectronicSignatureStateTests: XCTestCase {
+    func testUploadedSignatureCanOnlyBeValidatedOrRevoked() {
+        let signature = makeSignature(status: "UPLOADED", effectiveStatus: "UPLOADED", usable: false)
+
+        XCTAssertEqual(signature.displayStatusTitle, "Cargada")
+        XCTAssertTrue(signature.canValidate)
+        XCTAssertFalse(signature.canActivate)
+        XCTAssertTrue(signature.canRevoke)
+    }
+
+    func testValidSignatureCanBeActivatedButNotValidatedAgain() {
+        let signature = makeSignature(status: "VALID", effectiveStatus: "VALID", usable: false)
+
+        XCTAssertEqual(signature.displayStatusTitle, "Válida")
+        XCTAssertFalse(signature.canValidate)
+        XCTAssertTrue(signature.canActivate)
+        XCTAssertTrue(signature.canRevoke)
+    }
+
+    func testRevokedSignatureHasNoSensitiveActions() {
+        let signature = makeSignature(status: "REVOKED", effectiveStatus: "REVOKED", usable: false)
+
+        XCTAssertEqual(signature.displayStatusTitle, "Revocada")
+        XCTAssertFalse(signature.canValidate)
+        XCTAssertFalse(signature.canActivate)
+        XCTAssertFalse(signature.canRevoke)
+        XCTAssertTrue(signature.requiresNewUpload)
+    }
+
+    func testViewModelRejectsInvalidSignatureFileExtension() async {
+        let repository = AdminTaxSriTestRepository()
+        let viewModel = AdminTaxSriViewModel(repository: repository)
+
+        await viewModel.uploadSignature(
+            alias: "Firma",
+            fileName: "firma.txt",
+            fileData: Data("abc".utf8),
+            password: "secret",
+            reason: "test"
+        )
+
+        XCTAssertEqual(viewModel.errorMessage, "Selecciona un archivo de firma .p12 o .pfx.")
+    }
+
+    private func makeSignature(
+        status: String,
+        effectiveStatus: String,
+        usable: Bool
+    ) -> AdminElectronicSignature {
+        AdminElectronicSignature(
+            id: "sig_test_\(status)",
+            organizationId: "org_altos",
+            alias: "Firma test",
+            subject: "ALTOS DEL MURCO",
+            issuer: "Entidad certificadora",
+            serialNumber: "SERIAL",
+            validFrom: "2026-01-01",
+            validTo: "2027-01-01",
+            status: status,
+            effectiveStatus: effectiveStatus,
+            usable: usable,
+            expiresInDays: 100,
+            expiresSoon: false,
+            uploadedBy: "test",
+            uploadedAt: "now",
+            lastUsedAt: nil,
+            lastValidatedAt: nil,
+            createdAt: "now"
+        )
+    }
+}
