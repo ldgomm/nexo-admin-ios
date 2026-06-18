@@ -47,7 +47,7 @@ final class AdminTaxSriViewModel: ObservableObject {
             let summary = try await loadSummary.execute()
             apply(summary)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = humanizedTaxSriError(error)
         }
     }
 
@@ -152,7 +152,7 @@ final class AdminTaxSriViewModel: ObservableObject {
     }
 
     func startHomologation(reason: String) async {
-        await mutate(success: "Homologación iniciada.") {
+        await mutate(success: "Prueba de emisión iniciada.") {
             let run = try await startHomologationUseCase.execute(reason: reason)
             homologationRuns.insert(run, at: 0)
         }
@@ -186,8 +186,38 @@ final class AdminTaxSriViewModel: ObservableObject {
             try await operation()
             successMessage = success
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = humanizedTaxSriError(error)
         }
+    }
+
+
+
+    private func humanizedTaxSriError(_ error: Error) -> String {
+        let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalized = message.lowercased()
+
+        if normalized.contains("at least one homologation scenario is required")
+            || normalized.contains("homologation scenario")
+            || normalized.contains("no hay pruebas de emisión configuradas")
+            || normalized.contains("escenarios automáticos de homologación") {
+            return "No hay pruebas de emisión configuradas. El backend todavía no tiene escenarios automáticos para ejecutar esta prueba desde Admin. Esto no es un problema de tu firma ni del SRI."
+        }
+
+        if normalized.contains("an active electronic signature is required")
+            || normalized.contains("active electronic signature") {
+            return "Falta una firma electrónica activa. Carga, valida y activa una firma vigente antes de probar la emisión."
+        }
+
+        if normalized.contains("test environment")
+            || normalized.contains("only while organization sri settings are in test") {
+            return "La prueba de emisión solo puede ejecutarse en ambiente de pruebas del SRI. Revisa la configuración SRI antes de continuar."
+        }
+
+        if normalized.contains("sri settings are required") {
+            return "Falta completar la configuración SRI del negocio antes de probar la emisión."
+        }
+
+        return message.isEmpty ? "No se pudo completar la operación." : message
     }
 
     private func upsertSignature(_ signature: AdminElectronicSignature) {

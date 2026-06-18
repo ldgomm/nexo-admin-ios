@@ -172,16 +172,16 @@ struct AdminSriHomologationView: View {
     @State private var showReason = false
 
     var body: some View {
-        AdminTaxSriSectionCard(title: "Homologación", subtitle: "Runs técnicos contra ambiente de pruebas", systemImage: "testtube.2") {
+        AdminTaxSriSectionCard(title: "Prueba de emisión", subtitle: "Verifica en ambiente de pruebas que Nexo pueda generar, firmar, enviar y consultar una factura electrónica.", systemImage: "testtube.2") {
             if viewModel.homologationRuns.isEmpty {
                 Text("No hay runs de homologación registrados.").foregroundStyle(.secondary)
             } else {
                 ForEach(viewModel.homologationRuns) { run in
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text(run.id).font(.subheadline.weight(.semibold)).lineLimit(1)
+                            Text(run.displayTitle).font(.subheadline.weight(.semibold)).lineLimit(1)
                             Spacer()
-                            AdminTaxSriStatusBadge(text: run.status)
+                            AdminTaxSriStatusBadge(text: run.displayStatus)
                         }
                         Text("Ambiente: \(run.environment) • Inicio: \(run.startedAt ?? "—")")
                             .font(.caption)
@@ -196,7 +196,7 @@ struct AdminSriHomologationView: View {
             }
         }
         .sheet(isPresented: $showReason) {
-            AdminTaxSriReasonSheet(title: "Ejecutar homologación", actionTitle: "Ejecutar", onCancel: { showReason = false }) { reason in
+            AdminTaxSriReasonSheet(title: "Probar emisión en ambiente de pruebas", actionTitle: "Probar", onCancel: { showReason = false }) { reason in
                 Task { await viewModel.startHomologation(reason: reason); showReason = false }
             }
         }

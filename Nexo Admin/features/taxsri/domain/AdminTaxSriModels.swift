@@ -349,3 +349,52 @@ struct RequestProductionEnableInput: Equatable, Sendable {
     var confirmationText: String
     var reason: String
 }
+
+extension AdminSriHomologationRun {
+    var displayTitle: String {
+        "Prueba de emisión"
+    }
+
+    var displayStatus: String {
+        switch status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
+        case "PASSED", "SUCCESS", "AUTHORIZED", "APPROVED":
+            return "Correcta"
+        case "RUNNING", "PROCESSING", "PENDING":
+            return "En proceso"
+        case "FAILED", "ERROR":
+            return "Falló"
+        case "SKIPPED":
+            return "Omitida"
+        default:
+            return status.isEmpty ? "Sin estado" : status
+        }
+    }
+
+    var humanErrorMessage: String? {
+        guard let errorMessage, !errorMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        let normalized = errorMessage.lowercased()
+
+        if normalized.contains("at least one homologation scenario")
+            || normalized.contains("homologation scenario")
+            || normalized.contains("no hay pruebas de emisión configuradas") {
+            return "No hay pruebas de emisión configuradas en backend. Esto es una configuración técnica pendiente, no un problema de tu firma ni del SRI."
+        }
+
+        if normalized.contains("payment does not belong to this sale") {
+            return "La prueba automática está usando un pago que no pertenece a la venta de prueba. Hay que corregir el escenario interno."
+        }
+
+        if normalized.contains("expected final status authorized")
+            || normalized.contains("got not_authorized")
+            || normalized.contains("got returned_by_sri") {
+            return "La prueba llegó al flujo de autorización, pero el comprobante no terminó autorizado. Revisa el detalle técnico para ver la respuesta exacta del SRI o del escenario."
+        }
+
+        if normalized.contains("processing authorization status") {
+            return "El escenario de reintento esperaba un estado PROCESSING, pero recibió otra respuesta. Hay que ajustar esa prueba automática."
+        }
+
+        return errorMessage
+    }
+}
+
