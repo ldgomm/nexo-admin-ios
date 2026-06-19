@@ -294,6 +294,10 @@ struct AdminSriHomologationRunResponseDTO: Decodable, Sendable {
     let invoiceAccessKey: String?
     let authorizationNumber: String?
     let errorMessage: String?
+    let documentId: String?
+    let saleId: String?
+    let finalDocumentStatus: String?
+    let artifactTypes: [String]?
     let checklist: [AdminSriReadinessItemResponseDTO]?
 }
 

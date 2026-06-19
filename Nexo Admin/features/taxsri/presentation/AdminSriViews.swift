@@ -353,6 +353,10 @@ private struct AdminSriHomologationFeaturedRunCard: View {
                 AdminSriCopyableEvidenceRow(title: "Autorización", value: run.primaryAuthorizationNumber)
             }
 
+            if run.hasDocumentEvidence {
+                AdminSriHomologationDocumentEvidenceCard(run: run, compact: true)
+            }
+
             if run.humanErrorMessage != nil || run.suggestedRecoveryHint != nil {
                 AdminSriHomologationErrorDiagnosticCard(run: run, compact: true)
             }
@@ -448,6 +452,52 @@ private struct AdminSriCopyableEvidenceRow: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(.background.opacity(0.6))
+        )
+    }
+}
+
+private struct AdminSriHomologationDocumentEvidenceCard: View {
+    let run: AdminSriHomologationRun
+    var compact: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: compact ? 8 : 12) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "doc.richtext")
+                    .foregroundStyle(.blue)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Documento técnico relacionado")
+                        .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
+                    Text("La corrida ya trae vínculo documental desde backend. Usa el ID para abrir o buscar la factura técnica en Documentos electrónicos.")
+                        .font(compact ? .caption2 : .caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if compact {
+                if let documentId = run.primaryDocumentId {
+                    AdminSriCopyableEvidenceRow(title: "Documento", value: documentId)
+                }
+                AdminSriEvidenceMetric(title: "Estado documento", value: run.documentEvidenceStatusText, systemImage: "checkmark.seal")
+            } else {
+                AdminSriCopyableEvidenceRow(title: "Document ID", value: run.primaryDocumentId)
+                AdminSriCopyableEvidenceRow(title: "Sale ID", value: run.primarySaleId)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 12) {
+                    AdminSriEvidenceMetric(title: "Estado documento", value: run.documentEvidenceStatusText, systemImage: "checkmark.seal")
+                    AdminSriEvidenceMetric(title: "Artefactos", value: run.artifactSummaryText, systemImage: "tray.full")
+                }
+            }
+        }
+        .padding(compact ? 10 : 0)
+        .background(
+            Group {
+                if compact {
+                    RoundedRectangle(cornerRadius: 12).fill(.blue.opacity(0.08))
+                } else {
+                    Color.clear
+                }
+            }
         )
     }
 }
@@ -565,6 +615,16 @@ private struct AdminSriHomologationDetailSheet: View {
                         AdminSriCopyableEvidenceRow(title: "Run ID", value: run.id)
                         AdminSriCopyableEvidenceRow(title: "Clave de acceso", value: run.primaryAccessKey)
                         AdminSriCopyableEvidenceRow(title: "Número de autorización", value: run.primaryAuthorizationNumber)
+                    }
+
+                    if run.hasDocumentEvidence {
+                        AdminTaxSriSectionCard(
+                            title: "Documento técnico relacionado",
+                            subtitle: "Contrato mínimo entre homologación y Document Vault.",
+                            systemImage: "doc.richtext"
+                        ) {
+                            AdminSriHomologationDocumentEvidenceCard(run: run, compact: false)
+                        }
                     }
 
                     if run.humanErrorMessage != nil || run.suggestedRecoveryHint != nil {

@@ -176,6 +176,10 @@ extension AdminSriHomologationRunResponseDTO {
             invoiceAccessKey: invoiceAccessKey,
             authorizationNumber: authorizationNumber,
             errorMessage: errorMessage,
+            documentId: documentId,
+            saleId: saleId,
+            finalDocumentStatus: finalDocumentStatus,
+            artifactTypes: artifactTypes ?? [],
             checklist: (checklist ?? []).enumerated().map { $0.element.toDomain(fallbackIndex: $0.offset) }
         )
     }

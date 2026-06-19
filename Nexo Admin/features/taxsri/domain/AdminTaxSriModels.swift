@@ -299,7 +299,41 @@ struct AdminSriHomologationRun: Identifiable, Equatable, Sendable {
     let invoiceAccessKey: String?
     let authorizationNumber: String?
     let errorMessage: String?
+    let documentId: String?
+    let saleId: String?
+    let finalDocumentStatus: String?
+    let artifactTypes: [String]
     let checklist: [AdminSriReadinessItem]
+
+    init(
+        id: String,
+        status: String,
+        environment: String,
+        startedAt: String?,
+        finishedAt: String?,
+        invoiceAccessKey: String?,
+        authorizationNumber: String?,
+        errorMessage: String?,
+        documentId: String? = nil,
+        saleId: String? = nil,
+        finalDocumentStatus: String? = nil,
+        artifactTypes: [String] = [],
+        checklist: [AdminSriReadinessItem]
+    ) {
+        self.id = id
+        self.status = status
+        self.environment = environment
+        self.startedAt = startedAt
+        self.finishedAt = finishedAt
+        self.invoiceAccessKey = invoiceAccessKey
+        self.authorizationNumber = authorizationNumber
+        self.errorMessage = errorMessage
+        self.documentId = documentId
+        self.saleId = saleId
+        self.finalDocumentStatus = finalDocumentStatus
+        self.artifactTypes = artifactTypes
+        self.checklist = checklist
+    }
 }
 
 struct AdminTaxSriSummary: Equatable, Sendable {
@@ -506,6 +540,48 @@ extension AdminSriHomologationRun {
         primaryAccessKey != nil || primaryAuthorizationNumber != nil
     }
 
+    var primaryDocumentId: String? {
+        let value = documentId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
+    }
+
+    var primarySaleId: String? {
+        let value = saleId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
+    }
+
+    var primaryFinalDocumentStatus: String? {
+        let value = finalDocumentStatus?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
+    }
+
+    var hasDocumentEvidence: Bool {
+        primaryDocumentId != nil || primarySaleId != nil || primaryFinalDocumentStatus != nil || !artifactTypes.isEmpty
+    }
+
+    var documentEvidenceStatusText: String {
+        guard let status = primaryFinalDocumentStatus else { return "—" }
+        switch status.uppercased() {
+        case "AUTHORIZED", "DELIVERY_PENDING", "DELIVERED":
+            return "Autorizado"
+        case "AUTHORIZATION_PENDING", "RECEIVED", "PROCESSING":
+            return "En proceso"
+        case "RETURNED", "REJECTED", "NOT_AUTHORIZED", "FAILED", "ERROR":
+            return "No autorizado"
+        default:
+            return status
+        }
+    }
+
+    var artifactSummaryText: String {
+        let normalized = artifactTypes
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard !normalized.isEmpty else { return "Sin artefactos reportados" }
+        return normalized.sorted().joined(separator: ", ")
+    }
+
     var rawErrorMessage: String? {
         let value = errorMessage?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return value.isEmpty ? nil : value
@@ -624,7 +700,6 @@ extension AdminSriHomologationRun {
             || normalized.contains("config")
     }
 }
-
 
 private extension String {
     var nexoSriISODate: Date? {
