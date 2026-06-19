@@ -20,6 +20,8 @@ final class AdminTaxSriViewModel: ObservableObject {
     @Published private(set) var sriSettings: AdminSriSettings?
     @Published private(set) var readiness: AdminSriReadiness?
     @Published private(set) var homologationRuns: [AdminSriHomologationRun] = []
+    
+    @Published private(set) var isStartingHomologation = false
 
     private let repository: any AdminTaxSriRepository
     private let loadSummary: LoadAdminTaxSriSummaryUseCase
@@ -107,7 +109,79 @@ final class AdminTaxSriViewModel: ObservableObject {
             upsertSignature(signature)
         }
     }
+    
+    @MainActor
+    func startHomologation(reason: String) async {
+        guard !isStartingHomologation else { return }
 
+        let cleanReason = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanReason.isEmpty else {
+            errorMessage = "Ingresa un motivo de auditoría para ejecutar la prueba de homologación."
+            return
+        }
+
+        isStartingHomologation = true
+        isMutating = true
+        errorMessage = nil
+        successMessage = nil
+        defer {
+            isStartingHomologation = false
+            isMutating = false
+        }
+
+        do {
+            let run = try await startHomologationUseCase.execute(reason: cleanReason)
+            homologationRuns.removeAll { $0.id == run.id }
+            homologationRuns.insert(run, at: 0)
+            successMessage = run.displayStatus == "Correcta"
+                ? "Homologación TEST completada. El comprobante técnico fue autorizado en ambiente de pruebas."
+                : "Prueba de homologación registrada."
+        } catch {
+            errorMessage = homologationErrorMessage(from: error)
+        }
+    }
+    
+    private func homologationErrorMessage(from error: Error) -> String {
+        let localized = error.localizedDescription
+        let raw = String(describing: error)
+        let message = localized.isEmpty ? raw : localized
+        let normalized = message.lowercased()
+
+        if normalized.contains("homologation scenario")
+            || normalized.contains("no hay pruebas")
+            || normalized.contains("pruebas de emisión configuradas") {
+            return "No hay una prueba de homologación configurada en el backend. Actualiza el backend o revisa el escenario de emisión."
+        }
+
+        if normalized.contains("signature")
+            || normalized.contains("firma")
+            || normalized.contains("certificado") {
+            return "La firma electrónica no está lista. Revisa que esté cargada, válida y activa."
+        }
+
+        if normalized.contains("sequence")
+            || normalized.contains("secuencia")
+            || normalized.contains("secuencial") {
+            return "No hay una secuencia de factura disponible para ambiente de pruebas."
+        }
+
+        if normalized.contains("tax")
+            || normalized.contains("impuesto")
+            || normalized.contains("tax profile") {
+            return "Hay un problema con la configuración tributaria del producto o servicio de prueba."
+        }
+
+        if normalized.contains("sri")
+            || normalized.contains("recepcion")
+            || normalized.contains("recepción")
+            || normalized.contains("autorizacion")
+            || normalized.contains("autorización") {
+            return "El SRI no pudo completar la prueba. Revisa recepción, autorización o conectividad con ambiente de pruebas."
+        }
+
+        return message
+    }
+    
     func validateSignature(id: String, reason: String) async {
         guard let signature = signatures.first(where: { $0.id == id }), signature.canValidate else {
             errorMessage = "Esta firma no está en un estado que permita validarla."
@@ -148,13 +222,6 @@ final class AdminTaxSriViewModel: ObservableObject {
     func runReadiness() async {
         await mutate(success: "Readiness SRI ejecutado.") {
             readiness = try await runReadinessUseCase.execute()
-        }
-    }
-
-    func startHomologation(reason: String) async {
-        await mutate(success: "Prueba de emisión iniciada.") {
-            let run = try await startHomologationUseCase.execute(reason: reason)
-            homologationRuns.insert(run, at: 0)
         }
     }
 

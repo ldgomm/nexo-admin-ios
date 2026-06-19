@@ -352,7 +352,7 @@ struct RequestProductionEnableInput: Equatable, Sendable {
 
 extension AdminSriHomologationRun {
     var displayTitle: String {
-        "Prueba de emisión"
+        "Prueba de emisión SRI TEST"
     }
 
     var displayStatus: String {
@@ -361,13 +361,60 @@ extension AdminSriHomologationRun {
             return "Correcta"
         case "RUNNING", "PROCESSING", "PENDING":
             return "En proceso"
-        case "FAILED", "ERROR":
+        case "FAILED", "ERROR", "REJECTED":
             return "Falló"
         case "SKIPPED":
             return "Omitida"
         default:
             return status.isEmpty ? "Sin estado" : status
         }
+    }
+
+    var displayEnvironment: String {
+        switch environment.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "test", "testing", "pruebas", "1":
+            return "TEST"
+        case "production", "prod", "produccion", "producción", "2":
+            return "PRODUCCIÓN"
+        default:
+            return environment.isEmpty ? "—" : environment.uppercased()
+        }
+    }
+
+    var durationText: String {
+        guard let startedAtDate = startedAt?.nexoSriISODate, let finishedAtDate = finishedAt?.nexoSriISODate else {
+            return "—"
+        }
+
+        let seconds = max(0, finishedAtDate.timeIntervalSince(startedAtDate))
+        if seconds < 1 { return "< 1 s" }
+        if seconds < 60 { return "\(Int(seconds.rounded())) s" }
+
+        let minutes = Int(seconds) / 60
+        let remainder = Int(seconds) % 60
+        return "\(minutes) min \(remainder) s"
+    }
+
+    var displayStartedAt: String {
+        startedAt?.nexoSriReadableDate ?? startedAt ?? "—"
+    }
+
+    var displayFinishedAt: String {
+        finishedAt?.nexoSriReadableDate ?? finishedAt ?? "—"
+    }
+
+    var primaryAccessKey: String? {
+        let value = invoiceAccessKey?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
+    }
+
+    var primaryAuthorizationNumber: String? {
+        let value = authorizationNumber?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? primaryAccessKey : value
+    }
+
+    var hasFiscalEvidence: Bool {
+        primaryAccessKey != nil || primaryAuthorizationNumber != nil
     }
 
     var humanErrorMessage: String? {
@@ -395,6 +442,53 @@ extension AdminSriHomologationRun {
         }
 
         return errorMessage
+    }
+}
+
+private extension String {
+    var nexoSriISODate: Date? {
+        let value = trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+
+        let isoWithFractionalSeconds = ISO8601DateFormatter()
+        isoWithFractionalSeconds.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoWithFractionalSeconds.date(from: value) {
+            return date
+        }
+
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime]
+        if let date = iso.date(from: value) {
+            return date
+        }
+
+        let backendFormats = [
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX",
+            "yyyy-MM-dd'T'HH:mm:ssXXXXX",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd"
+        ]
+
+        for format in backendFormats {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.timeZone = TimeZone(secondsFromGMT: 0)
+            formatter.dateFormat = format
+            if let date = formatter.date(from: value) {
+                return date
+            }
+        }
+
+        return nil
+    }
+
+    var nexoSriReadableDate: String? {
+        guard let date = nexoSriISODate else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "es_EC")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 

@@ -70,9 +70,14 @@ struct AdminTaxSriSectionCard<Content: View>: View {
 struct AdminTaxSriReasonSheet: View {
     let title: String
     let actionTitle: String
+    var isSubmitting: Bool = false
     let onCancel: () -> Void
     let onSubmit: (String) -> Void
     @State private var reason = ""
+
+    private var cleanReason: String {
+        reason.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
     var body: some View {
         NavigationStack {
@@ -80,14 +85,29 @@ struct AdminTaxSriReasonSheet: View {
                 Section("Motivo obligatorio") {
                     TextField("Ej. Actualización solicitada por el propietario", text: $reason, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
+                        .disabled(isSubmitting)
+                }
+                if isSubmitting {
+                    Section {
+                        HStack(spacing: 10) {
+                            ProgressView()
+                            Text("Procesando solicitud…")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
+            .interactiveDismissDisabled(isSubmitting)
             .navigationTitle(title)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancelar", action: onCancel) }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar", action: onCancel)
+                        .disabled(isSubmitting)
+                }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(actionTitle) { onSubmit(reason.trimmingCharacters(in: .whitespacesAndNewlines)) }
-                        .disabled(reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Button(actionTitle) { onSubmit(cleanReason) }
+                        .disabled(cleanReason.isEmpty || isSubmitting)
                 }
             }
         }
