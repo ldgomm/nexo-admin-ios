@@ -62,13 +62,7 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
             .retryAuthorization,
             .regenerateRide
         ]
-        return supported.filter { action in
-            guard detail.allows(action) else { return false }
-            if action == .regenerateRide {
-                return canRegenerateRideForCurrentBackendContract(detail)
-            }
-            return true
-        }
+        return supported.filter { canPerform($0, on: detail) }
     }
 
     var canViewDocuments: Bool {
@@ -76,11 +70,19 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
     }
 
     var canDownloadRide: Bool {
-        permissions.canAny([PermissionCatalog.documentsDownloadPDF, PermissionCatalog.documentsDownloadRide])
+        permissions.canAny([PermissionCatalog.documentsDownloadPDF, PermissionCatalog.documentsDownloadRide, PermissionCatalog.taxManage])
     }
 
     var canDownloadXML: Bool {
-        permissions.canAny([PermissionCatalog.documentsDownloadXML])
+        permissions.canAny([PermissionCatalog.documentsDownloadXML, PermissionCatalog.taxManage])
+    }
+
+    var canViewTimeline: Bool {
+        permissions.canAny([PermissionCatalog.documentsViewTimeline, PermissionCatalog.taxManage])
+    }
+
+    var canViewSriErrors: Bool {
+        permissions.canAny([PermissionCatalog.documentsViewSriErrors, PermissionCatalog.taxManage])
     }
 
     var canRetryReception: Bool {
@@ -92,11 +94,11 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
     }
 
     var canRegenerateRide: Bool {
-        permissions.canAny(["documents.regenerate_ride", "documents.electronic_invoice.regenerate_ride", PermissionCatalog.documentsDownloadRide, PermissionCatalog.taxManage])
+        permissions.canAny(["documents.regenerate_ride", "documents.electronic_invoice.regenerate_ride", PermissionCatalog.taxManage])
     }
 
     var canResendEmail: Bool {
-        permissions.canAny([PermissionCatalog.documentsResendEmail, PermissionCatalog.documentsView])
+        permissions.canAny([PermissionCatalog.documentsResendEmail, PermissionCatalog.taxManage])
     }
 
     var documents: [AdminElectronicDocumentSummary] {
@@ -115,11 +117,11 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
         case .viewDetail:
             return canViewDocuments
         case .viewTimeline:
-            return canViewDocuments
+            return canViewTimeline
         case .downloadRide:
-            return canDownloadRide
+            return canDownloadRide && detail.artifacts.ride != nil
         case .downloadXml:
-            return canDownloadXML
+            return canDownloadXML && (detail.artifacts.authorizedXml != nil || detail.artifacts.signedXml != nil)
         case .retryReception:
             return canRetryReception && detail.retrySummary.canRetryReception
         case .retryAuthorization:
@@ -192,8 +194,12 @@ final class AdminElectronicDocumentsViewModel: ObservableObject {
 
     func refreshSelectedTimeline() async {
         guard let id = selectedDocumentId, let detail = selectedDetail else { return }
-        guard canPerform(.viewTimeline, on: detail) else {
-            actionErrorMessage = "No puedes actualizar el timeline en el estado actual."
+        guard detail.allows(.viewTimeline) else {
+            actionErrorMessage = "El timeline no está disponible para este comprobante."
+            return
+        }
+        guard canViewTimeline else {
+            actionErrorMessage = "No tienes permiso para consultar el timeline de comprobantes."
             return
         }
         await performAction(.viewTimeline) {

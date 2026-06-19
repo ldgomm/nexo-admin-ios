@@ -526,6 +526,138 @@ enum AdminElectronicDocumentText {
         default: environment.isEmpty ? "Ambiente no definido" : environment.capitalized
         }
     }
+
+    static func timelineTitle(_ type: String, backendTitle: String? = nil) -> String {
+        switch normalizedTimelineToken(type) {
+        case "SRI_ACCESS_KEY_GENERATED", "ACCESS_KEY_GENERATED":
+            return "Clave de acceso generada"
+        case "ELECTRONIC_XML_GENERATED", "XML_GENERATED":
+            return "XML generado"
+        case "ELECTRONIC_XML_XSD_VALIDATED", "XSD_VALIDATED":
+            return "XML validado contra XSD"
+        case "ELECTRONIC_XML_XSD_INVALID", "XSD_INVALID":
+            return "XML inválido"
+        case "ELECTRONIC_XML_SIGNED", "SIGNED":
+            return "XML firmado"
+        case "ELECTRONIC_XML_SIGNATURE_FAILED", "SIGNATURE_FAILED":
+            return "No se pudo firmar el XML"
+        case "SRI_RECEPTION_SUBMITTED", "SUBMITTED_TO_RECEPTION":
+            return "Enviado a recepción SRI"
+        case "SRI_RECEPTION_RECEIVED", "RECEIVED_BY_SRI":
+            return "Recibido por el SRI"
+        case "SRI_RECEPTION_RETURNED", "RETURNED_BY_SRI", "RETURNED":
+            return "Devuelto por el SRI"
+        case "SRI_RECEPTION_TRANSPORT_FAILED", "RECEPTION_TRANSPORT_FAILED":
+            return "No se pudo conectar con recepción SRI"
+        case "SRI_AUTHORIZATION_QUERIED":
+            return "Autorización consultada"
+        case "SRI_AUTHORIZATION_PROCESSING", "AUTHORIZATION_PENDING":
+            return "Autorización en proceso"
+        case "SRI_AUTHORIZED", "AUTHORIZED", "AUTORIZADO":
+            return "Autorizado por el SRI"
+        case "SRI_NOT_AUTHORIZED", "NOT_AUTHORIZED", "NO_AUTORIZADA":
+            return "No autorizado por el SRI"
+        case "SRI_AUTHORIZATION_TRANSPORT_FAILED", "AUTHORIZATION_TRANSPORT_FAILED":
+            return "No se pudo consultar autorización SRI"
+        case "ELECTRONIC_RIDE_GENERATED":
+            return "RIDE generado correctamente"
+        case "ELECTRONIC_RIDE_REUSED":
+            return "RIDE reutilizado correctamente"
+        case "ELECTRONIC_INVOICE_EMAIL_SENT", "DELIVERED":
+            return "Correo enviado correctamente"
+        case "ELECTRONIC_INVOICE_EMAIL_FAILED", "DELIVERY_FAILED":
+            return "No se pudo enviar el correo"
+        case "DELIVERY_PENDING":
+            return "Correo pendiente de envío"
+        case "CANCELLATION_REQUESTED":
+            return "Anulación solicitada"
+        case "CANCELED", "CANCELLED":
+            return "Comprobante anulado"
+        case "ERROR":
+            return "Error documental"
+        default:
+            return sanitizedBackendTimelineTitle(backendTitle) ?? "Evento documental registrado"
+        }
+    }
+
+    static func timelineMessage(_ type: String, backendMessage: String? = nil) -> String {
+        if let safeBackendMessage = AdminElectronicDocumentTextSanitizer.sanitizedMessage(backendMessage) {
+            return safeBackendMessage
+        }
+
+        switch normalizedTimelineToken(type) {
+        case "SRI_ACCESS_KEY_GENERATED", "ACCESS_KEY_GENERATED":
+            return "Se generó la clave de acceso del comprobante."
+        case "ELECTRONIC_XML_GENERATED", "XML_GENERATED":
+            return "Se generó el XML del comprobante."
+        case "ELECTRONIC_XML_XSD_VALIDATED", "XSD_VALIDATED":
+            return "El XML cumple la estructura esperada para su envío."
+        case "ELECTRONIC_XML_XSD_INVALID", "XSD_INVALID":
+            return "El XML no pasó la validación de estructura."
+        case "ELECTRONIC_XML_SIGNED", "SIGNED":
+            return "El XML fue firmado con la firma electrónica activa."
+        case "ELECTRONIC_XML_SIGNATURE_FAILED", "SIGNATURE_FAILED":
+            return "La firma del XML falló. Revisa la firma electrónica configurada."
+        case "SRI_RECEPTION_SUBMITTED", "SUBMITTED_TO_RECEPTION":
+            return "El comprobante fue enviado al servicio de recepción del SRI."
+        case "SRI_RECEPTION_RECEIVED", "RECEIVED_BY_SRI":
+            return "El SRI recibió el comprobante para su procesamiento."
+        case "SRI_RECEPTION_RETURNED", "RETURNED_BY_SRI", "RETURNED":
+            return "El SRI devolvió el comprobante. Revisa los errores registrados."
+        case "SRI_RECEPTION_TRANSPORT_FAILED", "RECEPTION_TRANSPORT_FAILED":
+            return "No se pudo completar la conexión con recepción SRI. Puedes reintentar si el estado lo permite."
+        case "SRI_AUTHORIZATION_QUERIED":
+            return "Se consultó el estado de autorización del comprobante."
+        case "SRI_AUTHORIZATION_PROCESSING", "AUTHORIZATION_PENDING":
+            return "El SRI todavía está procesando la autorización."
+        case "SRI_AUTHORIZED", "AUTHORIZED", "AUTORIZADO":
+            return "El SRI autorizó el comprobante."
+        case "SRI_NOT_AUTHORIZED", "NOT_AUTHORIZED", "NO_AUTORIZADA":
+            return "El SRI no autorizó el comprobante. Revisa el detalle de errores."
+        case "SRI_AUTHORIZATION_TRANSPORT_FAILED", "AUTHORIZATION_TRANSPORT_FAILED":
+            return "No se pudo consultar la autorización en el SRI. Puedes reintentar si el estado lo permite."
+        case "ELECTRONIC_RIDE_GENERATED":
+            return "RIDE generado correctamente."
+        case "ELECTRONIC_RIDE_REUSED":
+            return "Se reutilizó el RIDE existente."
+        case "ELECTRONIC_INVOICE_EMAIL_SENT", "DELIVERED":
+            return "Correo enviado correctamente."
+        case "ELECTRONIC_INVOICE_EMAIL_FAILED", "DELIVERY_FAILED":
+            return "No se pudo enviar el correo al cliente."
+        case "DELIVERY_PENDING":
+            return "El correo está pendiente de envío."
+        default:
+            return "Evento documental registrado."
+        }
+    }
+
+    static func timelineSeverity(_ value: String?) -> AdminSriErrorSeverity {
+        switch normalizedTimelineToken(value ?? "") {
+        case "CRITICAL":
+            return .critical
+        case "ERROR", "XSD_INVALID", "SIGNATURE_FAILED", "RETURNED", "RETURNED_BY_SRI", "NOT_AUTHORIZED", "NO_AUTORIZADA", "DELIVERY_FAILED":
+            return .error
+        case "WARNING", "RECEPTION_TRANSPORT_FAILED", "AUTHORIZATION_TRANSPORT_FAILED", "AUTHORIZATION_PENDING", "DELIVERY_PENDING":
+            return .warning
+        default:
+            return .info
+        }
+    }
+
+    private static func normalizedTimelineToken(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "-", with: "_")
+            .replacingOccurrences(of: " ", with: "_")
+            .uppercased()
+    }
+
+    private static func sanitizedBackendTimelineTitle(_ title: String?) -> String? {
+        guard let safeTitle = AdminElectronicDocumentTextSanitizer.sanitizedMessage(title) else { return nil }
+        let normalized = normalizedTimelineToken(safeTitle)
+        guard normalized != "EVENT" else { return nil }
+        return safeTitle
+    }
 }
 
 enum MoneyFormatter {

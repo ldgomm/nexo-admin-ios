@@ -5,8 +5,10 @@
 //  Created by José Ruiz on 21/5/26.
 //
 
+import Combine
 import SwiftUI
 import UIKit
+import QuickLook
 
 struct AdminSriSettingsView: View {
     @ObservedObject var viewModel: AdminTaxSriViewModel
@@ -170,8 +172,19 @@ struct AdminSriReadinessView: View {
 struct AdminSriHomologationView: View {
     @ObservedObject var viewModel: AdminTaxSriViewModel
     let permissions: Set<String>
+    let electronicDocumentRepository: (any AdminElectronicDocumentRepository)?
     @State private var showReason = false
     @State private var selectedRun: AdminSriHomologationRun?
+
+    init(
+        viewModel: AdminTaxSriViewModel,
+        permissions: Set<String>,
+        electronicDocumentRepository: (any AdminElectronicDocumentRepository)? = nil
+    ) {
+        self.viewModel = viewModel
+        self.permissions = permissions
+        self.electronicDocumentRepository = electronicDocumentRepository
+    }
 
     private var canHomologate: Bool {
         PermissionSet(permissions).can(PermissionCatalog.documentsElectronicInvoiceHomologate)
@@ -238,7 +251,11 @@ struct AdminSriHomologationView: View {
             }
         }
         .sheet(item: $selectedRun) { run in
-            AdminSriHomologationDetailSheet(run: run)
+            AdminSriHomologationDetailSheet(
+                run: run,
+                documentRepository: electronicDocumentRepository,
+                permissions: permissions
+            )
         }
         .sheet(isPresented: $showReason) {
             AdminTaxSriReasonSheet(
@@ -381,7 +398,7 @@ private struct AdminSriHomologationFeaturedRunCard: View {
                 .buttonStyle(.bordered)
 
                 Button {
-                    UIPasteboard.general.string = run.supportSummary
+                    UIPasteboard.general.string = run.supportSummaryWithDocumentEvidence
                 } label: {
                     Label("Copiar soporte", systemImage: "doc.on.doc")
                         .frame(maxWidth: .infinity)
@@ -459,6 +476,20 @@ private struct AdminSriCopyableEvidenceRow: View {
 private struct AdminSriHomologationDocumentEvidenceCard: View {
     let run: AdminSriHomologationRun
     var compact: Bool
+    var documentRepository: (any AdminElectronicDocumentRepository)?
+    var permissions: Set<String>
+
+    init(
+        run: AdminSriHomologationRun,
+        compact: Bool,
+        documentRepository: (any AdminElectronicDocumentRepository)? = nil,
+        permissions: Set<String> = []
+    ) {
+        self.run = run
+        self.compact = compact
+        self.documentRepository = documentRepository
+        self.permissions = permissions
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 8 : 12) {
@@ -487,6 +518,8 @@ private struct AdminSriHomologationDocumentEvidenceCard: View {
                     AdminSriEvidenceMetric(title: "Estado documento", value: run.documentEvidenceStatusText, systemImage: "checkmark.seal")
                     AdminSriEvidenceMetric(title: "Artefactos", value: run.artifactSummaryText, systemImage: "tray.full")
                 }
+
+                linkedDocumentAction
             }
         }
         .padding(compact ? 10 : 0)
@@ -499,6 +532,313 @@ private struct AdminSriHomologationDocumentEvidenceCard: View {
                 }
             }
         )
+    }
+
+    @ViewBuilder
+    private var linkedDocumentAction: some View {
+        if let documentId = run.primaryDocumentId, let documentRepository {
+            NavigationLink {
+                AdminSriLinkedHomologationDocumentScreen(
+                    documentId: documentId,
+                    repository: documentRepository,
+                    permissions: permissions
+                )
+            } label: {
+                Label("Ver documento técnico", systemImage: "doc.text.magnifyingglass")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+        } else if run.primaryDocumentId != nil {
+            NexoAdminUXInlineMessage(
+                title: "Documento enlazado",
+                message: "El contrato trae Document ID, pero esta entrada no recibió el repositorio de documentos para abrirlo desde aquí.",
+                tone: .info
+            )
+        }
+    }
+}
+
+private struct AdminSriLinkedHomologationDocumentScreen: View {
+    @StateObject private var viewModel: AdminSriLinkedHomologationDocumentViewModel
+
+    init(documentId: String, repository: any AdminElectronicDocumentRepository, permissions: Set<String>) {
+        _viewModel = StateObject(
+            wrappedValue: AdminSriLinkedHomologationDocumentViewModel(
+                documentId: documentId,
+                repository: repository,
+                permissions: permissions
+            )
+        )
+    }
+
+    var body: some View {
+        Group {
+            switch viewModel.state {
+            case .idle, .loading:
+                NexoAdminUXLoadingState(
+                    title: "Cargando documento técnico…",
+                    message: "Consultando Document Vault por el ID generado en la homologación."
+                )
+
+            case .empty(let message):
+                NexoAdminUXEmptyState(
+                    systemImage: "doc.text.magnifyingglass",
+                    title: "Sin documento",
+                    message: message
+                )
+                .padding(16)
+
+            case .failed(let message):
+                NexoAdminUXEmptyState(
+                    systemImage: "wifi.exclamationmark",
+                    title: "No se pudo abrir el documento",
+                    message: message,
+                    actionTitle: "Reintentar"
+                ) {
+                    Task { await viewModel.load() }
+                }
+                .padding(16)
+
+            case .loaded(let detail):
+                loadedContent(detail)
+            }
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Documento técnico")
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: viewModel.documentId) { await viewModel.loadIfNeeded() }
+        .sheet(item: $viewModel.previewFile) { file in
+            AdminSriDocumentQuickLookPreview(fileURL: file.localURL)
+        }
+    }
+
+    private func loadedContent(_ detail: AdminElectronicDocumentDetail) -> some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                if let message = viewModel.actionMessage {
+                    NexoAdminUXInlineMessage(title: "Listo", message: message, tone: .success)
+                } else if let message = viewModel.actionErrorMessage {
+                    NexoAdminUXInlineMessage(title: "No se pudo completar", message: message, tone: .danger)
+                }
+
+                NexoAdminUXCard {
+                    NexoAdminUXSectionHeader(
+                        "Factura técnica enlazada",
+                        subtitle: "Documento creado por la corrida de homologación y almacenado en Document Vault.",
+                        systemImage: "doc.richtext"
+                    )
+
+                    AdminSriCopyableEvidenceRow(title: "Document ID", value: detail.id)
+                    AdminSriCopyableEvidenceRow(title: "Número", value: detail.summary.displayNumber)
+                    AdminSriCopyableEvidenceRow(title: "Cliente", value: detail.summary.customerName)
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 12) {
+                        AdminSriEvidenceMetric(title: "Estado", value: detail.summary.statusTitle, systemImage: "checkmark.seal")
+                        AdminSriEvidenceMetric(title: "SRI", value: detail.summary.sriStatusTitle, systemImage: "building.columns")
+                        AdminSriEvidenceMetric(title: "Ambiente", value: detail.summary.environmentTitle, systemImage: "server.rack")
+                        AdminSriEvidenceMetric(title: "Total", value: detail.summary.moneyText, systemImage: "dollarsign.circle")
+                    }
+                }
+
+                NexoAdminUXCard {
+                    NexoAdminUXSectionHeader(
+                        "Evidencia SRI",
+                        subtitle: "Clave, autorización y fechas publicadas por el detalle documental.",
+                        systemImage: "number.square"
+                    )
+
+                    AdminSriCopyableEvidenceRow(title: "Clave de acceso", value: detail.sri.accessKey ?? detail.summary.accessKey)
+                    AdminSriCopyableEvidenceRow(title: "Autorización", value: detail.sri.authorizationNumber ?? detail.summary.authorizationNumber)
+                    AdminSriCopyableEvidenceRow(title: "Autorizado en", value: detail.sri.authorizedAt ?? detail.summary.authorizedAt)
+                }
+
+                NexoAdminUXCard {
+                    NexoAdminUXSectionHeader(
+                        "Archivos",
+                        subtitle: "Acciones reales disponibles desde el contrato actual de documentos electrónicos.",
+                        systemImage: "tray.full"
+                    )
+
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        Button {
+                            Task { await viewModel.openRide() }
+                        } label: {
+                            if viewModel.isOpeningRide {
+                                ProgressView().frame(maxWidth: .infinity)
+                            } else {
+                                Label("Abrir RIDE", systemImage: "doc.richtext")
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!viewModel.canOpenRide(detail) || viewModel.isBusy)
+
+                        Button {
+                            Task { await viewModel.openXml() }
+                        } label: {
+                            if viewModel.isOpeningXml {
+                                ProgressView().frame(maxWidth: .infinity)
+                            } else {
+                                Label("Abrir XML", systemImage: "chevron.left.forwardslash.chevron.right")
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(!viewModel.canOpenXml(detail) || viewModel.isBusy)
+                    }
+
+                    if detail.artifacts.ride == nil && detail.artifacts.authorizedXml == nil && detail.artifacts.signedXml == nil {
+                        NexoAdminUXInlineMessage(
+                            title: "Sin archivos reportados",
+                            message: "El documento existe, pero el backend no reportó RIDE/XML disponibles para abrir desde Admin.",
+                            tone: .warning
+                        )
+                    }
+                }
+            }
+            .padding(16)
+        }
+    }
+}
+
+@MainActor
+private final class AdminSriLinkedHomologationDocumentViewModel: ObservableObject {
+    @Published private(set) var state: LoadableViewState<AdminElectronicDocumentDetail> = .idle
+    @Published private(set) var actionMessage: String?
+    @Published private(set) var actionErrorMessage: String?
+    @Published private(set) var isOpeningRide = false
+    @Published private(set) var isOpeningXml = false
+    @Published var previewFile: AdminElectronicDocumentDownloadedFile?
+
+    let documentId: String
+    private let repository: any AdminElectronicDocumentRepository
+    private let permissions: PermissionSet
+
+    init(documentId: String, repository: any AdminElectronicDocumentRepository, permissions: Set<String>) {
+        self.documentId = documentId
+        self.repository = repository
+        self.permissions = PermissionSet(values: permissions)
+    }
+
+    var isBusy: Bool { isOpeningRide || isOpeningXml }
+
+    func loadIfNeeded() async {
+        if case .idle = state {
+            await load()
+        }
+    }
+
+    func load() async {
+        state = .loading
+        actionMessage = nil
+        actionErrorMessage = nil
+        do {
+            state = .loaded(try await repository.getDocument(id: documentId))
+        } catch {
+            state = .failed(error.userFriendlyMessage)
+        }
+    }
+
+    func canOpenRide(_ detail: AdminElectronicDocumentDetail) -> Bool {
+        let hasPermission = permissions.canAny([PermissionCatalog.documentsDownloadPDF, PermissionCatalog.documentsDownloadRide, PermissionCatalog.taxManage])
+        return hasPermission && detail.artifacts.ride != nil
+    }
+
+    func canOpenXml(_ detail: AdminElectronicDocumentDetail) -> Bool {
+        let hasPermission = permissions.canAny([PermissionCatalog.documentsDownloadXML, PermissionCatalog.taxManage])
+        return hasPermission && (detail.artifacts.authorizedXml != nil || detail.artifacts.signedXml != nil)
+    }
+
+    func openRide() async {
+        guard let detail = loadedDetail, canOpenRide(detail) else {
+            actionErrorMessage = "No puedes abrir el RIDE para este documento o todavía no está disponible."
+            return
+        }
+        guard !isBusy else { return }
+        isOpeningRide = true
+        actionMessage = nil
+        actionErrorMessage = nil
+        defer { isOpeningRide = false }
+        do {
+            previewFile = try await repository.downloadRideFile(documentId: documentId)
+            actionMessage = "RIDE listo para visualizar."
+        } catch {
+            actionErrorMessage = error.userFriendlyMessage
+        }
+    }
+
+    func openXml() async {
+        guard let detail = loadedDetail, canOpenXml(detail) else {
+            actionErrorMessage = "No puedes abrir el XML para este documento o todavía no está disponible."
+            return
+        }
+        guard !isBusy else { return }
+        isOpeningXml = true
+        actionMessage = nil
+        actionErrorMessage = nil
+        defer { isOpeningXml = false }
+        do {
+            previewFile = try await repository.downloadXmlFile(documentId: documentId, authorizedOnly: true)
+            actionMessage = "XML listo para visualizar."
+        } catch {
+            actionErrorMessage = error.userFriendlyMessage
+        }
+    }
+
+    private var loadedDetail: AdminElectronicDocumentDetail? {
+        if case .loaded(let detail) = state { return detail }
+        return nil
+    }
+}
+
+private struct AdminSriDocumentQuickLookPreview: UIViewControllerRepresentable {
+    let fileURL: URL
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(fileURL: fileURL)
+    }
+
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let controller = QLPreviewController()
+        controller.dataSource = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {}
+
+    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        let fileURL: URL
+
+        init(fileURL: URL) {
+            self.fileURL = fileURL
+        }
+
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
+
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+            fileURL as NSURL
+        }
+    }
+}
+
+private extension AdminSriHomologationRun {
+    var supportSummaryWithDocumentEvidence: String {
+        guard hasDocumentEvidence else { return supportSummary }
+
+        var lines = [supportSummary, "", "Documento técnico relacionado:"]
+        if let primaryDocumentId {
+            lines.append("Document ID: \(primaryDocumentId)")
+        }
+        if let primarySaleId {
+            lines.append("Sale ID: \(primarySaleId)")
+        }
+        if let primaryFinalDocumentStatus {
+            lines.append("Estado documento: \(documentEvidenceStatusText) [\(primaryFinalDocumentStatus)]")
+        }
+        if !artifactTypes.isEmpty {
+            lines.append("Artefactos: \(artifactSummaryText)")
+        }
+        return lines.joined(separator: "\n")
     }
 }
 
@@ -584,6 +924,8 @@ private struct AdminSriHomologationHistoryRow: View {
 
 private struct AdminSriHomologationDetailSheet: View {
     let run: AdminSriHomologationRun
+    let documentRepository: (any AdminElectronicDocumentRepository)?
+    let permissions: Set<String>
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -623,7 +965,12 @@ private struct AdminSriHomologationDetailSheet: View {
                             subtitle: "Contrato mínimo entre homologación y Document Vault.",
                             systemImage: "doc.richtext"
                         ) {
-                            AdminSriHomologationDocumentEvidenceCard(run: run, compact: false)
+                            AdminSriHomologationDocumentEvidenceCard(
+                                run: run,
+                                compact: false,
+                                documentRepository: documentRepository,
+                                permissions: permissions
+                            )
                         }
                     }
 
@@ -642,7 +989,7 @@ private struct AdminSriHomologationDetailSheet: View {
                         subtitle: "Texto listo para copiar en tickets, chats internos o diagnóstico.",
                         systemImage: "wrench.and.screwdriver"
                     ) {
-                        AdminSriSupportSummaryCard(summary: run.supportSummary)
+                        AdminSriSupportSummaryCard(summary: run.supportSummaryWithDocumentEvidence)
                     }
 
                     if !run.checklist.isEmpty {
@@ -672,7 +1019,7 @@ private struct AdminSriHomologationDetailSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        UIPasteboard.general.string = run.supportSummary
+                        UIPasteboard.general.string = run.supportSummaryWithDocumentEvidence
                     } label: {
                         Label("Copiar", systemImage: "doc.on.doc")
                     }

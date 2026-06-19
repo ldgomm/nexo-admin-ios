@@ -140,7 +140,8 @@ private struct FiscalSriShellView: View {
                 NavigationLink {
                     AdminTaxSriHomeView(
                         sessionStore: sessionStore,
-                        repository: taxSriRepository
+                        repository: taxSriRepository,
+                        electronicDocumentRepository: electronicDocumentRepository
                     )
                 } label: {
                     Label("Tributario, firma y SRI", systemImage: "checklist.checked")

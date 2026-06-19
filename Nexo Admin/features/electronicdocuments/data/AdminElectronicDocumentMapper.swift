@@ -265,15 +265,15 @@ enum AdminElectronicDocumentMapper {
     }
 
     private static func mapTimeline(_ dto: AdminElectronicDocumentTimelineEventDTO) -> AdminElectronicDocumentTimelineEvent {
-        let rawType = dto.type ?? dto.action ?? "event"
+        let rawType = dto.type ?? dto.action ?? dto.status ?? "event"
         return AdminElectronicDocumentTimelineEvent(
             id: dto.id ?? UUID().uuidString,
             type: rawType,
-            title: dto.title ?? AdminElectronicDocumentText.statusTitle(rawType),
-            message: dto.message ?? "Evento documental registrado.",
+            title: AdminElectronicDocumentText.timelineTitle(rawType, backendTitle: dto.title),
+            message: AdminElectronicDocumentText.timelineMessage(rawType, backendMessage: dto.message),
             actor: dto.actor ?? dto.actorUserId,
             createdAt: dto.createdAt ?? dto.occurredAt ?? "—",
-            severity: AdminSriErrorSeverity(rawValue: (dto.severity ?? dto.status)?.lowercased() ?? "") ?? .info
+            severity: AdminElectronicDocumentText.timelineSeverity(dto.severity ?? dto.status ?? rawType)
         )
     }
 }

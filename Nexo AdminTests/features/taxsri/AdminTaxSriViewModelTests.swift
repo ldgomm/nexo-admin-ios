@@ -20,7 +20,7 @@ final class AdminTaxSriViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.taxProfiles.count, 5)
         XCTAssertEqual(viewModel.signatures.count, 1)
         XCTAssertEqual(viewModel.readiness?.status, "blocked")
-        XCTAssertEqual(viewModel.homologationRuns.count, 1)
+        XCTAssertEqual(viewModel.homologationRuns.count, 3)
     }
 
     func testRunReadinessUpdatesChecklist() async {

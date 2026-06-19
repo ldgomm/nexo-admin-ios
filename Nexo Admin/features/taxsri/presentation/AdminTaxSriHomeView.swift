@@ -11,9 +11,15 @@ struct AdminTaxSriHomeView: View {
     @ObservedObject var sessionStore: AuthSessionStore
     @StateObject private var viewModel: AdminTaxSriViewModel
     @State private var selectedSurface: AdminTaxSriSurface = .summary
+    private let electronicDocumentRepository: (any AdminElectronicDocumentRepository)?
 
-    init(sessionStore: AuthSessionStore, repository: any AdminTaxSriRepository) {
+    init(
+        sessionStore: AuthSessionStore,
+        repository: any AdminTaxSriRepository,
+        electronicDocumentRepository: (any AdminElectronicDocumentRepository)? = nil
+    ) {
         self.sessionStore = sessionStore
+        self.electronicDocumentRepository = electronicDocumentRepository
         _viewModel = StateObject(wrappedValue: AdminTaxSriViewModel(repository: repository))
     }
 
@@ -203,7 +209,11 @@ struct AdminTaxSriHomeView: View {
                     subtitle: "Debe ejecutarse solo si el backend y los datos están preparados. Evita botones muertos o ambiguos.",
                     systemImage: "testtube.2"
                 )
-                AdminSriHomologationView(viewModel: viewModel, permissions: sessionStore.effectivePermissions)
+                AdminSriHomologationView(
+                    viewModel: viewModel,
+                    permissions: sessionStore.effectivePermissions,
+                    electronicDocumentRepository: electronicDocumentRepository
+                )
             }
         }
     }

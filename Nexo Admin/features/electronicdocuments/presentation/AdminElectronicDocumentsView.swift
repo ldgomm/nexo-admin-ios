@@ -395,7 +395,13 @@ private struct AdminElectronicDocumentDetailView: View {
                 primaryActions
                 operationalState
                 sriState
-                if !detail.errors.isEmpty { errorsSection }
+                if !detail.errors.isEmpty {
+                    if viewModel.canViewSriErrors {
+                        errorsSection
+                    } else {
+                        restrictedErrorsSection
+                    }
+                }
                 artifactsSection
                 emailSection
                 totalsSection
@@ -447,8 +453,8 @@ private struct AdminElectronicDocumentDetailView: View {
     private var primaryActions: some View {
         NexoAdminUXCard {
             NexoAdminUXSectionHeader(
-                "Acciones disponibles",
-                subtitle: "Solo muestra acciones reales para el estado actual. Nada de botones muertos.",
+                "Acciones disponibles para tu usuario",
+                subtitle: "Solo muestra acciones reales para el estado actual y tus permisos. Nada de botones muertos.",
                 systemImage: "bolt.fill"
             )
 
@@ -491,8 +497,9 @@ private struct AdminElectronicDocumentDetailView: View {
                 systemImage: "list.bullet.rectangle"
             )
 
-            if !detail.availableActions.isEmpty {
-                Text(detail.availableActions.map(\.title).joined(separator: " · "))
+            let allowedActions = viewModel.visibleActions(on: detail)
+            if !allowedActions.isEmpty {
+                Text(allowedActions.map(\.title).joined(separator: " · "))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -591,6 +598,21 @@ private struct AdminElectronicDocumentDetailView: View {
         }
     }
 
+    private var restrictedErrorsSection: some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Errores SRI",
+                subtitle: "Hay errores registrados, pero tu usuario no tiene permiso para ver el detalle técnico.",
+                systemImage: "lock.doc"
+            )
+            NexoAdminUXInlineMessage(
+                title: "Detalle restringido",
+                message: "Pide a un usuario con permisos de soporte documental o administración tributaria que revise los errores del comprobante.",
+                tone: .info
+            )
+        }
+    }
+
     private var artifactsSection: some View {
         NexoAdminUXCard {
             NexoAdminUXSectionHeader(
@@ -673,7 +695,13 @@ private struct AdminElectronicDocumentDetailView: View {
                 systemImage: "clock.arrow.circlepath"
             )
 
-            if detail.timeline.isEmpty {
+            if !viewModel.canViewTimeline {
+                NexoAdminUXInlineMessage(
+                    title: "Timeline restringido",
+                    message: "Tu usuario puede ver el comprobante, pero no tiene permiso para consultar su auditoría/timeline.",
+                    tone: .info
+                )
+            } else if detail.timeline.isEmpty {
                 NexoAdminUXInlineMessage(title: "Sin eventos", message: "No hay eventos cargados para este comprobante.", tone: .info)
             } else {
                 ForEach(detail.timeline) { event in
@@ -700,19 +728,21 @@ private struct AdminElectronicDocumentDetailView: View {
                 }
             }
 
-            Button {
-                Task { await viewModel.refreshSelectedTimeline() }
-            } label: {
-                if viewModel.isLoadingAction(.viewTimeline) {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                } else {
-                    Label("Actualizar timeline", systemImage: "clock.arrow.circlepath")
-                        .frame(maxWidth: .infinity)
+            if viewModel.canViewTimeline {
+                Button {
+                    Task { await viewModel.refreshSelectedTimeline() }
+                } label: {
+                    if viewModel.isLoadingAction(.viewTimeline) {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Label("Actualizar timeline", systemImage: "clock.arrow.circlepath")
+                            .frame(maxWidth: .infinity)
+                    }
                 }
+                .buttonStyle(.bordered)
+                .disabled(!viewModel.canPerform(.viewTimeline, on: detail) || viewModel.isPerformingAction)
             }
-            .buttonStyle(.bordered)
-            .disabled(!viewModel.canPerform(.viewTimeline, on: detail) || viewModel.isPerformingAction)
         }
     }
 
@@ -731,15 +761,7 @@ private struct AdminElectronicDocumentDetailView: View {
     }
 
     private func actionIsEnabled(_ action: AdminElectronicDocumentAction) -> Bool {
-        guard !viewModel.isPerformingAction else { return false }
-        switch action {
-        case .downloadRide:
-            return viewModel.canPerform(.downloadRide, on: detail) && detail.artifacts.ride != nil
-        case .downloadXml:
-            return viewModel.canPerform(.downloadXml, on: detail) && (detail.artifacts.authorizedXml != nil || detail.artifacts.signedXml != nil)
-        default:
-            return viewModel.canPerform(action, on: detail)
-        }
+        !viewModel.isPerformingAction && viewModel.canPerform(action, on: detail)
     }
 
     private func actionHandler(_ action: AdminElectronicDocumentAction) -> () -> Void {
