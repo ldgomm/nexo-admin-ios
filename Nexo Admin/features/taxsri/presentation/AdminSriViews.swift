@@ -171,6 +171,7 @@ struct AdminSriHomologationView: View {
     @ObservedObject var viewModel: AdminTaxSriViewModel
     let permissions: Set<String>
     @State private var showReason = false
+    @State private var selectedRun: AdminSriHomologationRun?
 
     private var canHomologate: Bool {
         PermissionSet(permissions).can(PermissionCatalog.documentsElectronicInvoiceHomologate)
@@ -197,7 +198,9 @@ struct AdminSriHomologationView: View {
             }
 
             if let latestRun {
-                AdminSriHomologationFeaturedRunCard(run: latestRun)
+                AdminSriHomologationFeaturedRunCard(run: latestRun) {
+                    selectedRun = latestRun
+                }
             } else if !viewModel.isStartingHomologation {
                 AdminSriHomologationEmptyState()
             }
@@ -207,7 +210,9 @@ struct AdminSriHomologationView: View {
                     Text("Historial")
                         .font(.subheadline.weight(.semibold))
                     ForEach(Array(historicalRuns)) { run in
-                        AdminSriHomologationHistoryRow(run: run)
+                        AdminSriHomologationHistoryRow(run: run) {
+                            selectedRun = run
+                        }
                         if run.id != historicalRuns.last?.id {
                             Divider()
                         }
@@ -231,6 +236,9 @@ struct AdminSriHomologationView: View {
                 .disabled(viewModel.isStartingHomologation)
                 .padding(.top, 4)
             }
+        }
+        .sheet(item: $selectedRun) { run in
+            AdminSriHomologationDetailSheet(run: run)
         }
         .sheet(isPresented: $showReason) {
             AdminTaxSriReasonSheet(
@@ -317,6 +325,7 @@ private struct AdminSriHomologationEmptyState: View {
 
 private struct AdminSriHomologationFeaturedRunCard: View {
     let run: AdminSriHomologationRun
+    let onViewDetail: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -363,6 +372,24 @@ private struct AdminSriHomologationFeaturedRunCard: View {
                         AdminSriHomologationChecklistRow(item: item)
                     }
                 }
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    onViewDetail()
+                } label: {
+                    Label("Ver detalle", systemImage: "doc.text.magnifyingglass")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    UIPasteboard.general.string = run.supportSummary
+                } label: {
+                    Label("Copiar soporte", systemImage: "doc.on.doc")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
             }
         }
         .padding(14)
@@ -476,30 +503,344 @@ private struct AdminSriHomologationChecklistRow: View {
 
 private struct AdminSriHomologationHistoryRow: View {
     let run: AdminSriHomologationRun
+    let onViewDetail: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(run.displayStartedAt)
-                    .font(.caption.weight(.semibold))
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                AdminTaxSriStatusBadge(text: run.displayStatus)
-            }
-            HStack(spacing: 8) {
-                Text(run.displayEnvironment)
-                Text("•")
-                Text(run.durationText)
-                if let accessKey = run.primaryAccessKey {
-                    Text("•")
-                    Text(accessKey)
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(run.displayStartedAt)
+                        .font(.caption.weight(.semibold))
                         .lineLimit(1)
-                        .truncationMode(.middle)
-                        .font(.caption.monospaced())
+                    Spacer(minLength: 8)
+                    AdminTaxSriStatusBadge(text: run.displayStatus)
+                }
+                HStack(spacing: 8) {
+                    Text(run.displayEnvironment)
+                    Text("•")
+                    Text(run.durationText)
+                    if let accessKey = run.primaryAccessKey {
+                        Text("•")
+                        Text(accessKey)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .font(.caption.monospaced())
+                    }
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+
+            Button {
+                onViewDetail()
+            } label: {
+                Image(systemName: "chevron.right.circle")
+                    .font(.title3)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Ver detalle de homologación")
+        }
+    }
+}
+
+
+private struct AdminSriHomologationDetailSheet: View {
+    let run: AdminSriHomologationRun
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    AdminSriHomologationDetailHeader(run: run)
+
+                    AdminTaxSriSectionCard(
+                        title: "Evidencia de la corrida",
+                        subtitle: "Datos principales que prueban qué se ejecutó y qué devolvió el backend.",
+                        systemImage: "doc.text.magnifyingglass"
+                    ) {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 12) {
+                            AdminSriEvidenceMetric(title: "Estado", value: run.displayStatus, systemImage: "checkmark.seal")
+                            AdminSriEvidenceMetric(title: "Ambiente", value: run.displayEnvironment, systemImage: "server.rack")
+                            AdminSriEvidenceMetric(title: "Inicio", value: run.displayStartedAt, systemImage: "clock")
+                            AdminSriEvidenceMetric(title: "Fin", value: run.displayFinishedAt, systemImage: "checkmark.circle")
+                            AdminSriEvidenceMetric(title: "Duración", value: run.durationText, systemImage: "timer")
+                            AdminSriEvidenceMetric(title: "Checklist", value: run.checklist.isEmpty ? "—" : "\(run.checklist.count) ítem(s)", systemImage: "list.bullet.clipboard")
+                        }
+                    }
+
+                    AdminTaxSriSectionCard(
+                        title: "Identificadores técnicos",
+                        subtitle: "Copia estos datos para soporte, logs o trazabilidad documental.",
+                        systemImage: "number.square"
+                    ) {
+                        AdminSriCopyableEvidenceRow(title: "Run ID", value: run.id)
+                        AdminSriCopyableEvidenceRow(title: "Clave de acceso", value: run.primaryAccessKey)
+                        AdminSriCopyableEvidenceRow(title: "Número de autorización", value: run.primaryAuthorizationNumber)
+                    }
+
+                    if let error = run.humanErrorMessage {
+                        AdminTaxSriSectionCard(
+                            title: "Error humano",
+                            subtitle: "Resumen entendible del fallo detectado.",
+                            systemImage: "xmark.octagon"
+                        ) {
+                            Text(error)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                                .textSelection(.enabled)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
+                    AdminTaxSriSectionCard(
+                        title: "Resumen para soporte",
+                        subtitle: "Texto listo para copiar en tickets, chats internos o diagnóstico.",
+                        systemImage: "wrench.and.screwdriver"
+                    ) {
+                        AdminSriSupportSummaryCard(summary: run.supportSummary)
+                    }
+
+                    if !run.checklist.isEmpty {
+                        AdminTaxSriSectionCard(
+                            title: "Checklist expandido",
+                            subtitle: "Escenarios y validaciones devueltas por backend.",
+                            systemImage: "checklist"
+                        ) {
+                            ForEach(run.checklist) { item in
+                                AdminSriHomologationChecklistDetailRow(item: item)
+                                if item.id != run.checklist.last?.id {
+                                    Divider()
+                                }
+                            }
+                        }
+                    }
+
+                    AdminSriHomologationProductionWarning()
+                }
+                .padding(16)
+            }
+            .navigationTitle("Detalle homologación")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        UIPasteboard.general.string = run.supportSummary
+                    } label: {
+                        Label("Copiar", systemImage: "doc.on.doc")
+                    }
                 }
             }
-            .font(.caption2)
-            .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct AdminSriHomologationDetailHeader: View {
+    let run: AdminSriHomologationRun
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: run.detailIconName)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(run.detailTint)
+                    .frame(width: 42, height: 42)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(run.detailTint.opacity(0.12))
+                    )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(run.displayTitle)
+                        .font(.headline)
+                    Text(run.detailHeadline)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+                AdminTaxSriStatusBadge(text: run.displayStatus)
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(.background)
+                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+        )
+    }
+}
+
+private struct AdminSriSupportSummaryCard: View {
+    let summary: String
+    @State private var didCopy = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(summary)
+                .font(.caption.monospaced())
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.thinMaterial)
+                )
+
+            Button {
+                UIPasteboard.general.string = summary
+                didCopy = true
+            } label: {
+                Label(didCopy ? "Resumen copiado" : "Copiar resumen completo", systemImage: didCopy ? "checkmark" : "doc.on.doc")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+}
+
+private struct AdminSriHomologationChecklistDetailRow: View {
+    let item: AdminSriReadinessItem
+
+    private var normalizedStatus: String {
+        item.status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    }
+
+    private var isPassed: Bool {
+        ["PASSED", "AUTHORIZED", "OK", "READY", "SUCCESS"].contains(normalizedStatus)
+    }
+
+    private var title: String {
+        let value = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value == "FINAL_CONSUMER" || item.code == "FINAL_CONSUMER" {
+            return "Factura consumidor final"
+        }
+        return value.isEmpty ? item.code : value
+    }
+
+    private var description: String {
+        let value = item.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.uppercased() == "AUTHORIZED" {
+            return "Comprobante técnico autorizado en ambiente TEST."
+        }
+        return value.isEmpty ? "Sin descripción técnica." : value
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: isPassed ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(isPassed ? .green : .orange)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                    Text(description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                AdminTaxSriStatusBadge(text: item.status)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
+                AdminSriEvidenceMetric(title: "Código", value: item.code, systemImage: "tag")
+                AdminSriEvidenceMetric(title: "Requerido", value: item.required ? "Sí" : "No", systemImage: item.required ? "asterisk" : "minus.circle")
+            }
+
+            if let actionLabel = item.actionLabel, !actionLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(actionLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct AdminSriHomologationProductionWarning: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "lock.shield")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("TEST aprobado no habilita producción")
+                    .font(.subheadline.weight(.semibold))
+                Text("Este detalle sirve para auditoría técnica de ambiente de pruebas. Para producción se mantiene el gate separado, configuración productiva y autorización correspondiente.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(.orange.opacity(0.10))
+        )
+    }
+}
+
+private extension AdminSriHomologationRun {
+    var supportSummary: String {
+        var lines: [String] = [
+            "Nexo Admin — Homologación SRI TEST",
+            "Run ID: \(id)",
+            "Estado: \(displayStatus)",
+            "Ambiente: \(displayEnvironment)",
+            "Inicio: \(displayStartedAt)",
+            "Fin: \(displayFinishedAt)",
+            "Duración: \(durationText)",
+            "Clave de acceso: \(primaryAccessKey ?? "—")",
+            "Autorización: \(primaryAuthorizationNumber ?? "—")"
+        ]
+
+        if let error = humanErrorMessage {
+            lines.append("Error: \(error)")
+        }
+
+        if !checklist.isEmpty {
+            lines.append("Checklist:")
+            lines.append(contentsOf: checklist.map { "- \($0.code): \($0.status) — \($0.description)" })
+        }
+
+        lines.append("Nota: ambiente TEST aprobado no habilita producción.")
+        return lines.joined(separator: "\n")
+    }
+
+    var detailHeadline: String {
+        switch status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
+        case "PASSED", "SUCCESS", "AUTHORIZED", "APPROVED":
+            return "La prueba terminó correctamente y dejó evidencia técnica para soporte."
+        case "RUNNING", "PROCESSING", "PENDING":
+            return "La prueba sigue en proceso. Espera a que el backend complete la corrida."
+        case "FAILED", "ERROR", "REJECTED":
+            return "La prueba falló. Copia el resumen de soporte para diagnosticar sin abrir logs."
+        default:
+            return "Revisa la evidencia técnica de esta corrida de homologación."
+        }
+    }
+
+    var detailIconName: String {
+        switch status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
+        case "PASSED", "SUCCESS", "AUTHORIZED", "APPROVED": return "checkmark.seal.fill"
+        case "RUNNING", "PROCESSING", "PENDING": return "hourglass"
+        case "FAILED", "ERROR", "REJECTED": return "xmark.octagon.fill"
+        default: return "questionmark.circle.fill"
+        }
+    }
+
+    var detailTint: Color {
+        switch status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
+        case "PASSED", "SUCCESS", "AUTHORIZED", "APPROVED": return .green
+        case "RUNNING", "PROCESSING", "PENDING": return .orange
+        case "FAILED", "ERROR", "REJECTED": return .red
+        default: return .gray
         }
     }
 }

@@ -24,6 +24,7 @@ private enum AdminShellTab: CaseIterable, Hashable {
         }
     }
 
+    
     var systemImage: String {
         switch self {
         case .dashboard: return "chart.bar.doc.horizontal"
@@ -59,7 +60,8 @@ struct AdminShellView: View {
                 viewModel: DashboardViewModel(
                     getSummary: GetDashboardSummaryUseCase(repository: dashboardRepository),
                     sessionStore: sessionStore
-                )
+                ),
+                onQuickAction: handleDashboardQuickAction
             )
             .tabItem {
                 Label(AdminShellTab.dashboard.title, systemImage: AdminShellTab.dashboard.systemImage)
@@ -110,6 +112,19 @@ struct AdminShellView: View {
                 Label(AdminShellTab.admin.title, systemImage: AdminShellTab.admin.systemImage)
             }
             .tag(AdminShellTab.admin)
+        }
+    }
+
+    private func handleDashboardQuickAction(_ destination: DashboardQuickActionDestination) {
+        switch destination {
+        case .business, .branches, .emissionPoints, .catalog, .catalogRequests:
+            selectedTab = .business
+
+        case .tax, .signature, .sri, .documents:
+            selectedTab = .fiscalSri
+
+        case .users, .roles, .cash, .audit, .support:
+            selectedTab = .admin
         }
     }
 }
