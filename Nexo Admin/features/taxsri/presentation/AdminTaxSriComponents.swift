@@ -28,12 +28,44 @@ struct AdminTaxSriInfoRow: View {
 struct AdminTaxSriStatusBadge: View {
     let text: String
 
+    private var normalizedText: String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    }
+
+    private var tint: Color {
+        if normalizedText.contains("CORRECT")
+            || normalizedText.contains("PASSED")
+            || normalizedText.contains("OK")
+            || normalizedText.contains("AUTORIZ") {
+            return .green
+        }
+        if normalizedText.contains("FALL")
+            || normalizedText.contains("FAILED")
+            || normalizedText.contains("ERROR")
+            || normalizedText.contains("RECHAZ")
+            || normalizedText.contains("REJECT")
+            || normalizedText.contains("NOT_AUTHORIZED") {
+            return .red
+        }
+        if normalizedText.contains("PROCES")
+            || normalizedText.contains("PENDING")
+            || normalizedText.contains("RUNNING") {
+            return .orange
+        }
+        if normalizedText.contains("OMIT")
+            || normalizedText.contains("SKIPPED") {
+            return .secondary
+        }
+        return .secondary
+    }
+
     var body: some View {
         Text(text.uppercased())
             .font(.caption2.weight(.bold))
+            .foregroundStyle(tint)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Capsule().fill(.thinMaterial))
+            .background(Capsule().fill(tint.opacity(0.12)))
     }
 }
 

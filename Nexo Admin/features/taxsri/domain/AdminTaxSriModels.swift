@@ -350,24 +350,112 @@ struct RequestProductionEnableInput: Equatable, Sendable {
     var reason: String
 }
 
+extension AdminSriReadinessItem {
+    var normalizedStatus: String {
+        status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    }
+
+    var humanStatus: String {
+        switch normalizedStatus {
+        case "PASSED", "AUTHORIZED", "OK", "READY", "SUCCESS":
+            return "Correcto"
+        case "FAILED", "ERROR", "INVALID", "BLOCKED":
+            return "Falló"
+        case "REJECTED", "RETURNED", "RETURNED_BY_SRI", "NOT_AUTHORIZED":
+            return "Rechazado"
+        case "RUNNING", "PROCESSING", "PENDING", "IN_PROGRESS":
+            return "En proceso"
+        case "SKIPPED", "OMITTED":
+            return "No ejecutado"
+        case "WARNING", "WARN":
+            return "Advertencia"
+        default:
+            return status.isEmpty ? "Sin estado" : status
+        }
+    }
+
+    var isPassedForHomologation: Bool {
+        ["PASSED", "AUTHORIZED", "OK", "READY", "SUCCESS"].contains(normalizedStatus)
+    }
+
+    var isFailedForHomologation: Bool {
+        ["FAILED", "ERROR", "INVALID", "BLOCKED", "REJECTED", "RETURNED", "RETURNED_BY_SRI", "NOT_AUTHORIZED"].contains(normalizedStatus)
+    }
+
+    var isPendingForHomologation: Bool {
+        ["RUNNING", "PROCESSING", "PENDING", "IN_PROGRESS"].contains(normalizedStatus)
+    }
+
+    var isSkippedForHomologation: Bool {
+        ["SKIPPED", "OMITTED"].contains(normalizedStatus)
+    }
+
+    var homologationDisplayTitle: String {
+        let value = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value == "FINAL_CONSUMER" || code == "FINAL_CONSUMER" {
+            return "Factura consumidor final"
+        }
+        return value.isEmpty ? code : value
+    }
+
+    var homologationDisplayDescription: String {
+        let value = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.uppercased() == "AUTHORIZED" {
+            return "Comprobante técnico autorizado en ambiente TEST."
+        }
+        if isPendingForHomologation {
+            return value.isEmpty ? "La validación todavía está en proceso." : value
+        }
+        if isSkippedForHomologation {
+            return value.isEmpty ? "Este escenario no se ejecutó en esta corrida." : value
+        }
+        if isFailedForHomologation {
+            return value.isEmpty ? "La validación no terminó correctamente." : value
+        }
+        return value.isEmpty ? "Sin descripción técnica." : value
+    }
+}
+
 extension AdminSriHomologationRun {
+    var normalizedStatus: String {
+        status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    }
+
     var displayTitle: String {
         "Prueba de emisión SRI TEST"
     }
 
     var displayStatus: String {
-        switch status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
+        switch normalizedStatus {
         case "PASSED", "SUCCESS", "AUTHORIZED", "APPROVED":
             return "Correcta"
-        case "RUNNING", "PROCESSING", "PENDING":
+        case "RUNNING", "PROCESSING", "PENDING", "IN_PROGRESS":
             return "En proceso"
-        case "FAILED", "ERROR", "REJECTED":
+        case "REJECTED", "RETURNED", "RETURNED_BY_SRI", "NOT_AUTHORIZED":
+            return "Rechazada"
+        case "FAILED", "ERROR", "INVALID", "BLOCKED":
             return "Falló"
-        case "SKIPPED":
+        case "SKIPPED", "OMITTED":
             return "Omitida"
         default:
             return status.isEmpty ? "Sin estado" : status
         }
+    }
+
+    var isPassed: Bool {
+        ["PASSED", "SUCCESS", "AUTHORIZED", "APPROVED"].contains(normalizedStatus)
+    }
+
+    var isRunning: Bool {
+        ["RUNNING", "PROCESSING", "PENDING", "IN_PROGRESS"].contains(normalizedStatus)
+    }
+
+    var isRejected: Bool {
+        ["REJECTED", "RETURNED", "RETURNED_BY_SRI", "NOT_AUTHORIZED"].contains(normalizedStatus)
+    }
+
+    var isFailed: Bool {
+        ["FAILED", "ERROR", "INVALID", "BLOCKED"].contains(normalizedStatus) || isRejected
     }
 
     var displayEnvironment: String {
@@ -383,7 +471,7 @@ extension AdminSriHomologationRun {
 
     var durationText: String {
         guard let startedAtDate = startedAt?.nexoSriISODate, let finishedAtDate = finishedAt?.nexoSriISODate else {
-            return "—"
+            return isRunning ? "En proceso" : "—"
         }
 
         let seconds = max(0, finishedAtDate.timeIntervalSince(startedAtDate))
@@ -400,7 +488,8 @@ extension AdminSriHomologationRun {
     }
 
     var displayFinishedAt: String {
-        finishedAt?.nexoSriReadableDate ?? finishedAt ?? "—"
+        if isRunning && finishedAt == nil { return "En proceso" }
+        return finishedAt?.nexoSriReadableDate ?? finishedAt ?? "—"
     }
 
     var primaryAccessKey: String? {
@@ -417,8 +506,13 @@ extension AdminSriHomologationRun {
         primaryAccessKey != nil || primaryAuthorizationNumber != nil
     }
 
+    var rawErrorMessage: String? {
+        let value = errorMessage?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return value.isEmpty ? nil : value
+    }
+
     var humanErrorMessage: String? {
-        guard let errorMessage, !errorMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        guard let errorMessage = rawErrorMessage else { return nil }
         let normalized = errorMessage.lowercased()
 
         if normalized.contains("at least one homologation scenario")
@@ -427,14 +521,60 @@ extension AdminSriHomologationRun {
             return "No hay pruebas de emisión configuradas en backend. Esto es una configuración técnica pendiente, no un problema de tu firma ni del SRI."
         }
 
+        if normalized.contains("signature")
+            || normalized.contains("firma")
+            || normalized.contains("p12")
+            || normalized.contains("pfx")
+            || normalized.contains("certificate")
+            || normalized.contains("certificado") {
+            if normalized.contains("expired") || normalized.contains("vencid") {
+                return "La firma electrónica parece vencida. Carga o activa una firma vigente antes de repetir la homologación."
+            }
+            if normalized.contains("password") || normalized.contains("contraseña") || normalized.contains("clave") {
+                return "No se pudo usar la firma electrónica. Revisa que la contraseña cargada sea correcta y que el archivo .p12/.pfx corresponda al RUC del emisor."
+            }
+            return "La corrida falló al validar o usar la firma electrónica. Revisa archivo, contraseña, vigencia y estado activo de la firma."
+        }
+
+        if normalized.contains("sequence")
+            || normalized.contains("secuencial")
+            || normalized.contains("secuencia") {
+            return "La corrida falló por configuración de secuencia. Revisa establecimiento, punto de emisión y secuencial disponible para facturas en ambiente TEST."
+        }
+
+        if normalized.contains("emission point")
+            || normalized.contains("ptoemi")
+            || normalized.contains("punto de emisión")
+            || normalized.contains("estab")
+            || normalized.contains("establecimiento") {
+            return "La corrida falló por datos del establecimiento o punto de emisión. Revisa que estén configurados y coincidan con la configuración SRI del negocio."
+        }
+
+        if normalized.contains("xml")
+            || normalized.contains("xsd")
+            || normalized.contains("schema")
+            || normalized.contains("estructura") {
+            return "La corrida generó un XML que no pasó validación técnica. Revisa el detalle del error y el escenario que lo produjo antes de reintentar."
+        }
+
+        if normalized.contains("timeout")
+            || normalized.contains("connection refused")
+            || normalized.contains("network")
+            || normalized.contains("socket")
+            || normalized.contains("sri") && normalized.contains("no responde") {
+            return "La corrida no pudo comunicarse correctamente con el servicio requerido. Verifica conectividad, endpoint SRI TEST y disponibilidad antes de reintentar."
+        }
+
         if normalized.contains("payment does not belong to this sale") {
             return "La prueba automática está usando un pago que no pertenece a la venta de prueba. Hay que corregir el escenario interno."
         }
 
         if normalized.contains("expected final status authorized")
             || normalized.contains("got not_authorized")
-            || normalized.contains("got returned_by_sri") {
-            return "La prueba llegó al flujo de autorización, pero el comprobante no terminó autorizado. Revisa el detalle técnico para ver la respuesta exacta del SRI o del escenario."
+            || normalized.contains("got returned_by_sri")
+            || normalized.contains("not_authorized")
+            || normalized.contains("returned_by_sri") {
+            return "La prueba llegó al flujo de autorización, pero el comprobante no terminó autorizado. Revisa la respuesta exacta del SRI o del escenario antes de repetir."
         }
 
         if normalized.contains("processing authorization status") {
@@ -443,7 +583,48 @@ extension AdminSriHomologationRun {
 
         return errorMessage
     }
+
+    var suggestedRecoveryHint: String? {
+        guard isFailed || rawErrorMessage != nil else { return nil }
+        let normalized = (rawErrorMessage ?? status).lowercased()
+
+        if normalized.contains("signature") || normalized.contains("firma") || normalized.contains("p12") || normalized.contains("pfx") || normalized.contains("certificado") {
+            return "Revisa Firma electrónica: archivo, contraseña, vigencia, estado activa y que pertenezca al RUC del emisor."
+        }
+        if normalized.contains("sequence") || normalized.contains("secuencial") || normalized.contains("secuencia") {
+            return "Revisa Secuencias: serie 001-001, siguiente número y tipo de documento factura en TEST."
+        }
+        if normalized.contains("emission point") || normalized.contains("ptoemi") || normalized.contains("punto de emisión") || normalized.contains("establecimiento") {
+            return "Revisa Configuración SRI: establecimiento, punto de emisión, ambiente TEST y modo de autorización."
+        }
+        if normalized.contains("xml") || normalized.contains("xsd") || normalized.contains("schema") {
+            return "Revisa XML/XSD: datos del emisor, cliente consumidor final, impuestos, totales y versión de factura usada por backend."
+        }
+        if normalized.contains("timeout") || normalized.contains("connection refused") || normalized.contains("network") || normalized.contains("socket") || normalized.contains("sri") {
+            return "Revisa conectividad: backend local/staging, endpoint SRI TEST, DNS/TLS y logs del transporte."
+        }
+        if isRejected {
+            return "Revisa respuesta de autorización/recepción y el XML generado. No basta con reintentar si el rechazo es de datos."
+        }
+        return "Copia el resumen de soporte y revisa readiness SRI, firma, secuencias y respuesta técnica del backend."
+    }
+
+    var shouldWarnAgainstBlindRetry: Bool {
+        guard isFailed else { return false }
+        let normalized = (rawErrorMessage ?? status).lowercased()
+        return normalized.contains("signature")
+            || normalized.contains("firma")
+            || normalized.contains("sequence")
+            || normalized.contains("secuencial")
+            || normalized.contains("xml")
+            || normalized.contains("xsd")
+            || normalized.contains("rejected")
+            || normalized.contains("not_authorized")
+            || normalized.contains("returned_by_sri")
+            || normalized.contains("config")
+    }
 }
+
 
 private extension String {
     var nexoSriISODate: Date? {

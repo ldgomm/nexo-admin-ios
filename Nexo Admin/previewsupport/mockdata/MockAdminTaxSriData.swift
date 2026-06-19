@@ -185,7 +185,84 @@ enum MockAdminTaxSriData {
         warnings: ["IVA turismo 8% requiere validar decreto y elegibilidad antes de producción"]
     )
 
+    static let failedHomologationChecklist = [
+        AdminSriReadinessItem(
+            id: "signature_validation_failed",
+            code: "SIGNATURE_VALIDATION",
+            title: "Firma electrónica",
+            description: "No se pudo usar la firma electrónica cargada para firmar el XML de prueba.",
+            status: "FAILED",
+            required: true,
+            actionLabel: "Revisar archivo .p12/.pfx, contraseña, vigencia y estado activo."
+        ),
+        AdminSriReadinessItem(
+            id: "final_consumer_skipped",
+            code: "FINAL_CONSUMER",
+            title: "FINAL_CONSUMER",
+            description: "No se ejecutó porque la firma falló antes de generar el comprobante.",
+            status: "SKIPPED",
+            required: true,
+            actionLabel: nil
+        )
+    ]
+
+    static let rejectedHomologationChecklist = [
+        AdminSriReadinessItem(
+            id: "final_consumer_rejected",
+            code: "FINAL_CONSUMER",
+            title: "FINAL_CONSUMER",
+            description: "El comprobante llegó al flujo SRI, pero no terminó autorizado.",
+            status: "REJECTED",
+            required: true,
+            actionLabel: "Revisar respuesta SRI, XML generado y datos de emisor/receptor."
+        )
+    ]
+
+    static let runningHomologationChecklist = [
+        AdminSriReadinessItem(
+            id: "final_consumer_running",
+            code: "FINAL_CONSUMER",
+            title: "FINAL_CONSUMER",
+            description: "Esperando respuesta de autorización en ambiente TEST.",
+            status: "PENDING",
+            required: true,
+            actionLabel: nil
+        )
+    ]
+
     static let runs = [
-        AdminSriHomologationRun(id: "homologation_run_001", status: "failed", environment: "test", startedAt: "2026-05-20T10:00:00Z", finishedAt: "2026-05-20T10:01:00Z", invoiceAccessKey: nil, authorizationNumber: nil, errorMessage: "Firma no validada en ambiente de pruebas", checklist: readiness.items)
+        AdminSriHomologationRun(
+            id: "homologation_run_failed_signature",
+            status: "failed",
+            environment: "test",
+            startedAt: "2026-05-20T10:00:00Z",
+            finishedAt: "2026-05-20T10:01:00Z",
+            invoiceAccessKey: nil,
+            authorizationNumber: nil,
+            errorMessage: "Firma no validada en ambiente de pruebas",
+            checklist: failedHomologationChecklist
+        ),
+        AdminSriHomologationRun(
+            id: "homologation_run_rejected_sri",
+            status: "rejected",
+            environment: "test",
+            startedAt: "2026-05-20T11:00:00Z",
+            finishedAt: "2026-05-20T11:00:14Z",
+            invoiceAccessKey: "2005202601050363837100110010010000000641234567811",
+            authorizationNumber: nil,
+            errorMessage: "Expected final status AUTHORIZED, got RETURNED_BY_SRI",
+            checklist: rejectedHomologationChecklist
+        ),
+        AdminSriHomologationRun(
+            id: "homologation_run_running",
+            status: "running",
+            environment: "test",
+            startedAt: "2026-05-20T11:05:00Z",
+            finishedAt: nil,
+            invoiceAccessKey: nil,
+            authorizationNumber: nil,
+            errorMessage: nil,
+            checklist: runningHomologationChecklist
+        )
     ]
 }

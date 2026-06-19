@@ -353,15 +353,8 @@ private struct AdminSriHomologationFeaturedRunCard: View {
                 AdminSriCopyableEvidenceRow(title: "Autorización", value: run.primaryAuthorizationNumber)
             }
 
-            if let error = run.humanErrorMessage {
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "xmark.octagon.fill")
-                        .foregroundStyle(.red)
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            if run.humanErrorMessage != nil || run.suggestedRecoveryHint != nil {
+                AdminSriHomologationErrorDiagnosticCard(run: run, compact: true)
             }
 
             if !run.checklist.isEmpty {
@@ -462,44 +455,39 @@ private struct AdminSriCopyableEvidenceRow: View {
 private struct AdminSriHomologationChecklistRow: View {
     let item: AdminSriReadinessItem
 
-    private var isPassed: Bool {
-        let value = item.status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        return value == "PASSED" || value == "AUTHORIZED" || value == "OK" || value == "READY"
+    private var iconName: String {
+        if item.isPassedForHomologation { return "checkmark.circle.fill" }
+        if item.isFailedForHomologation { return "xmark.octagon.fill" }
+        if item.isPendingForHomologation { return "hourglass.circle.fill" }
+        if item.isSkippedForHomologation { return "minus.circle.fill" }
+        return "questionmark.circle.fill"
     }
 
-    private var displayTitle: String {
-        let value = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        if value == "FINAL_CONSUMER" || item.code == "FINAL_CONSUMER" {
-            return "Factura consumidor final"
-        }
-        return value.isEmpty ? item.code : value
-    }
-
-    private var displayDescription: String {
-        let value = item.description.trimmingCharacters(in: .whitespacesAndNewlines)
-        if value.uppercased() == "AUTHORIZED" {
-            return "Comprobante técnico autorizado en ambiente TEST."
-        }
-        return value.isEmpty ? "Sin descripción técnica." : value
+    private var tint: Color {
+        if item.isPassedForHomologation { return .green }
+        if item.isFailedForHomologation { return .red }
+        if item.isPendingForHomologation { return .orange }
+        return .secondary
     }
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: isPassed ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .foregroundStyle(isPassed ? .green : .orange)
+            Image(systemName: iconName)
+                .foregroundStyle(tint)
             VStack(alignment: .leading, spacing: 3) {
-                Text(displayTitle)
+                Text(item.homologationDisplayTitle)
                     .font(.caption.weight(.semibold))
-                Text(displayDescription)
+                Text(item.homologationDisplayDescription)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
-            AdminTaxSriStatusBadge(text: item.status)
+            AdminTaxSriStatusBadge(text: item.humanStatus)
         }
     }
 }
+
 
 private struct AdminSriHomologationHistoryRow: View {
     let run: AdminSriHomologationRun
@@ -579,17 +567,13 @@ private struct AdminSriHomologationDetailSheet: View {
                         AdminSriCopyableEvidenceRow(title: "Número de autorización", value: run.primaryAuthorizationNumber)
                     }
 
-                    if let error = run.humanErrorMessage {
+                    if run.humanErrorMessage != nil || run.suggestedRecoveryHint != nil {
                         AdminTaxSriSectionCard(
-                            title: "Error humano",
-                            subtitle: "Resumen entendible del fallo detectado.",
-                            systemImage: "xmark.octagon"
+                            title: run.isRejected ? "Rechazo / fallo detectado" : "Error humano",
+                            subtitle: "Diagnóstico entendible y siguiente revisión sugerida.",
+                            systemImage: run.isRejected ? "doc.badge.exclamationmark" : "xmark.octagon"
                         ) {
-                            Text(error)
-                                .font(.footnote)
-                                .foregroundStyle(.red)
-                                .textSelection(.enabled)
-                                .fixedSize(horizontal: false, vertical: true)
+                            AdminSriHomologationErrorDiagnosticCard(run: run, compact: false)
                         }
                     }
 
@@ -675,6 +659,111 @@ private struct AdminSriHomologationDetailHeader: View {
     }
 }
 
+private struct AdminSriHomologationErrorDiagnosticCard: View {
+    let run: AdminSriHomologationRun
+    var compact: Bool
+    @State private var didCopyError = false
+
+    private var title: String {
+        if run.isRejected { return "Comprobante no autorizado" }
+        if run.isRunning { return "Corrida en proceso" }
+        return "La corrida no pasó"
+    }
+
+    private var iconName: String {
+        if run.isRejected { return "doc.badge.exclamationmark" }
+        if run.isRunning { return "hourglass.circle.fill" }
+        return "xmark.octagon.fill"
+    }
+
+    private var tint: Color {
+        if run.isRunning { return .orange }
+        return .red
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: compact ? 8 : 12) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: iconName)
+                    .foregroundStyle(tint)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
+                    Text(run.humanErrorMessage ?? "No llegó un mensaje de error humano. Copia el resumen para revisar el estado técnico y el checklist.")
+                        .font(compact ? .caption2 : .footnote)
+                        .foregroundStyle(compact ? .secondary : tint)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if !compact, let rawError = run.rawErrorMessage, rawError != run.humanErrorMessage {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Error técnico original")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(rawError)
+                        .font(.caption.monospaced())
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.background.opacity(0.65))
+                )
+            }
+
+            if let hint = run.suggestedRecoveryHint {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "wrench.and.screwdriver")
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Revisar primero")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(hint)
+                            .font(compact ? .caption2 : .caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
+            if run.shouldWarnAgainstBlindRetry {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("No reintentes a ciegas. Si el fallo es de configuración, firma, secuencia, XML o rechazo SRI, repetir puede generar más ruido sin corregir la causa.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if !compact, let rawError = run.rawErrorMessage {
+                Button {
+                    UIPasteboard.general.string = rawError
+                    didCopyError = true
+                } label: {
+                    Label(didCopyError ? "Error copiado" : "Copiar error técnico", systemImage: didCopyError ? "checkmark" : "doc.on.doc")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(compact ? 10 : 0)
+        .background(
+            Group {
+                if compact {
+                    RoundedRectangle(cornerRadius: 12).fill(tint.opacity(0.08))
+                }
+            }
+        )
+    }
+}
+
+
 private struct AdminSriSupportSummaryCard: View {
     let summary: String
     @State private var didCopy = false
@@ -707,50 +796,50 @@ private struct AdminSriSupportSummaryCard: View {
 private struct AdminSriHomologationChecklistDetailRow: View {
     let item: AdminSriReadinessItem
 
-    private var normalizedStatus: String {
-        item.status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    private var iconName: String {
+        if item.isPassedForHomologation { return "checkmark.circle.fill" }
+        if item.isFailedForHomologation { return "xmark.octagon.fill" }
+        if item.isPendingForHomologation { return "hourglass.circle.fill" }
+        if item.isSkippedForHomologation { return "minus.circle.fill" }
+        return "questionmark.circle.fill"
     }
 
-    private var isPassed: Bool {
-        ["PASSED", "AUTHORIZED", "OK", "READY", "SUCCESS"].contains(normalizedStatus)
-    }
-
-    private var title: String {
-        let value = item.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        if value == "FINAL_CONSUMER" || item.code == "FINAL_CONSUMER" {
-            return "Factura consumidor final"
-        }
-        return value.isEmpty ? item.code : value
-    }
-
-    private var description: String {
-        let value = item.description.trimmingCharacters(in: .whitespacesAndNewlines)
-        if value.uppercased() == "AUTHORIZED" {
-            return "Comprobante técnico autorizado en ambiente TEST."
-        }
-        return value.isEmpty ? "Sin descripción técnica." : value
+    private var tint: Color {
+        if item.isPassedForHomologation { return .green }
+        if item.isFailedForHomologation { return .red }
+        if item.isPendingForHomologation { return .orange }
+        return .secondary
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 10) {
-                Image(systemName: isPassed ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                    .foregroundStyle(isPassed ? .green : .orange)
+                Image(systemName: iconName)
+                    .foregroundStyle(tint)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
+                    Text(item.homologationDisplayTitle)
                         .font(.subheadline.weight(.semibold))
-                    Text(description)
+                    Text(item.homologationDisplayDescription)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
-                AdminTaxSriStatusBadge(text: item.status)
+                AdminTaxSriStatusBadge(text: item.humanStatus)
             }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
                 AdminSriEvidenceMetric(title: "Código", value: item.code, systemImage: "tag")
+                AdminSriEvidenceMetric(title: "Estado técnico", value: item.status.isEmpty ? "—" : item.status, systemImage: "terminal")
+                AdminSriEvidenceMetric(title: "Estado humano", value: item.humanStatus, systemImage: "text.badge.checkmark")
                 AdminSriEvidenceMetric(title: "Requerido", value: item.required ? "Sí" : "No", systemImage: item.required ? "asterisk" : "minus.circle")
+            }
+
+            if item.isFailedForHomologation && item.required {
+                Text("Esta validación es requerida. No conviene reintentar a ciegas: primero revisa el error y la configuración relacionada.")
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if let actionLabel = item.actionLabel, !actionLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -763,6 +852,7 @@ private struct AdminSriHomologationChecklistDetailRow: View {
         .padding(.vertical, 4)
     }
 }
+
 
 private struct AdminSriHomologationProductionWarning: View {
     var body: some View {
@@ -791,7 +881,7 @@ private extension AdminSriHomologationRun {
         var lines: [String] = [
             "Nexo Admin — Homologación SRI TEST",
             "Run ID: \(id)",
-            "Estado: \(displayStatus)",
+            "Estado: \(displayStatus) [\(status.isEmpty ? "sin estado técnico" : status)]",
             "Ambiente: \(displayEnvironment)",
             "Inicio: \(displayStartedAt)",
             "Fin: \(displayFinishedAt)",
@@ -801,12 +891,24 @@ private extension AdminSriHomologationRun {
         ]
 
         if let error = humanErrorMessage {
-            lines.append("Error: \(error)")
+            lines.append("Error humano: \(error)")
+        }
+
+        if let rawError = rawErrorMessage, rawError != humanErrorMessage {
+            lines.append("Error técnico: \(rawError)")
+        }
+
+        if let hint = suggestedRecoveryHint {
+            lines.append("Revisar primero: \(hint)")
+        }
+
+        if shouldWarnAgainstBlindRetry {
+            lines.append("Advertencia: no reintentar a ciegas; corregir causa probable antes de repetir.")
         }
 
         if !checklist.isEmpty {
             lines.append("Checklist:")
-            lines.append(contentsOf: checklist.map { "- \($0.code): \($0.status) — \($0.description)" })
+            lines.append(contentsOf: checklist.map { "- \($0.code): \($0.humanStatus) [\($0.status)] — \($0.homologationDisplayDescription)" })
         }
 
         lines.append("Nota: ambiente TEST aprobado no habilita producción.")
@@ -814,33 +916,33 @@ private extension AdminSriHomologationRun {
     }
 
     var detailHeadline: String {
-        switch status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
-        case "PASSED", "SUCCESS", "AUTHORIZED", "APPROVED":
+        if isPassed {
             return "La prueba terminó correctamente y dejó evidencia técnica para soporte."
-        case "RUNNING", "PROCESSING", "PENDING":
-            return "La prueba sigue en proceso. Espera a que el backend complete la corrida."
-        case "FAILED", "ERROR", "REJECTED":
-            return "La prueba falló. Copia el resumen de soporte para diagnosticar sin abrir logs."
-        default:
-            return "Revisa la evidencia técnica de esta corrida de homologación."
         }
+        if isRunning {
+            return "La prueba sigue en proceso. Espera a que el backend complete la corrida antes de tomar decisiones."
+        }
+        if isRejected {
+            return "El comprobante no terminó autorizado. Revisa error, checklist y respuesta técnica antes de reintentar."
+        }
+        if isFailed {
+            return "La prueba falló. Copia el resumen de soporte y revisa la acción sugerida sin abrir logs."
+        }
+        return "Revisa la evidencia técnica de esta corrida de homologación."
     }
 
     var detailIconName: String {
-        switch status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
-        case "PASSED", "SUCCESS", "AUTHORIZED", "APPROVED": return "checkmark.seal.fill"
-        case "RUNNING", "PROCESSING", "PENDING": return "hourglass"
-        case "FAILED", "ERROR", "REJECTED": return "xmark.octagon.fill"
-        default: return "questionmark.circle.fill"
-        }
+        if isPassed { return "checkmark.seal.fill" }
+        if isRunning { return "hourglass" }
+        if isRejected { return "doc.badge.exclamationmark" }
+        if isFailed { return "xmark.octagon.fill" }
+        return "questionmark.circle.fill"
     }
 
     var detailTint: Color {
-        switch status.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() {
-        case "PASSED", "SUCCESS", "AUTHORIZED", "APPROVED": return .green
-        case "RUNNING", "PROCESSING", "PENDING": return .orange
-        case "FAILED", "ERROR", "REJECTED": return .red
-        default: return .gray
-        }
+        if isPassed { return .green }
+        if isRunning { return .orange }
+        if isFailed { return .red }
+        return .gray
     }
 }
