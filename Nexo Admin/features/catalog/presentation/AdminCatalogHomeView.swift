@@ -67,6 +67,10 @@ struct AdminCatalogHomeView: View {
                         .frame(maxWidth: .infinity, minHeight: 180)
                 } else {
                     metrics
+                    AdminCatalogDiagnosticsCard(
+                        diagnostics: viewModel.diagnostics,
+                        catalogRevision: nil
+                    )
                     shortcuts
                     recentItems
                     recentRequests

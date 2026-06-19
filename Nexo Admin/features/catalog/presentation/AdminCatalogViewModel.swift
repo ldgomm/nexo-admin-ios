@@ -54,8 +54,11 @@ final class AdminCatalogViewModel: ObservableObject {
     }
 
     var activeItemsCount: Int { localItems.filter(\.isActive).count }
-    var pausedItemsCount: Int { localItems.filter { $0.status.uppercased() == "PAUSED" }.count }
+    var pausedItemsCount: Int { localItems.filter(\.isPaused).count }
     var pendingRequestsCount: Int { requests.filter { $0.status.uppercased() == "PENDING" || $0.status.uppercased() == "NEEDS_MORE_INFO" }.count }
+    var diagnostics: AdminCatalogDiagnostics {
+        AdminCatalogDiagnostics.from(items: localItems, pendingRequests: pendingRequestsCount)
+    }
 
     func load() async {
         guard !isLoading else { return }

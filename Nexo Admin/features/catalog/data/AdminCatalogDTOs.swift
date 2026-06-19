@@ -91,8 +91,9 @@ struct AdminCatalogLocalItemResponseDTO: Decodable, Sendable {
     let organizationId: String
     let branchId: String?
     let activityId: String
-    let templateId: String
-    let globalCatalogId: String
+    let templateId: String?
+    let globalCatalogId: String?
+    let sourceType: String?
     let localName: String
     let searchableText: String
     let type: String

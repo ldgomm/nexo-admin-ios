@@ -88,7 +88,8 @@ struct AdminCatalogLocalItemDetailView: View {
                 LabeledContent("Precio", value: current.localPrice.formatted)
                 LabeledContent("Tipo", value: current.type.readableSnakeCase)
                 LabeledContent("Tax profile", value: current.taxProfileId)
-                LabeledContent("Plantilla", value: current.templateId)
+                LabeledContent("Origen", value: current.sourceDisplayTitle)
+                LabeledContent("Plantilla", value: current.templateReferenceText)
                 if let identifier = current.primaryIdentifier {
                     LabeledContent("Identificador", value: identifier)
                 }

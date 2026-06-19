@@ -87,6 +87,7 @@ extension AdminCatalogLocalItemResponseDTO {
             activityId: activityId,
             templateId: templateId,
             globalCatalogId: globalCatalogId,
+            sourceType: sourceType,
             localName: localName,
             searchableText: searchableText,
             type: type,

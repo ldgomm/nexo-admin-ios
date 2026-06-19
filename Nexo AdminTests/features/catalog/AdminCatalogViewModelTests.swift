@@ -124,4 +124,53 @@ final class AdminCatalogViewModelTests: XCTestCase {
         XCTAssertTrue(ok)
         XCTAssertEqual(viewModel.localItems.first?.status, "PAUSED")
     }
+
+    func testDiagnosticsDetectsReadyCatalogWithKnownSources() async {
+        let repository = AdminCatalogTestRepository()
+        let viewModel = AdminCatalogViewModel(repository: repository)
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.diagnostics.totalItems, 2)
+        XCTAssertEqual(viewModel.diagnostics.activeItems, 1)
+        XCTAssertEqual(viewModel.diagnostics.seedItems, 1)
+        XCTAssertEqual(viewModel.diagnostics.adoptedItems, 1)
+        XCTAssertEqual(viewModel.diagnostics.missingPriceItems, 0)
+        XCTAssertEqual(viewModel.diagnostics.missingTaxProfileItems, 0)
+        XCTAssertEqual(viewModel.diagnostics.status, .review)
+    }
+
+    func testDiagnosticsBlocksCatalogWithoutPriceOrTaxProfile() async {
+        let brokenItem = AdminCatalogLocalItem(
+            id: "ocat_broken",
+            organizationId: "org_altos",
+            branchId: "br_main",
+            activityId: "act_restaurant",
+            templateId: nil,
+            globalCatalogId: nil,
+            sourceType: "MANUAL",
+            localName: "Producto incompleto",
+            searchableText: "producto incompleto",
+            type: "PRODUCT",
+            status: "ACTIVE",
+            localPrice: .zero,
+            taxProfileId: "",
+            publicDiscoveryStatus: "PRIVATE",
+            productFamilyId: nil,
+            variantAttributes: [:],
+            identifiers: [],
+            attributes: [:],
+            media: []
+        )
+        let repository = AdminCatalogTestRepository(localItems: [brokenItem], requests: [])
+        let viewModel = AdminCatalogViewModel(repository: repository)
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.diagnostics.status, .incomplete)
+        XCTAssertEqual(viewModel.diagnostics.missingPriceItems, 1)
+        XCTAssertEqual(viewModel.diagnostics.missingTaxProfileItems, 1)
+        XCTAssertFalse(viewModel.diagnostics.blockers.isEmpty)
+    }
+
 }

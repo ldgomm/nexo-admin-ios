@@ -540,6 +540,10 @@ private struct AdminBusinessCatalogPanel: View {
                 .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             } else {
                 catalogSummary
+                AdminCatalogDiagnosticsCard(
+                    diagnostics: viewModel.diagnostics,
+                    catalogRevision: nil
+                )
                 catalogActions
                 recentCatalogItems
                 recentCatalogRequests

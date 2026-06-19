@@ -45,6 +45,7 @@ final class MockAdminCatalogRepository: AdminCatalogRepository, @unchecked Senda
             activityId: current.activityId,
             templateId: current.templateId,
             globalCatalogId: current.globalCatalogId,
+            sourceType: current.sourceType,
             localName: input.localName?.trimmedOrNil ?? current.localName,
             searchableText: current.searchableText,
             type: current.type,
@@ -114,6 +115,7 @@ final class MockAdminCatalogRepository: AdminCatalogRepository, @unchecked Senda
             activityId: input.activityId,
             templateId: template.id,
             globalCatalogId: template.globalCatalogId,
+            sourceType: "ADOPTED",
             localName: template.canonicalName,
             searchableText: template.normalizedName,
             type: template.type,
@@ -186,6 +188,7 @@ final class MockAdminCatalogRepository: AdminCatalogRepository, @unchecked Senda
             activityId: current.activityId,
             templateId: current.templateId,
             globalCatalogId: current.globalCatalogId,
+            sourceType: current.sourceType,
             localName: current.localName,
             searchableText: current.searchableText,
             type: current.type,
@@ -208,7 +211,7 @@ final class MockAdminCatalogRepository: AdminCatalogRepository, @unchecked Senda
         if let query = search.query.trimmedOrNil?.lowercased() {
             result = result.filter { item in
                 item.localName.lowercased().contains(query) ||
-                item.globalCatalogId.lowercased().contains(query) ||
+                (item.globalCatalogId ?? "").lowercased().contains(query) ||
                 item.identifiers.contains { $0.value.lowercased().contains(query) }
             }
         }
