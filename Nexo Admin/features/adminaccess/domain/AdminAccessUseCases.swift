@@ -51,6 +51,14 @@ struct MutateAdminUserUseCase: Sendable {
     }
 }
 
+struct ListAdminCapabilityGroupsUseCase: Sendable {
+    let repository: any AdminAccessRepository
+
+    func execute() async throws -> [AdminHumanCapabilityGroup] {
+        try await repository.listCapabilityGroups()
+    }
+}
+
 struct ListAdminRolesUseCase: Sendable {
     let repository: any AdminAccessRepository
 

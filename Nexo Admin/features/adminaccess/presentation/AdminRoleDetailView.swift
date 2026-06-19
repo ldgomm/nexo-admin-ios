@@ -57,14 +57,68 @@ struct AdminRoleDetailView: View {
                 }
             }
 
-            Section("Permisos") {
-                if role.permissionKeys.isEmpty {
-                    Text("Sin permisos")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(role.permissionKeys.sorted(), id: \.self) { permission in
-                        Text(permission)
-                            .font(.caption.monospaced())
+            if let diagnostics = viewModel.diagnostics {
+                Section("Diagnóstico") {
+                    AdminRoleDiagnosticsCallout(diagnostics: diagnostics)
+                }
+
+                Section("Capacidades humanas") {
+                    if diagnostics.matchedCapabilityGroups.isEmpty {
+                        Text("Este rol no coincide con ningún grupo humano publicado por el backend.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(diagnostics.matchedCapabilityGroups) { group in
+                            AdminCapabilityGroupCard(
+                                group: group,
+                                matchedPermissionKeys: group.matchedPermissionKeys(for: role)
+                            )
+                        }
+                    }
+                }
+
+                if !diagnostics.highRiskPermissions.isEmpty {
+                    Section("Permisos sensibles") {
+                        ForEach(diagnostics.highRiskPermissions) { permission in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(permission.name)
+                                    .font(.subheadline.weight(.semibold))
+                                Text(permission.code)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 6) {
+                                    AdminAccessStatusBadge(text: permission.riskLabel)
+                                    if permission.requiresReason { AdminAccessStatusBadge(text: "Motivo") }
+                                    if permission.requiresAudit { AdminAccessStatusBadge(text: "Auditado") }
+                                    if permission.requiresStepUp { AdminAccessStatusBadge(text: "Crítico") }
+                                }
+                            }
+                            .padding(.vertical, 3)
+                        }
+                    }
+                }
+
+                Section("Permisos técnicos") {
+                    if role.usesWildcardPermission {
+                        Label("Este rol usa wildcard (*). Trátalo como acceso total protegido por backend.", systemImage: "exclamationmark.shield")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    if diagnostics.uncoveredPermissionKeys.isEmpty && !role.permissionKeys.isEmpty {
+                        Text("Todos los permisos técnicos visibles están cubiertos por grupos humanos o por wildcard.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else if role.permissionKeys.isEmpty {
+                        Text("Sin permisos")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        DisclosureGroup("Permisos sin grupo humano") {
+                            ForEach(diagnostics.uncoveredPermissionKeys, id: \.self) { permission in
+                                Text(permission)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
             }

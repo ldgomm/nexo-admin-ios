@@ -98,6 +98,7 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
     ]
 
     private let permissions: [AdminAccessPermission] = AdminAccessTestRepository.makePermissions()
+    private let capabilityGroups: [AdminHumanCapabilityGroup] = AdminAccessTestRepository.makeCapabilityGroups()
 
     func listUsers(query: String?, status: String?, limit: Int) async throws -> [AdminAccessUser] {
         var result = users
@@ -184,6 +185,8 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
     func resendInvitation(id: String, reason: String) async throws -> AdminInvitationResendResult { throw AppError.validation("not implemented") }
     func revokeInvitation(id: String, reason: String) async throws -> AdminAccessInvitation { throw AppError.validation("not implemented") }
 
+    func listCapabilityGroups() async throws -> [AdminHumanCapabilityGroup] { capabilityGroups }
+
     func listRoles(includeSystemTemplates: Bool) async throws -> [AdminAccessRole] {
         includeSystemTemplates ? roles : roles.filter { !$0.systemRole }
     }
@@ -236,6 +239,42 @@ final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendabl
     func activateRole(id: String, reason: String) async throws -> AdminAccessRole { roles.first { $0.id == id }! }
     func deactivateRole(id: String, reason: String) async throws -> AdminAccessRole { roles.first { $0.id == id }! }
     func listPermissions(includeReserved: Bool) async throws -> [AdminAccessPermission] { permissions }
+
+
+    private static func makeCapabilityGroups() -> [AdminHumanCapabilityGroup] {
+        [
+            AdminHumanCapabilityGroup(
+                code: "sales",
+                title: "Ventas",
+                description: "Permite consultar y operar ventas.",
+                humanBullets: ["Ver ventas", "Operar ventas permitidas"],
+                permissionKeys: [PermissionCatalog.salesView],
+                requiredModules: ["core.sales"],
+                sensitive: false,
+                rank: 100
+            ),
+            AdminHumanCapabilityGroup(
+                code: "cash",
+                title: "Caja",
+                description: "Agrupa caja actual, apertura y cierre.",
+                humanBullets: ["Ver caja actual", "Abrir caja", "Cerrar caja"],
+                permissionKeys: [PermissionCatalog.cashView, PermissionCatalog.cashSessionViewCurrent, PermissionCatalog.cashSessionOpen, PermissionCatalog.cashSessionClose],
+                requiredModules: ["core.cash"],
+                sensitive: true,
+                rank: 110
+            ),
+            AdminHumanCapabilityGroup(
+                code: "payments",
+                title: "Pagos",
+                description: "Agrupa consulta y registro de pagos.",
+                humanBullets: ["Ver pagos"],
+                permissionKeys: [PermissionCatalog.paymentsView],
+                requiredModules: ["core.payments"],
+                sensitive: false,
+                rank: 120
+            )
+        ]
+    }
 
     private static func makePermissions() -> [AdminAccessPermission] {
         let definitions: [(String, String, String, String, String, Bool, Bool, Bool)] = [

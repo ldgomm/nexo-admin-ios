@@ -12,6 +12,7 @@ final class MockAdminAccessRepository: AdminAccessRepository, @unchecked Sendabl
     private var roles: [AdminAccessRole]
     private var invitations: [AdminAccessInvitation]
     private let permissions: [AdminAccessPermission]
+    private let capabilityGroups: [AdminHumanCapabilityGroup]
     private let delayNanoseconds: UInt64
 
     init(
@@ -19,12 +20,14 @@ final class MockAdminAccessRepository: AdminAccessRepository, @unchecked Sendabl
         roles: [AdminAccessRole] = MockAdminAccessData.roles,
         invitations: [AdminAccessInvitation] = MockAdminAccessData.invitations,
         permissions: [AdminAccessPermission] = MockAdminAccessData.permissions,
+        capabilityGroups: [AdminHumanCapabilityGroup] = MockAdminAccessData.capabilityGroups,
         delayNanoseconds: UInt64 = 200_000_000
     ) {
         self.users = users
         self.roles = roles
         self.invitations = invitations
         self.permissions = permissions
+        self.capabilityGroups = capabilityGroups
         self.delayNanoseconds = delayNanoseconds
     }
 
@@ -205,6 +208,11 @@ final class MockAdminAccessRepository: AdminAccessRepository, @unchecked Sendabl
         )
         invitations[index] = revoked
         return revoked
+    }
+
+    func listCapabilityGroups() async throws -> [AdminHumanCapabilityGroup] {
+        try await delay()
+        return capabilityGroups
     }
 
     func listRoles(includeSystemTemplates: Bool) async throws -> [AdminAccessRole] {

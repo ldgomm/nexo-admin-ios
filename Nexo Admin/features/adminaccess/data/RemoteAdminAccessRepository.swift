@@ -73,6 +73,10 @@ final class RemoteAdminAccessRepository: AdminAccessRepository, @unchecked Senda
         try await api.revokeInvitation(id: id, request: AdminInvitationActionRequestDTO(reason: reason)).toDomain()
     }
 
+    func listCapabilityGroups() async throws -> [AdminHumanCapabilityGroup] {
+        try await api.listCapabilityGroups().groups.map { $0.toDomain() }
+    }
+
     func listRoles(includeSystemTemplates: Bool) async throws -> [AdminAccessRole] {
         try await api.listRoles(includeSystemTemplates: includeSystemTemplates).roles.map { $0.toDomain() }
     }

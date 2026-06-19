@@ -12,6 +12,7 @@ import Foundation
 final class AdminRolesViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<[AdminAccessRole]> = .idle
     @Published private(set) var permissionsState: LoadableViewState<[AdminAccessPermission]> = .idle
+    @Published private(set) var capabilityGroupsState: LoadableViewState<[AdminHumanCapabilityGroup]> = .idle
     @Published private(set) var isMutating = false
     @Published private(set) var missingTemplatePermissions: Set<String> = []
     @Published var includeSystemTemplates = true
@@ -25,12 +26,14 @@ final class AdminRolesViewModel: ObservableObject {
     private let listRoles: ListAdminRolesUseCase
     private let mutateRoles: MutateAdminRoleUseCase
     private let listPermissions: ListAdminPermissionsUseCase
+    private let listCapabilityGroups: ListAdminCapabilityGroupsUseCase
 
     init(repository: any AdminAccessRepository) {
         self.repository = repository
         self.listRoles = ListAdminRolesUseCase(repository: repository)
         self.mutateRoles = MutateAdminRoleUseCase(repository: repository)
         self.listPermissions = ListAdminPermissionsUseCase(repository: repository)
+        self.listCapabilityGroups = ListAdminCapabilityGroupsUseCase(repository: repository)
     }
 
     var roles: [AdminAccessRole] {
@@ -41,6 +44,11 @@ final class AdminRolesViewModel: ObservableObject {
     var permissions: [AdminAccessPermission] {
         guard case .loaded(let permissions) = permissionsState else { return [] }
         return permissions.activeWithoutWildcard
+    }
+
+    var capabilityGroups: [AdminHumanCapabilityGroup] {
+        guard case .loaded(let groups) = capabilityGroupsState else { return [] }
+        return groups.sortedByRankAndTitle
     }
 
     var filteredPermissions: [AdminAccessPermission] {
@@ -98,15 +106,18 @@ final class AdminRolesViewModel: ObservableObject {
         state = .loading
         async let rolesTask = listRoles.execute(includeSystemTemplates: includeSystemTemplates)
         async let permissionsTask = listPermissions.execute(includeReserved: false)
+        async let capabilityGroupsTask = listCapabilityGroups.execute()
         do {
-            let (loadedRoles, loadedPermissions) = try await (rolesTask, permissionsTask)
+            let (loadedRoles, loadedPermissions, loadedCapabilityGroups) = try await (rolesTask, permissionsTask, capabilityGroupsTask)
             state = loadedRoles.isEmpty ? .empty("No hay roles configurados.") : .loaded(loadedRoles)
             let visiblePermissions = loadedPermissions.activeWithoutWildcard
             permissionsState = visiblePermissions.isEmpty ? .empty("No hay permisos disponibles.") : .loaded(visiblePermissions)
+            capabilityGroupsState = loadedCapabilityGroups.isEmpty ? .empty("No hay grupos humanos de capacidades.") : .loaded(loadedCapabilityGroups)
             reconcileSelectedPermissions(with: visiblePermissions)
         } catch {
             state = .failed(error.userFriendlyMessage)
             permissionsState = .failed(error.userFriendlyMessage)
+            capabilityGroupsState = .failed(error.userFriendlyMessage)
         }
     }
 
@@ -146,6 +157,10 @@ final class AdminRolesViewModel: ObservableObject {
         isMutating = false
     }
 
+    func diagnostics(for role: AdminAccessRole) -> AdminRoleDiagnostics {
+        AdminRoleDiagnostics(role: role, capabilityGroups: capabilityGroups, permissions: permissions)
+    }
+
     private func reconcileSelectedPermissions(with loadedPermissions: [AdminAccessPermission]) {
         let valid = Set(loadedPermissions.map(\.code))
         createInput.permissionKeys = createInput.permissionKeys.intersection(valid)
@@ -156,6 +171,7 @@ final class AdminRolesViewModel: ObservableObject {
 final class AdminRoleDetailViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminAccessRole> = .idle
     @Published private(set) var permissionsState: LoadableViewState<[AdminAccessPermission]> = .idle
+    @Published private(set) var capabilityGroupsState: LoadableViewState<[AdminHumanCapabilityGroup]> = .idle
     @Published private(set) var isMutating = false
     @Published var updateInput = UpdateAdminRoleInput()
     @Published var actionReason = ""
@@ -167,12 +183,14 @@ final class AdminRoleDetailViewModel: ObservableObject {
     private let getRole: GetAdminRoleUseCase
     private let mutateRoles: MutateAdminRoleUseCase
     private let listPermissions: ListAdminPermissionsUseCase
+    private let listCapabilityGroups: ListAdminCapabilityGroupsUseCase
 
     init(roleId: String, repository: any AdminAccessRepository) {
         self.roleId = roleId
         self.getRole = GetAdminRoleUseCase(repository: repository)
         self.mutateRoles = MutateAdminRoleUseCase(repository: repository)
         self.listPermissions = ListAdminPermissionsUseCase(repository: repository)
+        self.listCapabilityGroups = ListAdminCapabilityGroupsUseCase(repository: repository)
     }
 
     var role: AdminAccessRole? {
@@ -183,6 +201,16 @@ final class AdminRoleDetailViewModel: ObservableObject {
     var permissions: [AdminAccessPermission] {
         guard case .loaded(let permissions) = permissionsState else { return [] }
         return permissions.activeWithoutWildcard
+    }
+
+    var capabilityGroups: [AdminHumanCapabilityGroup] {
+        guard case .loaded(let groups) = capabilityGroupsState else { return [] }
+        return groups.sortedByRankAndTitle
+    }
+
+    var diagnostics: AdminRoleDiagnostics? {
+        guard let role else { return nil }
+        return AdminRoleDiagnostics(role: role, capabilityGroups: capabilityGroups, permissions: permissions)
     }
 
     var filteredPermissions: [AdminAccessPermission] {
@@ -235,15 +263,18 @@ final class AdminRoleDetailViewModel: ObservableObject {
         state = .loading
         async let roleTask = getRole.execute(id: roleId)
         async let permissionsTask = listPermissions.execute(includeReserved: false)
+        async let capabilityGroupsTask = listCapabilityGroups.execute()
         do {
-            let (loadedRole, loadedPermissions) = try await (roleTask, permissionsTask)
+            let (loadedRole, loadedPermissions, loadedCapabilityGroups) = try await (roleTask, permissionsTask, capabilityGroupsTask)
             state = .loaded(loadedRole)
             let visiblePermissions = loadedPermissions.activeWithoutWildcard
             permissionsState = visiblePermissions.isEmpty ? .empty("No hay permisos disponibles.") : .loaded(visiblePermissions)
+            capabilityGroupsState = loadedCapabilityGroups.isEmpty ? .empty("No hay grupos humanos de capacidades.") : .loaded(loadedCapabilityGroups)
             hydrateUpdateInput(from: loadedRole, availablePermissions: visiblePermissions)
         } catch {
             state = .failed(error.userFriendlyMessage)
             permissionsState = .failed(error.userFriendlyMessage)
+            capabilityGroupsState = .failed(error.userFriendlyMessage)
         }
     }
 

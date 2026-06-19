@@ -259,3 +259,81 @@ extension Array where Element == AdminAccessPermission {
         }
     }
 }
+
+struct AdminCapabilityGroupChips: View {
+    let groups: [AdminHumanCapabilityGroup]
+    var limit = 6
+
+    var body: some View {
+        let visible = Array(groups.prefix(limit))
+        if groups.isEmpty {
+            AdminAccessStatusBadge(text: "Sin grupo humano")
+        } else {
+            HStack(spacing: 6) {
+                ForEach(visible) { group in
+                    AdminAccessStatusBadge(text: group.title, systemImage: group.sensitive ? "lock.shield" : nil)
+                }
+                if groups.count > limit {
+                    AdminAccessStatusBadge(text: "+\(groups.count - limit)")
+                }
+            }
+        }
+    }
+}
+
+struct AdminCapabilityGroupCard: View {
+    let group: AdminHumanCapabilityGroup
+    let matchedPermissionKeys: Set<String>
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Label(group.title, systemImage: group.sensitive ? "lock.shield" : "square.grid.2x2")
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                AdminAccessStatusBadge(text: "\(matchedPermissionKeys.count) permisos")
+            }
+            Text(group.description)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ForEach(group.humanBullets, id: \.self) { bullet in
+                Label(bullet, systemImage: "checkmark.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            DisclosureGroup("Permisos técnicos") {
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(matchedPermissionKeys.sorted(), id: \.self) { key in
+                        Text(key)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.top, 6)
+            }
+            .font(.caption.weight(.semibold))
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct AdminRoleDiagnosticsCallout: View {
+    let diagnostics: AdminRoleDiagnostics
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Lectura técnica ordenada", systemImage: "checklist.checked")
+                .font(.headline)
+            Text("Admin muestra capacidades humanas primero y deja permisos técnicos como detalle colapsado. El backend sigue siendo la autoridad final.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                ForEach(diagnostics.summaryBadges, id: \.self) { badge in
+                    AdminAccessStatusBadge(text: badge)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}

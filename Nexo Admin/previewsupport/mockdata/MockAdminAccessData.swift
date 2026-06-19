@@ -8,6 +8,39 @@
 import Foundation
 
 enum MockAdminAccessData {
+    static let capabilityGroups: [AdminHumanCapabilityGroup] = [
+        AdminHumanCapabilityGroup(
+            code: "sales",
+            title: "Ventas",
+            description: "Permite consultar y operar ventas según permisos.",
+            humanBullets: ["Ver historial de ventas", "Operar ventas permitidas"],
+            permissionKeys: [PermissionCatalog.salesView],
+            requiredModules: ["core.sales"],
+            sensitive: false,
+            rank: 100
+        ),
+        AdminHumanCapabilityGroup(
+            code: "cash",
+            title: "Caja",
+            description: "Agrupa consulta, apertura y cierre de caja.",
+            humanBullets: ["Ver caja", "Abrir caja", "Cerrar caja"],
+            permissionKeys: [PermissionCatalog.cashView, PermissionCatalog.cashSessionViewCurrent, PermissionCatalog.cashSessionOpen, PermissionCatalog.cashSessionClose],
+            requiredModules: ["core.cash"],
+            sensitive: true,
+            rank: 110
+        ),
+        AdminHumanCapabilityGroup(
+            code: "team",
+            title: "Equipo",
+            description: "Permite administrar usuarios, roles y sesiones.",
+            humanBullets: ["Ver equipo", "Gestionar roles", "Revocar sesiones"],
+            permissionKeys: [PermissionCatalog.credentialsUsersView, PermissionCatalog.credentialsRolesView, PermissionCatalog.credentialsRolesManage, PermissionCatalog.credentialsSessionsRevoke],
+            requiredModules: ["core.users_roles_permissions"],
+            sensitive: true,
+            rank: 300
+        )
+    ]
+
     static let permissions: [AdminAccessPermission] = [
         AdminAccessPermission(
             code: PermissionCatalog.credentialsUsersView,

@@ -65,7 +65,8 @@ struct AdminAccessRole: Identifiable, Equatable, Sendable {
     var isActive: Bool { status.normalizedStatus == "active" }
     var isCustom: Bool { type.normalizedStatus == "custom" }
     var canBeEditedFromApp: Bool { isCustom && editable && !critical && !systemRole }
-    var permissionCountLabel: String { "\(permissionKeys.count) permisos" }
+    var permissionCountLabel: String { usesWildcardPermission ? "Wildcard" : "\(permissionKeys.count) permisos" }
+    var usesWildcardPermission: Bool { permissionKeys.contains(PermissionCatalog.all) }
 }
 
 struct AdminAccessPermission: Identifiable, Equatable, Sendable {
@@ -86,6 +87,73 @@ struct AdminAccessPermission: Identifiable, Equatable, Sendable {
 
     var categoryLabel: String { category.readableStatus }
     var riskLabel: String { riskLevel.readableStatus }
+}
+
+struct AdminHumanCapabilityGroup: Identifiable, Equatable, Sendable {
+    var id: String { code }
+
+    let code: String
+    let title: String
+    let description: String
+    let humanBullets: [String]
+    let permissionKeys: Set<String>
+    let requiredModules: Set<String>
+    let sensitive: Bool
+    let rank: Int
+
+    func matchedPermissionKeys(for role: AdminAccessRole) -> Set<String> {
+        if role.usesWildcardPermission { return permissionKeys }
+        return role.permissionKeys.intersection(permissionKeys)
+    }
+
+    func matches(_ role: AdminAccessRole) -> Bool {
+        role.usesWildcardPermission || !matchedPermissionKeys(for: role).isEmpty
+    }
+}
+
+struct AdminRoleDiagnostics: Equatable, Sendable {
+    let role: AdminAccessRole
+    let capabilityGroups: [AdminHumanCapabilityGroup]
+    let permissions: [AdminAccessPermission]
+
+    var matchedCapabilityGroups: [AdminHumanCapabilityGroup] {
+        capabilityGroups
+            .filter { $0.matches(role) }
+            .sorted { lhs, rhs in lhs.rank == rhs.rank ? lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending : lhs.rank < rhs.rank }
+    }
+
+    var coveredPermissionKeys: Set<String> {
+        Set(matchedCapabilityGroups.flatMap(\.permissionKeys))
+    }
+
+    var uncoveredPermissionKeys: [String] {
+        if role.usesWildcardPermission { return [] }
+        return role.permissionKeys.subtracting(coveredPermissionKeys).sorted()
+    }
+
+    var highRiskPermissions: [AdminAccessPermission] {
+        permissions
+            .filter { role.permissionKeys.contains($0.code) && $0.isHighRisk }
+            .sorted {
+                if $0.category == $1.category {
+                    return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                }
+                return $0.category.localizedCaseInsensitiveCompare($1.category) == .orderedAscending
+            }
+    }
+
+    var sensitiveCapabilityGroups: [AdminHumanCapabilityGroup] {
+        matchedCapabilityGroups.filter(\.sensitive)
+    }
+
+    var summaryBadges: [String] {
+        var badges = ["\(role.permissionKeys.count) permisos"]
+        if role.usesWildcardPermission { badges.append("Wildcard") }
+        if !highRiskPermissions.isEmpty { badges.append("\(highRiskPermissions.count) alto riesgo") }
+        if !sensitiveCapabilityGroups.isEmpty { badges.append("\(sensitiveCapabilityGroups.count) sensible") }
+        if !uncoveredPermissionKeys.isEmpty { badges.append("\(uncoveredPermissionKeys.count) sin grupo") }
+        return badges
+    }
 }
 
 struct AdminAccessInvitation: Identifiable, Equatable, Sendable {
@@ -278,5 +346,16 @@ extension String {
             .split(separator: "_")
             .map { part in part.prefix(1).uppercased() + part.dropFirst().lowercased() }
             .joined(separator: " ")
+    }
+}
+
+extension Array where Element == AdminHumanCapabilityGroup {
+    var sortedByRankAndTitle: [AdminHumanCapabilityGroup] {
+        sorted { lhs, rhs in
+            if lhs.rank == rhs.rank {
+                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+            }
+            return lhs.rank < rhs.rank
+        }
     }
 }

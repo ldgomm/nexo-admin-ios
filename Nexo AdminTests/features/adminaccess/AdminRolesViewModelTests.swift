@@ -22,6 +22,22 @@ final class AdminRolesViewModelTests: XCTestCase {
         XCTAssertEqual(roles.count, 2)
         XCTAssertGreaterThan(viewModel.permissions.count, 10)
         XCTAssertFalse(viewModel.permissions.contains { $0.code == PermissionCatalog.all })
+        XCTAssertEqual(viewModel.capabilityGroups.map(\.code), ["sales", "cash", "payments"])
+    }
+
+
+    func testDiagnosticsGroupsCashierPermissionsByHumanCapabilities() async {
+        let repository = AdminAccessTestRepository()
+        let viewModel = AdminRolesViewModel(repository: repository)
+        await viewModel.load()
+
+        let cashier = viewModel.roles.first { $0.code == "cashier" }!
+        let diagnostics = viewModel.diagnostics(for: cashier)
+
+        XCTAssertEqual(diagnostics.matchedCapabilityGroups.map(\.code), ["sales", "cash", "payments"])
+        XCTAssertTrue(diagnostics.summaryBadges.contains("3 sensible") || diagnostics.summaryBadges.contains("1 sensible"))
+        XCTAssertTrue(diagnostics.highRiskPermissions.contains { $0.code == PermissionCatalog.cashSessionOpen })
+        XCTAssertTrue(diagnostics.uncoveredPermissionKeys.isEmpty)
     }
 
     func testCreateRoleValidatesRequiredFieldsAndWildcard() async {

@@ -132,6 +132,22 @@ struct AdminInvitationResendResponseDTO: Decodable, Sendable {
     let invitationUrl: String?
 }
 
+
+struct AdminHumanCapabilityGroupsResponseDTO: Decodable, Sendable {
+    let groups: [AdminHumanCapabilityGroupDTO]
+}
+
+struct AdminHumanCapabilityGroupDTO: Decodable, Sendable {
+    let code: String
+    let title: String
+    let description: String
+    let humanBullets: [String]
+    let permissionKeys: Set<String>
+    let requiredModules: Set<String>
+    let sensitive: Bool
+    let rank: Int
+}
+
 struct AdminRolesResponseDTO: Decodable, Sendable {
     let roles: [AdminRoleDTO]
 }

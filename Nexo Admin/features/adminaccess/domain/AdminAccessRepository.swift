@@ -23,6 +23,7 @@ protocol AdminAccessRepository: Sendable {
     func resendInvitation(id: String, reason: String) async throws -> AdminInvitationResendResult
     func revokeInvitation(id: String, reason: String) async throws -> AdminAccessInvitation
 
+    func listCapabilityGroups() async throws -> [AdminHumanCapabilityGroup]
     func listRoles(includeSystemTemplates: Bool) async throws -> [AdminAccessRole]
     func getRole(id: String) async throws -> AdminAccessRole
     func createRole(_ input: CreateAdminRoleInput) async throws -> AdminAccessRole

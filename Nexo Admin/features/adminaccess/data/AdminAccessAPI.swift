@@ -23,6 +23,7 @@ protocol AdminAccessAPI: Sendable {
     func resendInvitation(id: String, request: AdminInvitationActionRequestDTO) async throws -> AdminInvitationResendResponseDTO
     func revokeInvitation(id: String, request: AdminInvitationActionRequestDTO) async throws -> AdminInvitationDTO
 
+    func listCapabilityGroups() async throws -> AdminHumanCapabilityGroupsResponseDTO
     func listRoles(includeSystemTemplates: Bool) async throws -> AdminRolesResponseDTO
     func getRole(id: String) async throws -> AdminRoleDTO
     func createRole(_ request: CreateAdminRoleRequestDTO) async throws -> AdminRoleDTO
@@ -95,6 +96,10 @@ final class RemoteAdminAccessAPI: AdminAccessAPI, @unchecked Sendable {
 
     func revokeInvitation(id: String, request: AdminInvitationActionRequestDTO) async throws -> AdminInvitationDTO {
         try await apiClient.send(adminEndpoint(path: "/api/v1/admin/invitations/\(id)/revoke", method: .post), body: request)
+    }
+
+    func listCapabilityGroups() async throws -> AdminHumanCapabilityGroupsResponseDTO {
+        try await apiClient.send(adminEndpoint(path: "/api/v1/business/team/capability-groups", method: .get))
     }
 
     func listRoles(includeSystemTemplates: Bool) async throws -> AdminRolesResponseDTO {

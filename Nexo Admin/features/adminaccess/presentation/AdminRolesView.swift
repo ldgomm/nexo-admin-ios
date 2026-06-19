@@ -55,7 +55,7 @@ struct AdminRolesView: View {
                     NavigationLink {
                         AdminRoleDetailView(viewModel: AdminRoleDetailViewModel(roleId: role.id, repository: viewModel.repository))
                     } label: {
-                        AdminRoleRow(role: role)
+                        AdminRoleRow(role: role, diagnostics: viewModel.diagnostics(for: role))
                     }
                 }
             }
@@ -65,6 +65,7 @@ struct AdminRolesView: View {
 
 private struct AdminRoleRow: View {
     let role: AdminAccessRole
+    let diagnostics: AdminRoleDiagnostics
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
@@ -81,12 +82,15 @@ private struct AdminRoleRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
+            AdminCapabilityGroupChips(groups: diagnostics.matchedCapabilityGroups, limit: 4)
             HStack {
                 AdminAccessStatusBadge(text: role.type.readableStatus)
                 if role.systemRole { AdminAccessStatusBadge(text: "Sistema") }
                 if role.critical { AdminAccessStatusBadge(text: "Crítico") }
                 if role.canBeEditedFromApp { AdminAccessStatusBadge(text: "Editable") }
-                AdminAccessStatusBadge(text: role.permissionCountLabel)
+                ForEach(diagnostics.summaryBadges, id: \.self) { badge in
+                    AdminAccessStatusBadge(text: badge)
+                }
             }
         }
         .padding(.vertical, 4)

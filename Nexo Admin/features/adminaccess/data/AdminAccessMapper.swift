@@ -32,6 +32,22 @@ extension AdminAccessUserDTO {
     }
 }
 
+
+extension AdminHumanCapabilityGroupDTO {
+    func toDomain() -> AdminHumanCapabilityGroup {
+        AdminHumanCapabilityGroup(
+            code: code,
+            title: title,
+            description: description,
+            humanBullets: humanBullets,
+            permissionKeys: permissionKeys,
+            requiredModules: requiredModules,
+            sensitive: sensitive,
+            rank: rank
+        )
+    }
+}
+
 extension AdminRoleDTO {
     func toDomain() -> AdminAccessRole {
         AdminAccessRole(
