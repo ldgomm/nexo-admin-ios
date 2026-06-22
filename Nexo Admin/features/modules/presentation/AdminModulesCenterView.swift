@@ -10,6 +10,7 @@ import SwiftUI
 struct AdminModulesCenterView: View {
     @ObservedObject var sessionStore: AuthSessionStore
     let foundationRepository: any AdminFoundationRepository
+    let businessPackagesRepository: any AdminBusinessPackagesRepository
 
     var body: some View {
         NavigationStack {
@@ -48,8 +49,26 @@ struct AdminModulesCenterView: View {
                     }
                 }
 
-                Section("Regla v2.4") {
-                    Text("Las reservas, citas, mesas, vehículos, eventos y alquileres no son core visible. Se activan por módulo, compatibilidad de actividad, plan y permisos. El backend siempre valida.")
+
+                Section("Business Package System") {
+                    NavigationLink {
+                        AdminBusinessPackagesDiagnosticsView(
+                            viewModel: AdminBusinessPackagesDiagnosticsViewModel(
+                                repository: businessPackagesRepository,
+                                permissions: sessionStore.effectivePermissions
+                            )
+                        )
+                    } label: {
+                        AdminModulesCenterRow(
+                            title: "Paquetes del negocio",
+                            subtitle: "Capabilities, verticales recomendados y regulados",
+                            systemImage: "square.3.layers.3d.down.right"
+                        )
+                    }
+                }
+
+                Section("Regla v2.4 / 20K") {
+                    Text("Los módulos siguen siendo la seguridad técnica. Los paquetes del negocio son diagnóstico read-only para planificar capabilities y verticales; todavía no activan nada.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

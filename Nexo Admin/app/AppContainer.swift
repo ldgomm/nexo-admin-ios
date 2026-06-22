@@ -26,6 +26,7 @@ final class AppContainer: ObservableObject {
     let adminPublicProjectionRepository: any AdminPublicProjectionRepository
     let adminSupportRepository: any AdminSupportRepository
     let adminRoleTemplateRepository: any AdminRoleTemplateRepository
+    let adminBusinessPackagesRepository: any AdminBusinessPackagesRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -47,6 +48,7 @@ final class AppContainer: ObservableObject {
         adminPublicProjectionRepository: any AdminPublicProjectionRepository,
         adminSupportRepository: any AdminSupportRepository,
         adminRoleTemplateRepository: any AdminRoleTemplateRepository,
+        adminBusinessPackagesRepository: any AdminBusinessPackagesRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -66,6 +68,7 @@ final class AppContainer: ObservableObject {
         self.adminPublicProjectionRepository = adminPublicProjectionRepository
         self.adminSupportRepository = adminSupportRepository
         self.adminRoleTemplateRepository = adminRoleTemplateRepository
+        self.adminBusinessPackagesRepository = adminBusinessPackagesRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -128,6 +131,7 @@ final class AppContainer: ObservableObject {
         let supportRepository = RemoteAdminSupportRepository(api: supportAPI)
 
         let roleTemplateRepository = RemoteAdminRoleTemplateRepository(apiClient: client)
+        let businessPackagesRepository = RemoteAdminBusinessPackagesRepository(apiClient: client)
 
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
@@ -157,6 +161,7 @@ final class AppContainer: ObservableObject {
             adminPublicProjectionRepository: publicProjectionRepository,
             adminSupportRepository: supportRepository,
             adminRoleTemplateRepository: roleTemplateRepository,
+            adminBusinessPackagesRepository: businessPackagesRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )
