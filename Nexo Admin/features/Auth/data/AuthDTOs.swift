@@ -12,6 +12,13 @@ struct LoginRequestDTO: Encodable, Sendable {
     let password: String
 }
 
+struct RecoverSessionsRequestDTO: Encodable, Sendable {
+    let email: String
+    let password: String
+    let reason: String
+    let loginAfterRevoke: Bool
+}
+
 struct RefreshTokenRequestDTO: Encodable, Sendable {
     let refreshToken: String
 }
@@ -38,6 +45,18 @@ struct RefreshSessionResponseDTO: Decodable, Sendable {
     let refreshTokenExpiresAt: String
     let sessionId: String
     let userId: String
+}
+
+struct RecoverSessionsResponseDTO: Decodable, Sendable {
+    let revokedSessions: Int
+    let revokedRefreshTokens: Int
+    let accessToken: String
+    let accessTokenExpiresAt: String
+    let refreshToken: String
+    let refreshTokenExpiresAt: String
+    let sessionId: String
+    let userId: String
+    let mustChangePassword: Bool?
 }
 
 struct RevokeSessionResponseDTO: Decodable, Sendable, Equatable {
@@ -124,6 +143,20 @@ extension AuthTokenResponseDTO {
             sessionId: sessionId,
             userId: userId,
             mustChangePassword: mustChangePassword
+        )
+    }
+}
+
+extension RecoverSessionsResponseDTO {
+    func toTokens() -> SessionTokens {
+        SessionTokens(
+            accessToken: accessToken,
+            accessTokenExpiresAt: accessTokenExpiresAt,
+            refreshToken: refreshToken,
+            refreshTokenExpiresAt: refreshTokenExpiresAt,
+            sessionId: sessionId,
+            userId: userId,
+            mustChangePassword: mustChangePassword ?? false
         )
     }
 }

@@ -8,6 +8,7 @@
 import Foundation
 
 final class MockAuthRepository: AuthRepository, @unchecked Sendable {
+    
     var loginResult: Result<SessionTokens, Error>
     var meResult: Result<MeContext, Error>
     var logoutResult: Result<RevokeSessionResponseDTO, Error>
@@ -40,5 +41,9 @@ final class MockAuthRepository: AuthRepository, @unchecked Sendable {
 
     func logout(sessionId: String?, reason: String) async throws -> RevokeSessionResponseDTO {
         try logoutResult.get()
+    }
+    
+    func recoverSessions(email: String, password: String, reason: String) async throws -> SessionTokens {
+        try loginResult.get()
     }
 }

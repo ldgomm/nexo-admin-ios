@@ -16,6 +16,7 @@ protocol AdminAccessAPI: Sendable {
     func unblockUser(id: String, request: AdminUserActionRequestDTO) async throws -> AdminAccessUserDTO
     func resetPassword(userId: String, request: AdminResetUserPasswordRequestDTO) async throws -> AdminResetUserPasswordResponseDTO
     func revokeSessions(userId: String, request: AdminUserActionRequestDTO) async throws -> AdminUserSessionRevocationResponseDTO
+    func listUserSessions(userId: String) async throws -> AdminUserSessionsResponseDTO
 
     func listInvitations(status: String?, limit: Int) async throws -> AdminInvitationsResponseDTO
     func getInvitation(id: String) async throws -> AdminInvitationDTO
@@ -74,6 +75,10 @@ final class RemoteAdminAccessAPI: AdminAccessAPI, @unchecked Sendable {
 
     func revokeSessions(userId: String, request: AdminUserActionRequestDTO) async throws -> AdminUserSessionRevocationResponseDTO {
         try await apiClient.send(adminEndpoint(path: "/api/v1/admin/users/\(userId)/revoke-sessions", method: .post), body: request)
+    }
+
+    func listUserSessions(userId: String) async throws -> AdminUserSessionsResponseDTO {
+        try await apiClient.send(adminEndpoint(path: "/organizations/{organizationId}/users/\(userId)/sessions", method: .get))
     }
 
     func listInvitations(status: String?, limit: Int) async throws -> AdminInvitationsResponseDTO {

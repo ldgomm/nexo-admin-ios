@@ -77,7 +77,7 @@ final class AppContainer: ObservableObject {
         let keychain = KeychainStore(service: "com.nexo.admin.ios")
         let tokenStore = KeychainAuthTokenStore(keychain: keychain)
         let organizationStore = UserDefaultsOrganizationSelectionStore()
-        let deviceIdentityStore = UserDefaultsDeviceIdentityStore()
+        let deviceIdentityStore = KeychainDeviceIdentityStore(keychain: keychain)
         let buildInfo = BuildInfo.current()
         let deviceInfoProvider = DefaultDeviceInfoProvider(
             buildInfo: buildInfo,

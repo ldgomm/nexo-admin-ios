@@ -196,7 +196,17 @@ final class DefaultAPIClient: APIDataClient, @unchecked Sendable {
     }
     
     private func buildRequest<Body: Encodable>(_ endpoint: APIEndpoint, body: Body?) throws -> URLRequest {
-        guard var components = URLComponents(url: environment.baseURL.appendingNexoPath(endpoint.path), resolvingAgainstBaseURL: false) else {
+        let resolvedPath: String
+        if endpoint.requiresOrganization,
+           endpoint.path.contains("{organizationId}"),
+           let organizationId = organizationSelectionStore.selectedOrganizationId?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !organizationId.isEmpty {
+            resolvedPath = endpoint.path.replacingOccurrences(of: "{organizationId}", with: organizationId)
+        } else {
+            resolvedPath = endpoint.path
+        }
+
+        guard var components = URLComponents(url: environment.baseURL.appendingNexoPath(resolvedPath), resolvingAgainstBaseURL: false) else {
             throw AppError.invalidURL
         }
         
@@ -261,8 +271,20 @@ final class DefaultAPIClient: APIDataClient, @unchecked Sendable {
             throw AppError.forbidden
         case 404:
             throw AppError.notFound
-        case 409, 422:
+        case 409:
+            let apiError = decodeAPIError(data)
+            if apiError.error == "max_sessions_reached" {
+                throw AppError.maxSessionsReached(apiError.bestMessage)
+            }
+            throw AppError.validation(apiError.bestMessage)
+        case 422:
             throw AppError.validation(decodeAPIError(data).bestMessage)
+        case 423:
+            let apiError = decodeAPIError(data)
+            if apiError.error == "account_locked_too_many_attempts" {
+                throw AppError.accountLocked(apiError.bestMessage)
+            }
+            throw AppError.validation(apiError.bestMessage)
         case 500..<600:
             throw AppError.server(decodeAPIError(data).bestMessage)
         default:

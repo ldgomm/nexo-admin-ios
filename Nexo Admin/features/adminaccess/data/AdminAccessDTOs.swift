@@ -86,6 +86,27 @@ struct AdminUserSessionRevocationResponseDTO: Decodable, Sendable {
     let reason: String
 }
 
+struct AdminUserSessionsResponseDTO: Decodable, Sendable {
+    let sessions: [AdminUserSessionDTO]
+}
+
+struct AdminUserSessionDTO: Decodable, Sendable {
+    let id: String
+    let userId: String
+    let status: String
+    let createdAt: String
+    let expiresAt: String
+    let lastSeenAt: String?
+    let revokedAt: String?
+    let deviceId: String?
+    let appType: String?
+    let appVersion: String?
+    let appBuild: String?
+    let platform: String?
+    let userAgent: String?
+    let ipAddress: String?
+}
+
 struct AdminInvitationsResponseDTO: Decodable, Sendable {
     let invitations: [AdminInvitationDTO]
 }

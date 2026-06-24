@@ -16,6 +16,7 @@ protocol AdminAccessRepository: Sendable {
     func unblockUser(id: String, reason: String) async throws -> AdminAccessUser
     func resetPassword(userId: String, temporaryPassword: String?, revokeSessions: Bool, reason: String) async throws -> AdminResetPasswordResult
     func revokeSessions(userId: String, reason: String) async throws -> AdminUserSessionRevocationResult
+    func listUserSessions(userId: String) async throws -> [AdminUserSession]
 
     func listInvitations(status: String?, limit: Int) async throws -> [AdminAccessInvitation]
     func getInvitation(id: String) async throws -> AdminAccessInvitation

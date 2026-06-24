@@ -36,6 +36,18 @@ struct LoginView: View {
                             .onSubmit { submit() }
                     }
 
+                    if let lockedMessage = viewModel.lockedMessage {
+                        loginWarningCard(
+                            title: "Usuario bloqueado temporalmente",
+                            message: lockedMessage,
+                            systemImage: "lock.trianglebadge.exclamationmark"
+                        )
+                    }
+
+                    if let maxSessionsMessage = viewModel.maxSessionsMessage {
+                        maxSessionsRecoveryCard(message: maxSessionsMessage)
+                    }
+
                     if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
                             .font(.subheadline)
@@ -74,6 +86,46 @@ struct LoginView: View {
         .padding(.top, 24)
     }
 
+    private func loginWarningCard(title: String, message: String, systemImage: String) -> some View {
+        HCard {
+            Label(title, systemImage: systemImage)
+                .font(.headline)
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func maxSessionsRecoveryCard(message: String) -> some View {
+        HCard {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Máximo de dispositivos alcanzado", systemImage: "iphone.gen3.radiowaves.left.and.right")
+                    .font(.headline)
+                    .foregroundStyle(.orange)
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("Para restaurar el acceso, Nexo cerrará las sesiones anteriores y volverá a iniciar sesión solo si las credenciales son correctas.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button {
+                    recoverSessions()
+                } label: {
+                    if viewModel.isRecoveringSessions {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Label("Cerrar sesiones e ingresar", systemImage: "rectangle.stack.badge.minus")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!viewModel.canRecoverSessions)
+            }
+        }
+    }
+
     private var securityNote: some View {
         HCard {
             Label("Sesión protegida", systemImage: "lock.shield.fill")
@@ -86,5 +138,9 @@ struct LoginView: View {
 
     private func submit() {
         Task { await viewModel.login() }
+    }
+
+    private func recoverSessions() {
+        Task { await viewModel.recoverSessionsAndLogin() }
     }
 }

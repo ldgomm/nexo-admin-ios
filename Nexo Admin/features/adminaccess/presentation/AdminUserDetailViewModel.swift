@@ -12,6 +12,7 @@ import Foundation
 final class AdminUserDetailViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminAccessUser> = .idle
     @Published private(set) var rolesState: LoadableViewState<[AdminAccessRole]> = .idle
+    @Published private(set) var sessionsState: LoadableViewState<[AdminUserSession]> = .idle
     @Published private(set) var resetPasswordResult: AdminResetPasswordResult?
     @Published private(set) var sessionRevocationResult: AdminUserSessionRevocationResult?
     @Published private(set) var isMutating = false
@@ -23,12 +24,14 @@ final class AdminUserDetailViewModel: ObservableObject {
 
     private let userId: String
     private let getUser: GetAdminUserUseCase
+    private let listSessions: ListAdminUserSessionsUseCase
     private let mutateUsers: MutateAdminUserUseCase
     private let listRoles: ListAdminRolesUseCase
 
     init(userId: String, repository: any AdminAccessRepository) {
         self.userId = userId
         self.getUser = GetAdminUserUseCase(repository: repository)
+        self.listSessions = ListAdminUserSessionsUseCase(repository: repository)
         self.mutateUsers = MutateAdminUserUseCase(repository: repository)
         self.listRoles = ListAdminRolesUseCase(repository: repository)
     }
@@ -41,6 +44,11 @@ final class AdminUserDetailViewModel: ObservableObject {
     var roles: [AdminAccessRole] {
         guard case .loaded(let roles) = rolesState else { return [] }
         return roles.assignableFromAdmin
+    }
+
+    var sessions: [AdminUserSession] {
+        guard case .loaded(let sessions) = sessionsState else { return [] }
+        return sessions
     }
 
     var canSaveUpdate: Bool {
@@ -67,8 +75,19 @@ final class AdminUserDetailViewModel: ObservableObject {
             state = .loaded(loadedUser)
             rolesState = loadedRoles.isEmpty ? .empty("No hay roles disponibles.") : .loaded(loadedRoles)
             hydrateUpdateInput(from: loadedUser)
+            await refreshSessions()
         } catch {
             state = .failed(error.userFriendlyMessage)
+        }
+    }
+
+    func refreshSessions() async {
+        sessionsState = .loading
+        do {
+            let loadedSessions = try await listSessions.execute(userId: userId)
+            sessionsState = loadedSessions.isEmpty ? .empty("No hay sesiones activas para este usuario.") : .loaded(loadedSessions)
+        } catch {
+            sessionsState = .failed(error.userFriendlyMessage)
         }
     }
 
@@ -113,6 +132,7 @@ final class AdminUserDetailViewModel: ObservableObject {
             resetTemporaryPassword = ""
             actionReason = ""
             await refresh()
+            await refreshSessions()
         } catch {
             errorMessage = error.userFriendlyMessage
         }
@@ -130,6 +150,7 @@ final class AdminUserDetailViewModel: ObservableObject {
             sessionRevocationResult = try await mutateUsers.revokeSessions(userId: userId, reason: actionReason)
             actionReason = ""
             await refresh()
+            await refreshSessions()
         } catch {
             errorMessage = error.userFriendlyMessage
         }

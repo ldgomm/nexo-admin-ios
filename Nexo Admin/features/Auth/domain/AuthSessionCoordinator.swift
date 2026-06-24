@@ -70,6 +70,30 @@ final class AuthSessionCoordinator {
         )
     }
 
+    func recoverSessionsAndLogin(email: String, password: String) async throws {
+        let cleanEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !cleanEmail.isEmpty else { throw AppError.validation("Ingresa tu correo.") }
+        guard !password.isEmpty else { throw AppError.validation("Ingresa tu contraseña.") }
+
+        let tokens = try await repository.recoverSessions(
+            email: cleanEmail,
+            password: password,
+            reason: "Admin iOS: recuperación por máximo de dispositivos"
+        )
+        try tokenStore.saveTokens(tokens)
+
+        if tokens.mustChangePassword {
+            let context = try? await repository.loadMe(organizationId: nil)
+            sessionStore.markNeedsPasswordChange(user: context?.user)
+            return
+        }
+
+        try await loadMeAndResolveNavigation(
+            preferredOrganizationId: organizationSelectionStore.selectedOrganizationId,
+            source: .login
+        )
+    }
+
     func selectOrganization(_ organizationId: String) async throws {
         let cleanId = organizationId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanId.isEmpty else {

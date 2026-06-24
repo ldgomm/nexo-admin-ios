@@ -9,6 +9,7 @@ import Combine
 
 protocol AuthAPI: Sendable {
     func login(email: String, password: String) async throws -> AuthTokenResponseDTO
+    func recoverSessions(email: String, password: String, reason: String) async throws -> RecoverSessionsResponseDTO
     func me(organizationId: String?) async throws -> MeResponseDTO
     func logout(sessionId: String?, reason: String) async throws -> RevokeSessionResponseDTO
 }
@@ -24,6 +25,18 @@ final class RemoteAuthAPI: AuthAPI, @unchecked Sendable {
         try await apiClient.send(
             APIEndpoint(path: "/auth/login", method: .post, requiresAuth: false),
             body: LoginRequestDTO(email: email, password: password)
+        )
+    }
+
+    func recoverSessions(email: String, password: String, reason: String) async throws -> RecoverSessionsResponseDTO {
+        try await apiClient.send(
+            APIEndpoint(path: "/auth/sessions/recover", method: .post, requiresAuth: false),
+            body: RecoverSessionsRequestDTO(
+                email: email,
+                password: password,
+                reason: reason,
+                loginAfterRevoke: true
+            )
         )
     }
 

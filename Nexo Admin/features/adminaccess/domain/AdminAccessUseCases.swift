@@ -23,6 +23,14 @@ struct GetAdminUserUseCase: Sendable {
     }
 }
 
+struct ListAdminUserSessionsUseCase: Sendable {
+    let repository: any AdminAccessRepository
+
+    func execute(userId: String) async throws -> [AdminUserSession] {
+        try await repository.listUserSessions(userId: userId)
+    }
+}
+
 struct MutateAdminUserUseCase: Sendable {
     let repository: any AdminAccessRepository
 

@@ -169,6 +169,27 @@ extension AdminUserSessionRevocationResponseDTO {
     }
 }
 
+extension AdminUserSessionDTO {
+    func toDomain() -> AdminUserSession {
+        AdminUserSession(
+            id: id,
+            userId: userId,
+            status: status,
+            createdAt: createdAt,
+            expiresAt: expiresAt,
+            lastSeenAt: lastSeenAt,
+            revokedAt: revokedAt,
+            deviceId: deviceId,
+            appType: appType,
+            appVersion: appVersion,
+            appBuild: appBuild,
+            platform: platform,
+            userAgent: userAgent,
+            ipAddress: ipAddress
+        )
+    }
+}
+
 extension CreateTemporaryAdminUserInput {
     func toRequest() -> CreateTemporaryAdminUserRequestDTO {
         CreateTemporaryAdminUserRequestDTO(

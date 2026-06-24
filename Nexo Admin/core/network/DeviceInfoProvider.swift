@@ -31,6 +31,28 @@ final class UserDefaultsDeviceIdentityStore: DeviceIdentityStoring, @unchecked S
     }
 }
 
+final class KeychainDeviceIdentityStore: DeviceIdentityStoring, @unchecked Sendable {
+    private let key = "nexo.admin.device.id"
+    private let keychain: SecureKeyValueStore
+
+    init(keychain: SecureKeyValueStore) {
+        self.keychain = keychain
+    }
+
+    var deviceId: String {
+        if let data = try? keychain.get(key),
+           let existing = String(data: data, encoding: .utf8),
+           !existing.isEmpty {
+            return existing
+        }
+
+        let generated = UIDevice.current.identifierForVendor?.uuidString.lowercased()
+            ?? UUID().uuidString.lowercased()
+        try? keychain.set(Data(generated.utf8), for: key)
+        return generated
+    }
+}
+
 protocol DeviceInfoProviding: Sendable {
     var deviceId: String { get }
     var appType: String { get }

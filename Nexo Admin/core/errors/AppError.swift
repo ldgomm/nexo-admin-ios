@@ -14,6 +14,8 @@ enum AppError: Error, Equatable, LocalizedError, Sendable {
     case forbidden
     case notFound
     case validation(String)
+    case maxSessionsReached(String)
+    case accountLocked(String)
     case server(String)
     case decoding(String)
     case transport(String)
@@ -34,6 +36,10 @@ enum AppError: Error, Equatable, LocalizedError, Sendable {
         case .notFound:
             return "El recurso solicitado no existe."
         case .validation(let message):
+            return message
+        case .maxSessionsReached(let message):
+            return message
+        case .accountLocked(let message):
             return message
         case .server(let message):
             return message

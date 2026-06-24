@@ -141,6 +141,29 @@ final class MockAdminAccessRepository: AdminAccessRepository, @unchecked Sendabl
         return AdminUserSessionRevocationResult(userId: userId, revokedSessions: 1, revokedRefreshTokens: 1, revokedAt: "2026-05-21T13:00:00Z", reason: reason)
     }
 
+    func listUserSessions(userId: String) async throws -> [AdminUserSession] {
+        try await delay()
+        guard users.contains(where: { $0.id == userId }) else { throw AppError.notFound }
+        return [
+            AdminUserSession(
+                id: "ses_admin_demo",
+                userId: userId,
+                status: "active",
+                createdAt: "2026-06-24T10:00:00Z",
+                expiresAt: "2026-07-24T10:00:00Z",
+                lastSeenAt: "2026-06-24T10:48:00Z",
+                revokedAt: nil,
+                deviceId: "ios-admin-preview",
+                appType: "admin_ios",
+                appVersion: "0.14.0",
+                appBuild: "debug",
+                platform: "ios",
+                userAgent: "Nexo Admin Preview",
+                ipAddress: "127.0.0.1"
+            )
+        ]
+    }
+
     func listInvitations(status: String?, limit: Int) async throws -> [AdminAccessInvitation] {
         try await delay()
         return invitations

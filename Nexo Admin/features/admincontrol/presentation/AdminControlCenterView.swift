@@ -5,6 +5,7 @@
 //  Created by José Ruiz on 2/6/26.
 //
 
+import Combine
 import SwiftUI
 
 struct AdminControlCenterView: View {
@@ -100,6 +101,14 @@ struct AdminControlCenterView: View {
             )
 
             VStack(spacing: 10) {
+                NexoAdminUXNavigationTile(
+                    title: "Centro de seguridad",
+                    subtitle: "Sesiones activas, usuarios bloqueados y dispositivos excedidos",
+                    systemImage: "shield.lefthalf.filled.badge.checkmark"
+                ) {
+                    AdminSecurityCenterView(repository: adminAccessRepository)
+                }
+
                 NexoAdminUXNavigationTile(
                     title: "Usuarios, roles y permisos",
                     subtitle: "Cuentas, invitaciones, resets, bloqueos y permisos efectivos",
@@ -243,5 +252,144 @@ struct AdminControlCenterView: View {
             PermissionCatalog.observabilityView,
             PermissionCatalog.devicesView
         ])
+    }
+}
+
+
+private struct AdminSecurityCenterView: View {
+    @StateObject private var viewModel: AdminSecurityCenterViewModel
+
+    init(repository: any AdminAccessRepository) {
+        _viewModel = StateObject(wrappedValue: AdminSecurityCenterViewModel(repository: repository))
+    }
+
+    var body: some View {
+        List {
+            switch viewModel.state {
+            case .idle, .loading:
+                Section { ProgressView("Cargando seguridad…") }
+            case .empty(let message):
+                Section { EmptyStateView(systemImage: "shield", title: "Sin datos", message: message) }
+            case .failed(let message):
+                Section { ErrorStateView(title: "No se pudo cargar seguridad", message: message, retry: { Task { await viewModel.refresh() } }) }
+            case .loaded(let users):
+                Section("Resumen") {
+                    LabeledContent("Usuarios", value: "\(users.count)")
+                    LabeledContent("Bloqueados", value: "\(viewModel.blockedUsers.count)")
+                    LabeledContent("Sesiones activas", value: "\(viewModel.totalActiveSessions)")
+                    LabeledContent("Sobre límite", value: "\(viewModel.usersOverSessionLimit.count)")
+                }
+
+                if !viewModel.usersOverSessionLimit.isEmpty {
+                    Section("Usuarios sobre límite") {
+                        ForEach(viewModel.usersOverSessionLimit) { user in
+                            NavigationLink {
+                                AdminUserDetailView(viewModel: AdminUserDetailViewModel(userId: user.id, repository: viewModel.repository))
+                            } label: {
+                                AdminSecurityUserRow(user: user, warning: "\(user.activeSessionCount) sesiones")
+                            }
+                        }
+                    }
+                }
+
+                if !viewModel.blockedUsers.isEmpty {
+                    Section("Usuarios bloqueados") {
+                        ForEach(viewModel.blockedUsers) { user in
+                            NavigationLink {
+                                AdminUserDetailView(viewModel: AdminUserDetailViewModel(userId: user.id, repository: viewModel.repository))
+                            } label: {
+                                AdminSecurityUserRow(user: user, warning: user.blockedReason ?? "Bloqueado")
+                            }
+                        }
+                    }
+                }
+
+                Section("Todos los usuarios") {
+                    ForEach(users) { user in
+                        NavigationLink {
+                            AdminUserDetailView(viewModel: AdminUserDetailViewModel(userId: user.id, repository: viewModel.repository))
+                        } label: {
+                            AdminSecurityUserRow(user: user, warning: user.activeSessionCount > 0 ? "\(user.activeSessionCount) sesiones" : user.statusLabel)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Seguridad")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await viewModel.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+            }
+        }
+        .task { await viewModel.load() }
+        .refreshable { await viewModel.refresh() }
+    }
+}
+
+@MainActor
+private final class AdminSecurityCenterViewModel: ObservableObject {
+    @Published private(set) var state: LoadableViewState<[AdminAccessUser]> = .idle
+
+    let repository: any AdminAccessRepository
+    private let listUsers: ListAdminUsersUseCase
+
+    init(repository: any AdminAccessRepository) {
+        self.repository = repository
+        self.listUsers = ListAdminUsersUseCase(repository: repository)
+    }
+
+    var users: [AdminAccessUser] {
+        guard case .loaded(let users) = state else { return [] }
+        return users
+    }
+
+    var blockedUsers: [AdminAccessUser] {
+        users.filter(\.isBlocked)
+    }
+
+    var usersOverSessionLimit: [AdminAccessUser] {
+        users.filter { $0.activeSessionCount > 3 }
+    }
+
+    var totalActiveSessions: Int {
+        users.reduce(0) { $0 + $1.activeSessionCount }
+    }
+
+    func load() async {
+        if case .loaded = state { return }
+        await refresh()
+    }
+
+    func refresh() async {
+        state = .loading
+        do {
+            let loadedUsers = try await listUsers.execute(query: nil, status: nil, limit: 200)
+            state = loadedUsers.isEmpty ? .empty("No hay usuarios para auditar.") : .loaded(loadedUsers)
+        } catch {
+            state = .failed(error.userFriendlyMessage)
+        }
+    }
+}
+
+private struct AdminSecurityUserRow: View {
+    let user: AdminAccessUser
+    let warning: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(user.displayName)
+                    .font(.headline)
+                Spacer()
+                AdminAccessStatusBadge(text: warning, systemImage: user.activeSessionCount > 3 ? "exclamationmark.triangle.fill" : nil)
+            }
+            Text(user.email)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text(user.statusLabel)
+                .font(.caption)
+                .foregroundStyle(user.isBlocked ? .red : .secondary)
+        }
+        .padding(.vertical, 4)
     }
 }

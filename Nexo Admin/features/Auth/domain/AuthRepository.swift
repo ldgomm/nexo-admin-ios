@@ -9,6 +9,7 @@ import Foundation
 
 protocol AuthRepository: Sendable {
     func login(email: String, password: String) async throws -> SessionTokens
+    func recoverSessions(email: String, password: String, reason: String) async throws -> SessionTokens
     func loadMe(organizationId: String?) async throws -> MeContext
     func logout(sessionId: String?, reason: String) async throws -> RevokeSessionResponseDTO
 }
@@ -22,6 +23,10 @@ final class RemoteAuthRepository: AuthRepository, @unchecked Sendable {
 
     func login(email: String, password: String) async throws -> SessionTokens {
         try await authAPI.login(email: email, password: password).toTokens()
+    }
+
+    func recoverSessions(email: String, password: String, reason: String) async throws -> SessionTokens {
+        try await authAPI.recoverSessions(email: email, password: password, reason: reason).toTokens()
     }
 
     func loadMe(organizationId: String?) async throws -> MeContext {

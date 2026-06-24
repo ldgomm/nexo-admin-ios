@@ -218,6 +218,38 @@ struct AdminUserSessionRevocationResult: Equatable, Sendable {
     let reason: String
 }
 
+struct AdminUserSession: Identifiable, Equatable, Sendable {
+    let id: String
+    let userId: String
+    let status: String
+    let createdAt: String
+    let expiresAt: String
+    let lastSeenAt: String?
+    let revokedAt: String?
+    let deviceId: String?
+    let appType: String?
+    let appVersion: String?
+    let appBuild: String?
+    let platform: String?
+    let userAgent: String?
+    let ipAddress: String?
+
+    var displayTitle: String {
+        let app = appType?.readableStatus ?? "App"
+        let platformName = platform?.readableStatus ?? "Dispositivo"
+        return "\(app) · \(platformName)"
+    }
+
+    var statusLabel: String { status.readableStatus }
+    var isActive: Bool { status.normalizedStatus == "active" }
+    var deviceSummary: String {
+        [appVersion, appBuild, ipAddress]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
+    }
+}
+
 struct CreateTemporaryAdminUserInput: Equatable, Sendable {
     var email = ""
     var displayName = ""

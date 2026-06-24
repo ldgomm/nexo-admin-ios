@@ -53,6 +53,10 @@ final class RemoteAdminAccessRepository: AdminAccessRepository, @unchecked Senda
         try await api.revokeSessions(userId: userId, request: AdminUserActionRequestDTO(reason: reason)).toDomain()
     }
 
+    func listUserSessions(userId: String) async throws -> [AdminUserSession] {
+        try await api.listUserSessions(userId: userId).sessions.map { $0.toDomain() }
+    }
+
     func listInvitations(status: String?, limit: Int) async throws -> [AdminAccessInvitation] {
         try await api.listInvitations(status: status, limit: limit).invitations.map { $0.toDomain() }
     }
