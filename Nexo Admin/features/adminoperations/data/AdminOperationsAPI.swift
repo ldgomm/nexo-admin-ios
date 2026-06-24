@@ -62,13 +62,13 @@ struct RemoteAdminOperationsAPI: AdminOperationsAPI {
 
     func searchAuditLogs(filter: AdminAuditFilter) async throws -> AdminAuditLogsResponseDTO {
         try await apiClient.send(
-            APIEndpoint(path: "/api/v1/admin/audit/logs", method: .get, queryItems: filter.queryItems, requiresOrganization: true)
+            APIEndpoint(path: "/api/v1/admin/audit-logs", method: .get, queryItems: filter.queryItems, requiresOrganization: true)
         )
     }
 
     func getAuditTimeline(filter: AdminAuditFilter) async throws -> AdminAuditTimelineResponseDTO {
         try await apiClient.send(
-            APIEndpoint(path: "/api/v1/admin/audit/timeline", method: .get, queryItems: filter.queryItems, requiresOrganization: true)
+            APIEndpoint(path: "/api/v1/admin/audit-timeline", method: .get, queryItems: filter.queryItems, requiresOrganization: true)
         )
     }
 

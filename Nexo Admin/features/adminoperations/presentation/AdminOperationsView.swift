@@ -67,6 +67,8 @@ struct AdminOperationsView: View {
                         .padding(40)
                 } else {
                     switch viewModel.selectedSection {
+                    case .snapshot:
+                        operationalSnapshotContent
                     case .overview:
                         overviewContent
                     case .cash:
@@ -95,6 +97,111 @@ struct AdminOperationsView: View {
                     .buttonStyle(.bordered)
             }
             .font(.subheadline.weight(.semibold))
+        }
+    }
+
+    private var operationalSnapshotContent: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HCard {
+                Label("Readiness operativo", systemImage: "checkmark.seal.fill")
+                    .font(.headline)
+                Text(viewModel.readinessTitle)
+                    .font(.subheadline.weight(.semibold))
+                if viewModel.readinessChecks.isEmpty {
+                    Text("Sin checks de readiness cargados. Revisa /api/v1/admin/support/diagnostics.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(viewModel.readinessChecks.prefix(5)) { check in
+                        SnapshotCheckRow(check: check)
+                    }
+                }
+            }
+
+            if let current = viewModel.operationalCashSession {
+                CashSessionCard(session: current) { selectedCashSession = current }
+            } else {
+                HCard {
+                    Label("Estado de caja", systemImage: "banknote")
+                        .font(.headline)
+                    Text("No hay caja abierta o no se pudo cargar la caja actual.")
+                        .foregroundStyle(.secondary)
+                    if let cash = viewModel.todayReport?.cash {
+                        LabeledContent("Cajas abiertas", value: "\(cash.openSessionCount)")
+                        LabeledContent("Cajas cerradas", value: "\(cash.closedSessionCount)")
+                        LabeledContent("Movimientos", value: "\(cash.movementCount)")
+                    }
+                }
+            }
+
+            SnapshotEventListCard(
+                title: "Últimas ventas",
+                subtitle: "Eventos recientes de venta desde auditoría/timeline, sin entrar como Business.",
+                emptyMessage: "Sin ventas recientes en auditoría para este rango.",
+                events: viewModel.recentSalesEvents
+            )
+
+            SnapshotEventListCard(
+                title: "Últimos pagos",
+                subtitle: "Pagos, abonos o movimientos asociados a cobro.",
+                emptyMessage: "Sin pagos recientes en auditoría para este rango.",
+                events: viewModel.recentPaymentEvents
+            )
+
+            SnapshotEventListCard(
+                title: "Últimos documentos",
+                subtitle: "Comprobantes, RIDE, XML, autorización o estados documentales.",
+                emptyMessage: "Sin documentos recientes en auditoría para este rango.",
+                events: viewModel.recentDocumentEvents
+            )
+
+            SnapshotEventListCard(
+                title: "Errores de documentos",
+                subtitle: "Rechazos, fallos o advertencias documentales/SRI.",
+                emptyMessage: "Sin errores documentales recientes para este rango.",
+                events: viewModel.documentErrorEvents
+            )
+
+            HCard {
+                Label("Estado de inventario / alertas", systemImage: "shippingbox.fill")
+                    .font(.headline)
+                if viewModel.inventoryAlertEvents.isEmpty {
+                    Text("Sin alertas de inventario/stock en auditoría o reporte operativo.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(viewModel.inventoryAlertEvents) { event in
+                        SnapshotEventRow(event: event)
+                        Divider()
+                    }
+                }
+                if let topItems = viewModel.todayReport?.topItems, !topItems.isEmpty {
+                    Divider()
+                    Text("Productos con movimiento")
+                        .font(.subheadline.weight(.semibold))
+                    ForEach(topItems.prefix(3)) { item in
+                        HStack {
+                            Text(item.name)
+                            Spacer()
+                            Text("Cant. \(item.quantity)")
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.caption)
+                    }
+                }
+            }
+
+            SnapshotEventListCard(
+                title: "Últimas exportaciones",
+                subtitle: "Generación/descarga de paquetes y archivos operativos.",
+                emptyMessage: "Sin exportaciones recientes en auditoría para este rango.",
+                events: viewModel.recentExportEvents
+            )
+
+            SnapshotEventListCard(
+                title: "Auditoría básica",
+                subtitle: "Últimos eventos generales para soporte.",
+                emptyMessage: "Sin auditoría reciente para este rango.",
+                events: viewModel.basicAuditEvents
+            )
         }
     }
 
@@ -567,5 +674,112 @@ private struct AuditDictionarySection: View {
 private extension String {
     func ifBlank(_ fallback: String) -> String {
         trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? fallback : self
+    }
+}
+
+private struct SnapshotCheckRow: View {
+    let check: AdminSupportDiagnosticCheck
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .foregroundStyle(color)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(check.message)
+                    .font(.subheadline.weight(.semibold))
+                if let hint = check.actionHint, !hint.isEmpty {
+                    Text(hint)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var icon: String {
+        switch check.status.lowercased() {
+        case "pass", "ok", "healthy", "ready": return "checkmark.circle.fill"
+        case "warn", "warning": return "exclamationmark.triangle.fill"
+        case "fail", "error", "critical", "blocked": return "xmark.octagon.fill"
+        default: return "info.circle.fill"
+        }
+    }
+
+    private var color: Color {
+        switch check.status.lowercased() {
+        case "pass", "ok", "healthy", "ready": return .green
+        case "warn", "warning": return .orange
+        case "fail", "error", "critical", "blocked": return .red
+        default: return .blue
+        }
+    }
+}
+
+private struct SnapshotEventListCard: View {
+    let title: String
+    let subtitle: String
+    let emptyMessage: String
+    let events: [AdminOperationalSnapshotEvent]
+
+    var body: some View {
+        HCard {
+            Label(title, systemImage: events.first?.systemImage ?? "list.bullet.rectangle")
+                .font(.headline)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if events.isEmpty {
+                Text(emptyMessage)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(events) { event in
+                    SnapshotEventRow(event: event)
+                    Divider()
+                }
+            }
+        }
+    }
+}
+
+private struct SnapshotEventRow: View {
+    let event: AdminOperationalSnapshotEvent
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: event.systemImage)
+                .foregroundStyle(color)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(event.title)
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text(event.severity.uppercased())
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(color.opacity(0.14))
+                        .clipShape(Capsule())
+                }
+                Text(event.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(event.occurredAt)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var color: Color {
+        switch event.severity.lowercased() {
+        case "error", "critical", "fail", "blocked": return .red
+        case "warn", "warning": return .orange
+        case "success", "ok", "pass", "info": return .blue
+        default: return .secondary
+        }
     }
 }
