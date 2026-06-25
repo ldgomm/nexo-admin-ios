@@ -9,6 +9,10 @@ import Foundation
 @testable import Nexo_Admin
 
 final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendable {
+    func listUserSessions(userId: String) async throws -> [Nexo_Admin.AdminUserSession] {
+        return []
+    }
+    
     private var users: [AdminAccessUser] = [
         AdminAccessUser(
             id: "usr_owner",
