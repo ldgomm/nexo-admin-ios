@@ -11,6 +11,7 @@ struct AdminModulesCenterView: View {
     @ObservedObject var sessionStore: AuthSessionStore
     let foundationRepository: any AdminFoundationRepository
     let businessPackagesRepository: any AdminBusinessPackagesRepository
+    let verticalsRepository: any AdminVerticalsRepository
 
     var body: some View {
         NavigationStack {
@@ -50,6 +51,23 @@ struct AdminModulesCenterView: View {
                 }
 
 
+                Section("Vertical activation") {
+                    NavigationLink {
+                        AdminVerticalActivationView(
+                            viewModel: AdminVerticalActivationViewModel(
+                                repository: verticalsRepository,
+                                permissions: sessionStore.effectivePermissions
+                            )
+                        )
+                    } label: {
+                        AdminModulesCenterRow(
+                            title: "Verticales",
+                            subtitle: "Activar Restaurante v1, readiness, capabilities, work modes y seeds futuros",
+                            systemImage: "square.3.layers.3d.down.right"
+                        )
+                    }
+                }
+
                 Section("Business Package System") {
                     NavigationLink {
                         AdminBusinessPackagesDiagnosticsView(
@@ -68,7 +86,7 @@ struct AdminModulesCenterView: View {
                 }
 
                 Section("Regla v2.4 / 20K") {
-                    Text("Los módulos siguen siendo la seguridad técnica. Los paquetes del negocio son diagnóstico read-only para planificar capabilities y verticales; todavía no activan nada.")
+                    Text("Los módulos siguen siendo la seguridad técnica. Los paquetes del negocio son diagnóstico read-only. La activación real de verticales vive en la nueva pantalla Verticales y no duplica ventas/caja/documentos/catálogo.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

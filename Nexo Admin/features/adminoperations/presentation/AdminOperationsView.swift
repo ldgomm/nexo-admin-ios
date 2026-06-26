@@ -117,6 +117,8 @@ struct AdminOperationsView: View {
                 }
             }
 
+            AdminAccountantPackReadinessCard()
+            
             if let current = viewModel.operationalCashSession {
                 CashSessionCard(session: current) { selectedCashSession = current }
             } else {
@@ -781,5 +783,43 @@ private struct SnapshotEventRow: View {
         case "success", "ok", "pass", "info": return .blue
         default: return .secondary
         }
+    }
+}
+
+private struct AdminAccountantPackReadinessCard: View {
+    var body: some View {
+        HCard {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "doc.zipper")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.blue)
+                    .frame(width: 34, height: 34)
+                    .background(.blue.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Paquete contador")
+                        .font(.headline)
+                    Text("Readiness visible para soporte")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Admin diagnostica disponibilidad y límites. La descarga operativa vive en Business.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Endpoint esperado: /api/v1/business/finance/accountant-pack/draft.zip", systemImage: "link")
+                Label("Contenido mínimo: manifest, cierres, ventas, pagos, caja, documentos, CxC y README_CONTADOR", systemImage: "doc.zipper")
+                Label("No es contabilidad legal, ATS ni declaración tributaria", systemImage: "exclamationmark.shield")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .accessibilityIdentifier("admin.accountantPack.readinessCard")
     }
 }

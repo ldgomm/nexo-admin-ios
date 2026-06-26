@@ -28,6 +28,12 @@ enum PermissionCatalog {
     static let modulesDisable = "modules.disable"
     static let modulesManage = "modules.manage"
 
+    static let verticalsView = "verticals.view"
+    static let verticalsActivate = "verticals.activate"
+    static let verticalsDeactivate = "verticals.deactivate"
+    static let verticalsReadinessView = "verticals.readiness.view"
+    static let verticalsSeedApply = "verticals.seed.apply"
+
     static let activitiesView = "activities.view"
     static let activitiesCreate = "activities.create"
     static let activitiesUpdate = "activities.update"

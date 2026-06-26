@@ -27,6 +27,7 @@ final class AppContainer: ObservableObject {
     let adminSupportRepository: any AdminSupportRepository
     let adminRoleTemplateRepository: any AdminRoleTemplateRepository
     let adminBusinessPackagesRepository: any AdminBusinessPackagesRepository
+    let adminVerticalsRepository: any AdminVerticalsRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -49,6 +50,7 @@ final class AppContainer: ObservableObject {
         adminSupportRepository: any AdminSupportRepository,
         adminRoleTemplateRepository: any AdminRoleTemplateRepository,
         adminBusinessPackagesRepository: any AdminBusinessPackagesRepository,
+        adminVerticalsRepository: any AdminVerticalsRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -69,6 +71,7 @@ final class AppContainer: ObservableObject {
         self.adminSupportRepository = adminSupportRepository
         self.adminRoleTemplateRepository = adminRoleTemplateRepository
         self.adminBusinessPackagesRepository = adminBusinessPackagesRepository
+        self.adminVerticalsRepository = adminVerticalsRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -132,6 +135,8 @@ final class AppContainer: ObservableObject {
 
         let roleTemplateRepository = RemoteAdminRoleTemplateRepository(apiClient: client)
         let businessPackagesRepository = RemoteAdminBusinessPackagesRepository(apiClient: client)
+        let verticalsAPI = RemoteAdminVerticalsAPI(apiClient: client)
+        let verticalsRepository = RemoteAdminVerticalsRepository(api: verticalsAPI)
 
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
@@ -162,6 +167,7 @@ final class AppContainer: ObservableObject {
             adminSupportRepository: supportRepository,
             adminRoleTemplateRepository: roleTemplateRepository,
             adminBusinessPackagesRepository: businessPackagesRepository,
+            adminVerticalsRepository: verticalsRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )
