@@ -13,6 +13,7 @@ protocol AdminVerticalsAPI: Sendable {
     func activate(verticalCode: String, request: AdminVerticalActivateRequestDTO) async throws -> AdminVerticalActivationDTO
     func deactivate(verticalCode: String, request: AdminVerticalDeactivateRequestDTO) async throws -> AdminVerticalActivationDTO
     func readiness(verticalCode: String) async throws -> AdminVerticalReadinessResponseDTO
+    func restaurantTablesReadiness(branchId: String?) async throws -> AdminRestaurantTablesReadinessResponseDTO
 }
 
 final class RemoteAdminVerticalsAPI: AdminVerticalsAPI, @unchecked Sendable {
@@ -48,8 +49,19 @@ final class RemoteAdminVerticalsAPI: AdminVerticalsAPI, @unchecked Sendable {
         try await apiClient.send(adminEndpoint(path: "/api/v1/admin/verticals/\(encoded(verticalCode))/readiness", method: .get))
     }
 
-    private func adminEndpoint(path: String, method: HTTPMethod) -> APIEndpoint {
-        APIEndpoint(path: path, method: method, requiresAuth: true, requiresOrganization: true)
+
+    func restaurantTablesReadiness(branchId: String?) async throws -> AdminRestaurantTablesReadinessResponseDTO {
+        let queryItems: [URLQueryItem]
+        if let branchId = branchId?.trimmingCharacters(in: .whitespacesAndNewlines), !branchId.isEmpty {
+            queryItems = [URLQueryItem(name: "branchId", value: branchId)]
+        } else {
+            queryItems = []
+        }
+        return try await apiClient.send(adminEndpoint(path: "/api/v1/admin/restaurant/tables/readiness", method: .get, queryItems: queryItems))
+    }
+
+    private func adminEndpoint(path: String, method: HTTPMethod, queryItems: [URLQueryItem] = []) -> APIEndpoint {
+        APIEndpoint(path: path, method: method, queryItems: queryItems, requiresAuth: true, requiresOrganization: true)
     }
 
     private func encoded(_ value: String) -> String {

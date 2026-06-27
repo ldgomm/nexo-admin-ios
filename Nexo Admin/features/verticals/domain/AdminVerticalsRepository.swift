@@ -13,6 +13,7 @@ protocol AdminVerticalsRepository: Sendable {
     func activate(verticalCode: String, request: AdminVerticalActivationRequest) async throws -> AdminVerticalActivation
     func deactivate(verticalCode: String, reason: String) async throws -> AdminVerticalActivation
     func readiness(verticalCode: String) async throws -> AdminVerticalReadinessResult
+    func restaurantTablesReadiness(branchId: String?) async throws -> AdminRestaurantTablesReadiness
 }
 
 struct AdminVerticalActivationRequest: Equatable, Sendable {

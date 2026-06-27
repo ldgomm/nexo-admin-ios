@@ -418,3 +418,174 @@ enum AdminVerticalReadinessStatusDTO: Equatable, Decodable, Sendable {
         }
     }
 }
+
+// MARK: - Admin Restaurant Tables Readiness
+
+struct AdminRestaurantTablesReadinessResponseDTO: Decodable, Equatable, Sendable {
+    let organizationId: String
+    let branchId: String?
+    let restaurantTablesOptionalActive: Bool
+    let businessUiReady: Bool
+    let warnings: [String]
+    let summary: AdminRestaurantTablesReadinessSummaryDTO
+    let tables: [AdminRestaurantTableReadinessDTO]
+
+    private enum CodingKeys: String, CodingKey {
+        case organizationId
+        case branchId
+        case restaurantTablesOptionalActive
+        case businessUiReady
+        case warnings
+        case summary
+        case tables
+    }
+
+    init(
+        organizationId: String,
+        branchId: String?,
+        restaurantTablesOptionalActive: Bool,
+        businessUiReady: Bool,
+        warnings: [String],
+        summary: AdminRestaurantTablesReadinessSummaryDTO,
+        tables: [AdminRestaurantTableReadinessDTO]
+    ) {
+        self.organizationId = organizationId
+        self.branchId = branchId
+        self.restaurantTablesOptionalActive = restaurantTablesOptionalActive
+        self.businessUiReady = businessUiReady
+        self.warnings = warnings
+        self.summary = summary
+        self.tables = tables
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.organizationId = try container.decodeIfPresent(String.self, forKey: .organizationId) ?? ""
+        self.branchId = try container.decodeIfPresent(String.self, forKey: .branchId)
+        self.restaurantTablesOptionalActive = try container.decodeIfPresent(Bool.self, forKey: .restaurantTablesOptionalActive) ?? false
+        self.businessUiReady = try container.decodeIfPresent(Bool.self, forKey: .businessUiReady) ?? false
+        self.warnings = try container.decodeIfPresent([String].self, forKey: .warnings) ?? []
+        self.summary = try container.decodeIfPresent(AdminRestaurantTablesReadinessSummaryDTO.self, forKey: .summary) ?? .empty
+        self.tables = try container.decodeIfPresent([AdminRestaurantTableReadinessDTO].self, forKey: .tables) ?? []
+    }
+}
+
+struct AdminRestaurantTablesReadinessSummaryDTO: Decodable, Equatable, Sendable {
+    let total: Int
+    let available: Int
+    let occupied: Int
+    let disabled: Int
+    let openSessions: Int
+
+    static let empty = AdminRestaurantTablesReadinessSummaryDTO(total: 0, available: 0, occupied: 0, disabled: 0, openSessions: 0)
+
+    private enum CodingKeys: String, CodingKey {
+        case total
+        case available
+        case occupied
+        case disabled
+        case openSessions
+    }
+
+    init(total: Int, available: Int, occupied: Int, disabled: Int, openSessions: Int) {
+        self.total = total
+        self.available = available
+        self.occupied = occupied
+        self.disabled = disabled
+        self.openSessions = openSessions
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.total = try container.decodeIfPresent(Int.self, forKey: .total) ?? 0
+        self.available = try container.decodeIfPresent(Int.self, forKey: .available) ?? 0
+        self.occupied = try container.decodeIfPresent(Int.self, forKey: .occupied) ?? 0
+        self.disabled = try container.decodeIfPresent(Int.self, forKey: .disabled) ?? 0
+        self.openSessions = try container.decodeIfPresent(Int.self, forKey: .openSessions) ?? 0
+    }
+}
+
+struct AdminRestaurantTableReadinessDTO: Decodable, Equatable, Sendable {
+    let tableId: String
+    let code: String
+    let name: String
+    let area: String?
+    let capacity: Int?
+    let status: String
+    let activeSessionId: String?
+    let linkedSaleId: String?
+    let openedAt: String?
+    let canOpen: Bool
+    let canClose: Bool
+    let canCancel: Bool
+    let canLinkSale: Bool
+    let reasonIfBlocked: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case tableId
+        case code
+        case name
+        case area
+        case capacity
+        case status
+        case activeSessionId
+        case linkedSaleId
+        case openedAt
+        case canOpen
+        case canClose
+        case canCancel
+        case canLinkSale
+        case reasonIfBlocked
+    }
+
+    init(
+        tableId: String,
+        code: String,
+        name: String,
+        area: String?,
+        capacity: Int?,
+        status: String,
+        activeSessionId: String?,
+        linkedSaleId: String?,
+        openedAt: String?,
+        canOpen: Bool,
+        canClose: Bool,
+        canCancel: Bool,
+        canLinkSale: Bool,
+        reasonIfBlocked: String?
+    ) {
+        self.tableId = tableId
+        self.code = code
+        self.name = name
+        self.area = area
+        self.capacity = capacity
+        self.status = status
+        self.activeSessionId = activeSessionId
+        self.linkedSaleId = linkedSaleId
+        self.openedAt = openedAt
+        self.canOpen = canOpen
+        self.canClose = canClose
+        self.canCancel = canCancel
+        self.canLinkSale = canLinkSale
+        self.reasonIfBlocked = reasonIfBlocked
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.tableId = try container.decodeIfPresent(String.self, forKey: .tableId) ?? ""
+        self.code = try container.decodeIfPresent(String.self, forKey: .code) ?? tableId
+        self.name = try container.decodeIfPresent(String.self, forKey: .name) ?? code
+        self.area = try container.decodeIfPresent(String.self, forKey: .area)
+        self.capacity = try container.decodeIfPresent(Int.self, forKey: .capacity)
+        self.status = try container.decodeIfPresent(String.self, forKey: .status) ?? "unknown"
+        self.activeSessionId = try container.decodeIfPresent(String.self, forKey: .activeSessionId)
+        self.linkedSaleId = try container.decodeIfPresent(String.self, forKey: .linkedSaleId)
+        self.openedAt = try container.decodeIfPresent(String.self, forKey: .openedAt)
+        self.canOpen = try container.decodeIfPresent(Bool.self, forKey: .canOpen) ?? false
+        self.canClose = try container.decodeIfPresent(Bool.self, forKey: .canClose) ?? false
+        self.canCancel = try container.decodeIfPresent(Bool.self, forKey: .canCancel) ?? false
+        self.canLinkSale = try container.decodeIfPresent(Bool.self, forKey: .canLinkSale) ?? false
+        self.reasonIfBlocked = try container.decodeIfPresent(String.self, forKey: .reasonIfBlocked)
+    }
+}
+

@@ -16,13 +16,18 @@ final class AdminVerticalActivationViewModel: ObservableObject {
     @Published var deactivationReason = "Desactivar restaurante v1 desde Nexo Admin iOS"
     @Published var errorMessage: String?
     @Published var successMessage: String?
+    @Published private(set) var tablesReadiness: AdminRestaurantTablesReadiness?
+    @Published private(set) var tablesReadinessErrorMessage: String?
+    @Published private(set) var isLoadingTablesReadiness = false
 
     let permissions: Set<String>
+    private let repository: any AdminVerticalsRepository
     private let loadActivation: LoadAdminVerticalActivationUseCase
     private let changeActivation: ChangeAdminVerticalActivationUseCase
 
     init(repository: any AdminVerticalsRepository, permissions: Set<String>) {
         self.permissions = permissions
+        self.repository = repository
         self.loadActivation = LoadAdminVerticalActivationUseCase(repository: repository)
         self.changeActivation = ChangeAdminVerticalActivationUseCase(repository: repository)
     }
@@ -74,13 +79,30 @@ final class AdminVerticalActivationViewModel: ObservableObject {
 
         state = .loading
         errorMessage = nil
+        tablesReadinessErrorMessage = nil
 
         do {
             let presentation = try await loadActivation.execute(verticalCode: AdminVerticalCode.restaurant)
             state = .loaded(presentation)
+            await refreshTablesReadiness()
         } catch {
             state = .failed(error.userFriendlyMessage)
         }
+    }
+
+
+    func refreshTablesReadiness() async {
+        guard canViewVerticals else { return }
+
+        isLoadingTablesReadiness = true
+        tablesReadinessErrorMessage = nil
+        do {
+            tablesReadiness = try await repository.restaurantTablesReadiness(branchId: nil)
+        } catch {
+            tablesReadiness = nil
+            tablesReadinessErrorMessage = error.userFriendlyMessage
+        }
+        isLoadingTablesReadiness = false
     }
 
     func activateRestaurant() async {

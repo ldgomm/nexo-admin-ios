@@ -69,6 +69,12 @@ final class AdminVerticalsTestRepository: AdminVerticalsRepository, @unchecked S
         if let error { throw error }
         return readiness
     }
+
+
+    func restaurantTablesReadiness(branchId: String?) async throws -> AdminRestaurantTablesReadiness {
+        if let error { throw error }
+        return .fixture(branchId: branchId ?? "br_staging_matriz")
+    }
 }
 
 extension AdminVerticalPackagesResult {
@@ -151,3 +157,51 @@ extension AdminVerticalReadinessResult {
         )
     }
 }
+
+extension AdminRestaurantTablesReadiness {
+    static func fixture(branchId: String = "br_staging_matriz") -> AdminRestaurantTablesReadiness {
+        AdminRestaurantTablesReadiness(
+            organizationId: "org_altos_del_murco_staging",
+            branchId: branchId,
+            restaurantTablesOptionalActive: true,
+            businessUiReady: true,
+            warnings: [],
+            summary: AdminRestaurantTablesReadinessSummary(total: 2, available: 1, occupied: 1, disabled: 0, openSessions: 1),
+            tables: [
+                AdminRestaurantTableReadiness(
+                    tableId: "tbl_1",
+                    code: "M1",
+                    name: "Mesa 1",
+                    area: "Salón",
+                    capacity: 4,
+                    status: "available",
+                    activeSessionId: nil,
+                    linkedSaleId: nil,
+                    openedAt: nil,
+                    canOpen: true,
+                    canClose: false,
+                    canCancel: false,
+                    canLinkSale: false,
+                    reasonIfBlocked: nil
+                ),
+                AdminRestaurantTableReadiness(
+                    tableId: "tbl_2",
+                    code: "M2",
+                    name: "Mesa 2",
+                    area: "Salón",
+                    capacity: 4,
+                    status: "occupied",
+                    activeSessionId: "ts_1",
+                    linkedSaleId: "sale_1",
+                    openedAt: "2026-06-26T20:00:00Z",
+                    canOpen: false,
+                    canClose: true,
+                    canCancel: true,
+                    canLinkSale: true,
+                    reasonIfBlocked: nil
+                )
+            ]
+        )
+    }
+}
+

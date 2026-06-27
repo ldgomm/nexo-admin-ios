@@ -229,3 +229,63 @@ struct AdminVerticalActivationPresentation: Equatable, Sendable {
         return "Listo"
     }
 }
+
+// MARK: - Admin Restaurant Tables Readiness
+
+struct AdminRestaurantTablesReadiness: Equatable, Sendable {
+    let organizationId: String
+    let branchId: String?
+    let restaurantTablesOptionalActive: Bool
+    let businessUiReady: Bool
+    let warnings: [String]
+    let summary: AdminRestaurantTablesReadinessSummary
+    let tables: [AdminRestaurantTableReadiness]
+
+    var hasWarnings: Bool { !warnings.isEmpty }
+    var hasOpenSessions: Bool { summary.openSessions > 0 }
+
+    var statusTitle: String {
+        if !restaurantTablesOptionalActive { return "Mesas apagadas" }
+        if businessUiReady && warnings.isEmpty { return "Listo" }
+        if businessUiReady { return "Listo con advertencias" }
+        return "No listo"
+    }
+}
+
+struct AdminRestaurantTablesReadinessSummary: Equatable, Sendable {
+    let total: Int
+    let available: Int
+    let occupied: Int
+    let disabled: Int
+    let openSessions: Int
+}
+
+struct AdminRestaurantTableReadiness: Identifiable, Equatable, Sendable {
+    var id: String { tableId }
+
+    let tableId: String
+    let code: String
+    let name: String
+    let area: String?
+    let capacity: Int?
+    let status: String
+    let activeSessionId: String?
+    let linkedSaleId: String?
+    let openedAt: String?
+    let canOpen: Bool
+    let canClose: Bool
+    let canCancel: Bool
+    let canLinkSale: Bool
+    let reasonIfBlocked: String?
+
+    var displayName: String {
+        if !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return name }
+        if !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return code }
+        return tableId
+    }
+
+    var normalizedStatus: String {
+        status.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+}
+

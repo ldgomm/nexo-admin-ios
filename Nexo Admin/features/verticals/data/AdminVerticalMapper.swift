@@ -154,3 +154,53 @@ extension AdminVerticalActivationRequest {
         )
     }
 }
+
+// MARK: - Admin Restaurant Tables Readiness
+
+extension AdminRestaurantTablesReadinessResponseDTO {
+    func toDomain() -> AdminRestaurantTablesReadiness {
+        AdminRestaurantTablesReadiness(
+            organizationId: organizationId,
+            branchId: branchId,
+            restaurantTablesOptionalActive: restaurantTablesOptionalActive,
+            businessUiReady: businessUiReady,
+            warnings: warnings,
+            summary: summary.toDomain(),
+            tables: tables.map { $0.toDomain() }
+        )
+    }
+}
+
+extension AdminRestaurantTablesReadinessSummaryDTO {
+    func toDomain() -> AdminRestaurantTablesReadinessSummary {
+        AdminRestaurantTablesReadinessSummary(
+            total: total,
+            available: available,
+            occupied: occupied,
+            disabled: disabled,
+            openSessions: openSessions
+        )
+    }
+}
+
+extension AdminRestaurantTableReadinessDTO {
+    func toDomain() -> AdminRestaurantTableReadiness {
+        AdminRestaurantTableReadiness(
+            tableId: tableId,
+            code: code,
+            name: name,
+            area: area,
+            capacity: capacity,
+            status: status,
+            activeSessionId: activeSessionId,
+            linkedSaleId: linkedSaleId,
+            openedAt: openedAt,
+            canOpen: canOpen,
+            canClose: canClose,
+            canCancel: canCancel,
+            canLinkSale: canLinkSale,
+            reasonIfBlocked: reasonIfBlocked
+        )
+    }
+}
+

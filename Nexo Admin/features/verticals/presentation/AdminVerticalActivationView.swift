@@ -109,6 +109,11 @@ struct AdminVerticalActivationView: View {
                 onDeactivate: { showDeactivateConfirmation = true }
             )
             AdminVerticalReadinessCard(readiness: presentation.readiness)
+            AdminRestaurantTablesReadinessCard(
+                readiness: viewModel.tablesReadiness,
+                errorMessage: viewModel.tablesReadinessErrorMessage,
+                isLoading: viewModel.isLoadingTablesReadiness
+            )
             AdminVerticalCapabilitiesCard(package: presentation.package, activeCapabilities: presentation.defaultEnabledCapabilities)
             AdminVerticalSurfacesCard(package: presentation.package)
             AdminVerticalSeedsCard(package: presentation.package)
@@ -313,6 +318,168 @@ private struct AdminVerticalReadinessRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 2)
+    }
+}
+
+
+private struct AdminRestaurantTablesReadinessCard: View {
+    let readiness: AdminRestaurantTablesReadiness?
+    let errorMessage: String?
+    let isLoading: Bool
+
+    var body: some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Mesas opcionales",
+                subtitle: "Diagnóstico Admin de configuración y sesiones. La operación diaria de mesas pertenece a Business.",
+                systemImage: "rectangle.grid.2x2"
+            )
+
+            if isLoading && readiness == nil {
+                HStack(spacing: 10) {
+                    ProgressView()
+                    Text("Cargando diagnóstico de mesas…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let readiness {
+                HStack(spacing: 10) {
+                    NexoAdminUXStatusBadge(
+                        title: readiness.restaurantTablesOptionalActive ? "Activo" : "Apagado",
+                        systemImage: readiness.restaurantTablesOptionalActive ? "checkmark.seal.fill" : "pause.circle",
+                        tint: readiness.restaurantTablesOptionalActive ? .green : .orange
+                    )
+                    NexoAdminUXStatusBadge(
+                        title: readiness.businessUiReady ? "Business ready" : "Business no listo",
+                        systemImage: readiness.businessUiReady ? "iphone.gen3" : "exclamationmark.triangle.fill",
+                        tint: readiness.businessUiReady ? .green : .orange
+                    )
+                    if let branchId = readiness.branchId, !branchId.isEmpty {
+                        NexoAdminUXStatusBadge(title: branchId, systemImage: "building.2", tint: .secondary)
+                    }
+                }
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    NexoAdminUXMetricTile(title: "Mesas", value: "\(readiness.summary.total)", subtitle: "Configuradas", systemImage: "rectangle.grid.2x2", tint: .accentColor)
+                    NexoAdminUXMetricTile(title: "Disponibles", value: "\(readiness.summary.available)", subtitle: "Libres", systemImage: "checkmark.circle", tint: .green)
+                    NexoAdminUXMetricTile(title: "Ocupadas", value: "\(readiness.summary.occupied)", subtitle: "Con sesión", systemImage: "person.2.fill", tint: readiness.summary.occupied > 0 ? .orange : .secondary)
+                    NexoAdminUXMetricTile(title: "Deshabilitadas", value: "\(readiness.summary.disabled)", subtitle: "Fuera de uso", systemImage: "slash.circle", tint: readiness.summary.disabled > 0 ? .red : .secondary)
+                    NexoAdminUXMetricTile(title: "Sesiones", value: "\(readiness.summary.openSessions)", subtitle: "Abiertas", systemImage: "clock", tint: readiness.summary.openSessions > 0 ? .orange : .green)
+                    NexoAdminUXMetricTile(title: "Estado", value: readiness.businessUiReady ? "OK" : "WARN", subtitle: readiness.statusTitle, systemImage: readiness.businessUiReady ? "checkmark.seal" : "exclamationmark.triangle", tint: readiness.businessUiReady ? .green : .orange)
+                }
+
+                if !readiness.warnings.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(readiness.warnings, id: \.self) { warning in
+                            Label(warning.nexoReadableKey, systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+
+                if readiness.tables.isEmpty {
+                    NexoAdminUXInlineMessage(
+                        title: "Sin mesas configuradas",
+                        message: "Business puede seguir usando venta rápida. Configura mesas solo si el restaurante realmente las usará.",
+                        tone: .info
+                    )
+                } else {
+                    VStack(spacing: 10) {
+                        ForEach(readiness.tables.prefix(6)) { table in
+                            AdminRestaurantTableReadinessRow(table: table)
+                            if table.id != readiness.tables.prefix(6).last?.id { Divider() }
+                        }
+                    }
+                }
+
+                NexoAdminUXInlineMessage(
+                    title: "Solo diagnóstico",
+                    message: "Admin no abre/cierra/cancela mesas, no cobra y no factura desde esta superficie.",
+                    tone: .info
+                )
+            } else if let errorMessage, !errorMessage.isEmpty {
+                NexoAdminUXInlineMessage(
+                    title: "No se pudo cargar mesas",
+                    message: errorMessage,
+                    tone: .warning
+                )
+            } else {
+                NexoAdminUXInlineMessage(
+                    title: "Sin diagnóstico de mesas",
+                    message: "Actualiza la pantalla para consultar el readiness Admin de mesas opcionales.",
+                    tone: .info
+                )
+            }
+        }
+        .accessibilityIdentifier("admin.restaurant.tables.readiness.card")
+    }
+}
+
+private struct AdminRestaurantTableReadinessRow: View {
+    let table: AdminRestaurantTableReadiness
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: table.adminTablesSystemImage)
+                .font(.headline.weight(.semibold))
+                .frame(width: 34, height: 34)
+                .background(table.adminTablesTint.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .foregroundStyle(table.adminTablesTint)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(table.displayName)
+                        .font(.subheadline.weight(.semibold))
+                    NexoAdminUXStatusBadge(title: table.status.nexoReadableKey, systemImage: table.adminTablesSystemImage, tint: table.adminTablesTint)
+                }
+
+                Text([table.code, table.area, table.capacity.map { "\($0) pax" }].compactMap { $0 }.joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if let activeSessionId = table.activeSessionId, !activeSessionId.isEmpty {
+                    Text("Sesión: \(activeSessionId)")
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+
+                if let linkedSaleId = table.linkedSaleId, !linkedSaleId.isEmpty {
+                    Text("Venta: \(linkedSaleId)")
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+
+                if let reason = table.reasonIfBlocked, !reason.isEmpty {
+                    Text(reason.nexoReadableKey)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+private extension AdminRestaurantTableReadiness {
+    var adminTablesTint: Color {
+        switch normalizedStatus {
+        case "available": return .green
+        case "occupied": return .orange
+        case "disabled": return .secondary
+        default: return .secondary
+        }
+    }
+
+    var adminTablesSystemImage: String {
+        switch normalizedStatus {
+        case "available": return "checkmark.circle.fill"
+        case "occupied": return "person.2.fill"
+        case "disabled": return "slash.circle.fill"
+        default: return "questionmark.circle.fill"
+        }
     }
 }
 

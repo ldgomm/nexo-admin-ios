@@ -36,4 +36,9 @@ final class RemoteAdminVerticalsRepository: AdminVerticalsRepository, @unchecked
     func readiness(verticalCode: String) async throws -> AdminVerticalReadinessResult {
         try await api.readiness(verticalCode: verticalCode).toDomain()
     }
+
+
+    func restaurantTablesReadiness(branchId: String?) async throws -> AdminRestaurantTablesReadiness {
+        try await api.restaurantTablesReadiness(branchId: branchId).toDomain()
+    }
 }
