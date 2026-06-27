@@ -108,6 +108,65 @@ enum AdminBusinessMapper {
         )
     }
 
+    static func map(_ dto: AdminRestaurantReadinessCheckDTO) -> AdminRestaurantReadinessCheck {
+        AdminRestaurantReadinessCheck(
+            code: dto.code,
+            status: AdminRestaurantReadinessStatus(apiValue: dto.status),
+            message: dto.message,
+            blocking: dto.blocking ?? false,
+            details: dto.details ?? [:]
+        )
+    }
+
+    static func map(_ dto: AdminRestaurantReadinessComponentDTO) -> AdminRestaurantReadinessComponent {
+        AdminRestaurantReadinessComponent(
+            code: dto.code,
+            status: AdminRestaurantReadinessStatus(apiValue: dto.status),
+            path: dto.path,
+            supportOnly: dto.supportOnly ?? false,
+            details: dto.details ?? [:]
+        )
+    }
+
+    static func map(_ dto: AdminRestaurantTableSummaryDTO?) -> AdminRestaurantTableSummary? {
+        guard let dto else { return nil }
+        return AdminRestaurantTableSummary(
+            total: dto.total,
+            available: dto.available,
+            occupied: dto.occupied,
+            disabled: dto.disabled,
+            openSessions: dto.openSessions
+        )
+    }
+
+    static func map(_ dto: AdminRestaurantSupportLinkDTO) -> AdminRestaurantSupportLink {
+        AdminRestaurantSupportLink(
+            label: dto.label,
+            method: dto.method,
+            path: dto.path,
+            supportOnly: dto.supportOnly ?? false
+        )
+    }
+
+    static func map(_ dto: AdminRestaurantReadinessResponseDTO) -> AdminRestaurantReadiness {
+        AdminRestaurantReadiness(
+            organizationId: dto.organizationId,
+            branchId: dto.branchId,
+            status: AdminRestaurantReadinessStatus(apiValue: dto.status),
+            overallStatus: AdminRestaurantReadinessStatus(apiValue: dto.overallStatus),
+            ready: dto.ready,
+            surface: dto.surface,
+            capabilities: dto.capabilities,
+            supportMode: dto.supportMode,
+            warnings: dto.warnings,
+            blockers: dto.blockers,
+            checks: dto.checks.map(map(_:)),
+            components: dto.components.map(map(_:)),
+            tables: map(dto.tables),
+            supportLinks: dto.supportLinks.map(map(_:))
+        )
+    }
+
     static func map(_ dto: AdminBusinessFoundationCountsDTO) -> AdminBusinessFoundationCounts {
         AdminBusinessFoundationCounts(
             totalActivities: dto.totalActivities,

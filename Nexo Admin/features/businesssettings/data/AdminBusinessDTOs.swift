@@ -200,6 +200,54 @@ struct AdminBusinessReadinessCheckDTO: Decodable, Sendable {
     let action: String?
 }
 
+struct AdminRestaurantReadinessResponseDTO: Decodable, Sendable {
+    let organizationId: String
+    let branchId: String?
+    let status: String
+    let overallStatus: String
+    let ready: Bool
+    let surface: String
+    let capabilities: [String]
+    let supportMode: String
+    let warnings: [String]
+    let blockers: [String]
+    let checks: [AdminRestaurantReadinessCheckDTO]
+    let components: [AdminRestaurantReadinessComponentDTO]
+    let tables: AdminRestaurantTableSummaryDTO?
+    let supportLinks: [AdminRestaurantSupportLinkDTO]
+}
+
+struct AdminRestaurantReadinessCheckDTO: Decodable, Sendable {
+    let code: String
+    let status: String
+    let message: String
+    let blocking: Bool?
+    let details: [String: String]?
+}
+
+struct AdminRestaurantReadinessComponentDTO: Decodable, Sendable {
+    let code: String
+    let status: String
+    let path: String?
+    let supportOnly: Bool?
+    let details: [String: String]?
+}
+
+struct AdminRestaurantTableSummaryDTO: Decodable, Sendable {
+    let total: Int
+    let available: Int
+    let occupied: Int
+    let disabled: Int
+    let openSessions: Int
+}
+
+struct AdminRestaurantSupportLinkDTO: Decodable, Sendable {
+    let label: String
+    let method: String
+    let path: String
+    let supportOnly: Bool?
+}
+
 struct AdminBusinessFoundationOverviewDTO: Decodable, Sendable {
     let organizationId: String
     let overallStatus: String

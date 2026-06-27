@@ -28,6 +28,7 @@ final class MockAdminBusinessRepository: AdminBusinessRepository, @unchecked Sen
     func getOverview() async throws -> AdminBusinessOverview { makeOverview() }
     func getBusiness() async throws -> AdminBusinessProfile { business }
     func getReadiness() async throws -> AdminBusinessReadiness { makeReadiness() }
+    func getRestaurantReadiness(branchId: String?) async throws -> AdminRestaurantReadiness { makeRestaurantReadiness(branchId: branchId) }
 
     func updateBusiness(_ input: UpdateAdminBusinessProfileInput) async throws -> AdminBusinessProfile {
         business = AdminBusinessProfile(
@@ -221,6 +222,38 @@ final class MockAdminBusinessRepository: AdminBusinessRepository, @unchecked Sen
         ]
         let ready = checks.filter(\.required).allSatisfy { $0.status == .ready }
         return AdminBusinessReadiness(organizationId: business.id, overallStatus: ready ? .ready : .blocked, ready: ready, generatedAt: "now", checks: checks)
+    }
+
+    private func makeRestaurantReadiness(branchId: String?) -> AdminRestaurantReadiness {
+        AdminRestaurantReadiness(
+            organizationId: business.id,
+            branchId: branchId ?? branches.first?.id,
+            status: .warn,
+            overallStatus: .warn,
+            ready: true,
+            surface: "admin",
+            capabilities: ["restaurant.menu_attributes", "restaurant.service_type", "restaurant.tables_optional"],
+            supportMode: "support_only_no_table_operations",
+            warnings: ["restaurant_tables_have_open_sessions"],
+            blockers: [],
+            checks: [
+                AdminRestaurantReadinessCheck(code: "restaurant_active", status: .pass, message: "Restaurante v1 está activo para la organización.", blocking: true, details: [:]),
+                AdminRestaurantReadinessCheck(code: "quick_sale_ready", status: .pass, message: "Venta rápida sigue como modo operativo base.", blocking: true, details: ["workMode": "quick_sale"]),
+                AdminRestaurantReadinessCheck(code: "tables_optional_ready", status: .pass, message: "Mesas opcionales activas y con mesas configuradas.", blocking: false, details: ["total": "5"]),
+                AdminRestaurantReadinessCheck(code: "restaurant_tables_have_open_sessions", status: .warn, message: "Hay mesas/sesiones abiertas; puede ser normal en operación.", blocking: false, details: ["openSessions": "1"]),
+                AdminRestaurantReadinessCheck(code: "admin_readiness_support_only", status: .pass, message: "Admin readiness está declarado como superficie de diagnóstico.", blocking: false, details: ["supportMode": "support_only_no_table_operations"])
+            ],
+            components: [
+                AdminRestaurantReadinessComponent(code: "business_context", status: .pass, path: "/api/v1/business/context", supportOnly: false, details: [:]),
+                AdminRestaurantReadinessComponent(code: "vertical_readiness", status: .pass, path: "/api/v1/admin/verticals/restaurant/readiness", supportOnly: true, details: [:]),
+                AdminRestaurantReadinessComponent(code: "tables_readiness", status: .pass, path: "/api/v1/admin/restaurant/tables/readiness", supportOnly: true, details: ["openSessions": "1"])
+            ],
+            tables: AdminRestaurantTableSummary(total: 5, available: 4, occupied: 1, disabled: 0, openSessions: 1),
+            supportLinks: [
+                AdminRestaurantSupportLink(label: "Business context", method: "GET", path: "/api/v1/business/context", supportOnly: false),
+                AdminRestaurantSupportLink(label: "Restaurant tables readiness", method: "GET", path: "/api/v1/admin/restaurant/tables/readiness", supportOnly: true)
+            ]
+        )
     }
 
     private func updateActivityStatus(id: String, status: AdminActivityStatus) throws -> AdminBusinessActivity {

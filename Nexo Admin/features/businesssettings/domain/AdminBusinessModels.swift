@@ -236,6 +236,102 @@ struct AdminBusinessReadiness: Equatable, Sendable {
     }
 }
 
+enum AdminRestaurantReadinessStatus: String, Equatable, Sendable {
+    case pass
+    case warn
+    case fail
+    case unknown
+
+    init(apiValue: String) {
+        switch apiValue.normalizedApiValue {
+        case "pass", "ready": self = .pass
+        case "warn", "warning": self = .warn
+        case "fail", "blocked": self = .fail
+        default: self = .unknown
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .pass: "Listo"
+        case .warn: "Con advertencias"
+        case .fail: "Bloqueado"
+        case .unknown: "Desconocido"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .pass: "checkmark.seal.fill"
+        case .warn: "exclamationmark.triangle.fill"
+        case .fail: "xmark.octagon.fill"
+        case .unknown: "questionmark.circle.fill"
+        }
+    }
+
+    var isEmphasis: Bool { self != .pass }
+}
+
+struct AdminRestaurantReadinessCheck: Identifiable, Equatable, Sendable {
+    let code: String
+    let status: AdminRestaurantReadinessStatus
+    let message: String
+    let blocking: Bool
+    let details: [String: String]
+
+    var id: String { code }
+}
+
+struct AdminRestaurantReadinessComponent: Identifiable, Equatable, Sendable {
+    let code: String
+    let status: AdminRestaurantReadinessStatus
+    let path: String?
+    let supportOnly: Bool
+    let details: [String: String]
+
+    var id: String { code }
+}
+
+struct AdminRestaurantTableSummary: Equatable, Sendable {
+    let total: Int
+    let available: Int
+    let occupied: Int
+    let disabled: Int
+    let openSessions: Int
+
+    var hasOpenSessions: Bool { openSessions > 0 }
+}
+
+struct AdminRestaurantSupportLink: Identifiable, Equatable, Sendable {
+    let label: String
+    let method: String
+    let path: String
+    let supportOnly: Bool
+
+    var id: String { "\(method):\(path)" }
+}
+
+struct AdminRestaurantReadiness: Equatable, Sendable {
+    let organizationId: String
+    let branchId: String?
+    let status: AdminRestaurantReadinessStatus
+    let overallStatus: AdminRestaurantReadinessStatus
+    let ready: Bool
+    let surface: String
+    let capabilities: [String]
+    let supportMode: String
+    let warnings: [String]
+    let blockers: [String]
+    let checks: [AdminRestaurantReadinessCheck]
+    let components: [AdminRestaurantReadinessComponent]
+    let tables: AdminRestaurantTableSummary?
+    let supportLinks: [AdminRestaurantSupportLink]
+
+    var hasWarnings: Bool { !warnings.isEmpty }
+    var hasBlockers: Bool { !blockers.isEmpty }
+    var isSupportOnly: Bool { supportMode.normalizedApiValue.contains("support_only") }
+}
+
 struct AdminBusinessFoundationCounts: Equatable, Sendable {
     let totalActivities: Int
     let activeActivities: Int

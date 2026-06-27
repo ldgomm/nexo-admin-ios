@@ -30,6 +30,10 @@ final class RemoteAdminBusinessRepository: AdminBusinessRepository, @unchecked S
         try await AdminBusinessMapper.map(api.getReadiness())
     }
 
+    func getRestaurantReadiness(branchId: String?) async throws -> AdminRestaurantReadiness {
+        try await AdminBusinessMapper.map(api.getRestaurantReadiness(branchId: branchId))
+    }
+
     func listActivities() async throws -> [AdminBusinessActivity] {
         try await api.listActivities().activities.map(AdminBusinessMapper.map(_:))
     }

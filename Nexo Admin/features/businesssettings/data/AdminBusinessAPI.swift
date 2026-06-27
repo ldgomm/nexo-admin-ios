@@ -12,6 +12,7 @@ protocol AdminBusinessAPI: Sendable {
     func getBusiness() async throws -> AdminBusinessEnvelopeDTO
     func updateBusiness(_ request: UpdateAdminBusinessRequestDTO) async throws -> AdminBusinessEnvelopeDTO
     func getReadiness() async throws -> AdminBusinessReadinessResponseDTO
+    func getRestaurantReadiness(branchId: String?) async throws -> AdminRestaurantReadinessResponseDTO
 
     func listActivities() async throws -> AdminActivitiesResponseDTO
     func createActivity(_ request: CreateAdminActivityRequestDTO) async throws -> AdminActivityEnvelopeDTO
@@ -53,6 +54,20 @@ final class RemoteAdminBusinessAPI: AdminBusinessAPI, @unchecked Sendable {
 
     func getReadiness() async throws -> AdminBusinessReadinessResponseDTO {
         try await apiClient.send(adminEndpoint(path: "/api/v1/admin/business/readiness", method: .get))
+    }
+
+    func getRestaurantReadiness(branchId: String?) async throws -> AdminRestaurantReadinessResponseDTO {
+        var queryItems: [URLQueryItem] = []
+        if let branchId = branchId?.trimmedOrNil {
+            queryItems.append(URLQueryItem(name: "branchId", value: branchId))
+        }
+        return try await apiClient.send(
+            adminEndpoint(
+                path: "/api/v1/admin/restaurant/readiness",
+                method: .get,
+                queryItems: queryItems
+            )
+        )
     }
 
     func listActivities() async throws -> AdminActivitiesResponseDTO {

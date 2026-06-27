@@ -12,6 +12,7 @@ protocol AdminBusinessRepository: Sendable {
     func getBusiness() async throws -> AdminBusinessProfile
     func updateBusiness(_ input: UpdateAdminBusinessProfileInput) async throws -> AdminBusinessProfile
     func getReadiness() async throws -> AdminBusinessReadiness
+    func getRestaurantReadiness(branchId: String?) async throws -> AdminRestaurantReadiness
 
     func listActivities() async throws -> [AdminBusinessActivity]
     func createActivity(_ input: SaveAdminActivityInput) async throws -> AdminBusinessActivity

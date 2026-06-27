@@ -117,6 +117,20 @@ final class AdminBusinessViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.emissionPoints.first?.displayName, "Caja 1")
     }
 
+    func testLoadRestaurantReadinessPublishesSupportOnlySummary() async {
+        let repository = AdminBusinessTestRepository()
+        let viewModel = AdminBusinessViewModel(repository: repository)
+        await viewModel.load()
+
+        await viewModel.loadRestaurantReadiness(branchId: "br_1")
+
+        XCTAssertEqual(viewModel.restaurantReadiness?.overallStatus, .pass)
+        XCTAssertEqual(viewModel.restaurantReadiness?.branchId, "br_1")
+        XCTAssertEqual(viewModel.restaurantReadiness?.supportMode, "support_only_no_table_operations")
+        XCTAssertEqual(viewModel.restaurantReadiness?.tables?.openSessions, 0)
+        XCTAssertTrue(viewModel.restaurantReadiness?.supportLinks.isEmpty == true)
+    }
+
     func testValidationRejectsMissingReason() async {
         let repository = AdminBusinessTestRepository()
         let viewModel = AdminBusinessViewModel(repository: repository)

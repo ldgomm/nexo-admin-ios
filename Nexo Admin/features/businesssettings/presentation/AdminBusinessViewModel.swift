@@ -13,6 +13,9 @@ final class AdminBusinessViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isSaving = false
     @Published private(set) var overview: AdminBusinessOverview?
+    @Published private(set) var restaurantReadiness: AdminRestaurantReadiness?
+    @Published private(set) var isLoadingRestaurantReadiness = false
+    @Published private(set) var restaurantReadinessErrorMessage: String?
     @Published var errorMessage: String?
     @Published var successMessage: String?
 
@@ -24,8 +27,10 @@ final class AdminBusinessViewModel: ObservableObject {
     private let changeBranchStatus: ChangeAdminBranchStatusUseCase
     private let saveEmissionPoint: SaveAdminEmissionPointUseCase
     private let changeEmissionPointStatus: ChangeAdminEmissionPointStatusUseCase
+    private let repository: any AdminBusinessRepository
 
     init(repository: any AdminBusinessRepository) {
+        self.repository = repository
         self.getOverview = GetAdminBusinessOverviewUseCase(repository: repository)
         self.updateBusinessProfile = UpdateAdminBusinessProfileUseCase(repository: repository)
         self.saveActivity = SaveAdminActivityUseCase(repository: repository)
@@ -41,6 +46,7 @@ final class AdminBusinessViewModel: ObservableObject {
     var activities: [AdminBusinessActivity] { overview?.activities ?? [] }
     var branches: [AdminBusinessBranch] { overview?.branches ?? [] }
     var emissionPoints: [AdminEmissionPoint] { overview?.emissionPoints ?? [] }
+    var primaryBranchId: String? { branches.first(where: { $0.isMain })?.id ?? branches.first?.id }
 
     func load() async {
         guard !isLoading else { return }
@@ -57,6 +63,23 @@ final class AdminBusinessViewModel: ObservableObject {
 
     func refresh() async {
         await load()
+    }
+
+    func loadRestaurantReadiness(branchId: String? = nil) async {
+        guard !isLoadingRestaurantReadiness else { return }
+        isLoadingRestaurantReadiness = true
+        restaurantReadinessErrorMessage = nil
+        defer { isLoadingRestaurantReadiness = false }
+
+        do {
+            restaurantReadiness = try await repository.getRestaurantReadiness(branchId: branchId)
+        } catch {
+            restaurantReadinessErrorMessage = error.userFacingMessage
+        }
+    }
+
+    func refreshRestaurantReadiness(branchId: String? = nil) async {
+        await loadRestaurantReadiness(branchId: branchId)
     }
 
     func updateBusiness(_ input: UpdateAdminBusinessProfileInput) async -> Bool {
