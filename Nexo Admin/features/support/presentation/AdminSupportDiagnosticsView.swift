@@ -14,7 +14,7 @@ struct AdminSupportDiagnosticsView: View {
         List {
             AdminSupportDeskInlineEntryPointView()
             Section("Mesa de soporte") {
-                AdminSupportDeskEntryPointView()
+                AdminSupportDeskEntryPointView(notificationsRepository: viewModel.supportRepositoryForNotifications)
             }
             content
         }

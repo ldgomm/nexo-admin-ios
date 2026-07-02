@@ -17,6 +17,10 @@ final class AdminSupportDiagnosticsViewModel: ObservableObject {
     private let permissions: Set<String>
     private let buildInfoProvider: () -> BuildInfo
 
+    var supportRepositoryForNotifications: any AdminSupportRepository {
+        repository
+    }
+
     init(
         repository: any AdminSupportRepository,
         permissions: Set<String>,
