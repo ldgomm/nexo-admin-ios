@@ -21,4 +21,9 @@ final class RemoteAdminSupportRepository: AdminSupportRepository, @unchecked Sen
     func listDevices() async throws -> [AdminRegisteredDevice] {
         try await api.listDevices().devices.map { $0.toDomain() }
     }
+
+
+    func getNotificationsSummary() async throws -> AdminSupportNotificationsSummary {
+        try await api.getNotificationsSummary().toDomain()
+    }
 }

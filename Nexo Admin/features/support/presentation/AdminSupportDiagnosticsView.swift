@@ -9,19 +9,25 @@ import SwiftUI
 
 struct AdminSupportDiagnosticsView: View {
     @StateObject var viewModel: AdminSupportDiagnosticsViewModel
-
+    
     var body: some View {
-        List { content }
-            .navigationTitle("Soporte")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { Task { await viewModel.refresh() } } label: { Image(systemName: "arrow.clockwise") }
-                }
+        List {
+            AdminSupportDeskInlineEntryPointView()
+            Section("Mesa de soporte") {
+                AdminSupportDeskEntryPointView()
             }
-            .task { await viewModel.load() }
-            .refreshable { await viewModel.refresh() }
+            content
+        }
+        .navigationTitle("Soporte")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await viewModel.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+            }
+        }
+        .task { await viewModel.load() }
+        .refreshable { await viewModel.refresh() }
     }
-
+    
     @ViewBuilder private var content: some View {
         switch viewModel.state {
         case .idle, .loading:
@@ -42,7 +48,7 @@ struct AdminSupportDiagnosticsView: View {
                 }
                 .padding(.vertical, 6)
             }
-
+            
             Section("Build local") {
                 LabeledContent("App", value: snapshot.buildInfo.appName)
                 LabeledContent("Versión", value: snapshot.buildInfo.displayVersion)
@@ -50,7 +56,7 @@ struct AdminSupportDiagnosticsView: View {
                 LabeledContent("API", value: snapshot.buildInfo.apiBaseURL)
                 LabeledContent("Bundle", value: snapshot.buildInfo.bundleIdentifier)
             }
-
+            
             if let health = snapshot.health {
                 Section("API") {
                     LabeledContent("Estado", value: health.statusTitle)
@@ -63,7 +69,7 @@ struct AdminSupportDiagnosticsView: View {
                     LabeledContent("Generado", value: health.generatedAt ?? "—")
                 }
             }
-
+            
             Section("Dispositivos") {
                 if snapshot.devices.isEmpty {
                     Text("No hay dispositivos registrados para esta organización o usuario.")
@@ -85,5 +91,22 @@ struct AdminSupportDiagnosticsView: View {
                 }
             }
         }
+    }
+}
+
+private struct AdminSupportDeskInlineEntryPointView: View {
+    var body: some View {
+        NavigationLink {
+            AdminSupportDeskView()
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Admin Support Desk")
+                    .font(.headline)
+                Text("Lista, detalle, contexto sanitizado, respuesta, nota interna y cierre de tickets.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityIdentifier("admin_support_desk_entrypoint")
     }
 }
