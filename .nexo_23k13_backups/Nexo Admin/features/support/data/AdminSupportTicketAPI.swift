@@ -8,29 +8,11 @@
 import Foundation
 
 final class AdminSupportTicketAPI {
-    private let apiClient: APIClient?
     enum APIError: Error {
         case invalidBaseURL
         case invalidResponse
         case httpStatus(Int, String)
         case missingURL
-
-        var userVisibleMessage: String {
-            switch self {
-            case .invalidBaseURL:
-                return "No se pudo cargar tickets de soporte. Base URL inválida."
-            case .invalidResponse:
-                return "No se pudo cargar tickets de soporte. Respuesta HTTP inválida."
-            case .httpStatus(let status, let message):
-                let clean = message.trimmingCharacters(in: .whitespacesAndNewlines)
-                if clean.isEmpty {
-                    return "No se pudo cargar tickets de soporte. HTTP \(status)."
-                }
-                return "No se pudo cargar tickets de soporte. HTTP \(status): \(clean)"
-            case .missingURL:
-                return "No se pudo cargar tickets de soporte. URL inválida."
-            }
-        }
     }
 
     private let supportTicketsBasePath = "/api/v1/admin/support/tickets"
@@ -46,7 +28,6 @@ final class AdminSupportTicketAPI {
         session: URLSession = .shared,
         bearerTokenProvider: @escaping @Sendable () async -> String? = { AdminSupportTicketAPI.defaultBearerToken() }
     ) {
-        self.apiClient = nil
         self.baseURL = baseURL
         self.session = session
         self.bearerTokenProvider = bearerTokenProvider
@@ -54,27 +35,12 @@ final class AdminSupportTicketAPI {
         self.encoder = JSONEncoder()
     }
 
-    init(apiClient: APIClient) {
-        self.apiClient = apiClient
-        self.baseURL = AdminSupportTicketAPI.defaultBaseURL()
-        self.session = .shared
-        self.bearerTokenProvider = { AdminSupportTicketAPI.defaultBearerToken() }
-        self.decoder = JSONDecoder()
-        self.encoder = JSONEncoder()
-    }
-
     func listTickets(status: String?, priority: String?, organizationId: String?) async throws -> [AdminSupportTicketSummaryDTO] {
+        var components = URLComponents(url: baseURL.appendingPathComponent(supportTicketsPathComponent), resolvingAgainstBaseURL: false)
         var queryItems: [URLQueryItem] = []
         if let status, !status.isEmpty { queryItems.append(URLQueryItem(name: "status", value: status)) }
         if let priority, !priority.isEmpty { queryItems.append(URLQueryItem(name: "priority", value: priority)) }
         if let organizationId, !organizationId.isEmpty { queryItems.append(URLQueryItem(name: "organizationId", value: organizationId)) }
-
-        if let apiClient {
-            let path = Self.pathWithQuery(supportTicketsBasePath, queryItems: queryItems)
-            return try await apiClient.send(APIEndpoint(path: path, method: .get, requiresOrganization: true))
-        }
-
-        var components = URLComponents(url: baseURL.appendingPathComponent(supportTicketsPathComponent), resolvingAgainstBaseURL: false)
         components?.queryItems = queryItems.isEmpty ? nil : queryItems
         guard let url = components?.url else { throw APIError.missingURL }
 
@@ -82,10 +48,7 @@ final class AdminSupportTicketAPI {
     }
 
     func getTicketDetail(ticketId: String) async throws -> AdminSupportTicketDetailDTO {
-        if let apiClient {
-            return try await apiClient.send(APIEndpoint(path: "\(supportTicketsBasePath)/\(ticketId)", method: .get, requiresOrganization: true))
-        }
-        return try await send(path: "\(supportTicketsPathComponent)/\(ticketId)", method: "GET", body: Optional<Data>.none)
+        try await send(path: "\(supportTicketsPathComponent)/\(ticketId)", method: "GET", body: Optional<Data>.none)
     }
 
     func replyToTicket(ticketId: String, body: String) async throws -> AdminSupportTicketDetailDTO {
@@ -103,14 +66,6 @@ final class AdminSupportTicketAPI {
         return try await send(path: "\(supportTicketsPathComponent)/\(ticketId)/transition", method: "POST", body: payload)
     }
 
-    private static func pathWithQuery(_ path: String, queryItems: [URLQueryItem]) -> String {
-        guard !queryItems.isEmpty else { return path }
-        var components = URLComponents()
-        components.path = path
-        components.queryItems = queryItems
-        return components.string ?? path
-    }
-
     private func send<T: Decodable>(path: String, method: String, body: Data?) async throws -> T {
         let url = baseURL.appendingPathComponent(path)
         return try await send(url: url, method: method, body: body)
@@ -120,11 +75,6 @@ final class AdminSupportTicketAPI {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("admin_ios", forHTTPHeaderField: "X-App-Type")
-        request.setValue("NexoAdminIOS", forHTTPHeaderField: "X-Client-App")
-        if let organizationId = Self.defaultOrganizationId(), !organizationId.isEmpty {
-            request.setValue(organizationId, forHTTPHeaderField: "X-Organization-Id")
-        }
         if let body {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -157,33 +107,10 @@ final class AdminSupportTicketAPI {
         return URL(string: "http://localhost:8080")!
     }
 
-    private static func defaultOrganizationId() -> String? {
-        let defaults = UserDefaults.standard
-        let keys = [
-            "nexo.admin.organizationId",
-            "nexo.activeOrganizationId",
-            "activeOrganizationId",
-            "organizationId",
-            "selectedOrganizationId"
-        ]
-        for key in keys {
-            if let value = defaults.string(forKey: key), !value.isEmpty { return value }
-        }
-        if let value = Bundle.main.object(forInfoDictionaryKey: "NEXO_ORGANIZATION_ID") as? String, !value.isEmpty {
-            return value
-        }
-        return nil
-    }
-
     private static func defaultBearerToken() -> String? {
         let defaults = UserDefaults.standard
         let keys = [
             "nexo.admin.accessToken",
-            "nexo.admin.auth.accessToken",
-            "nexo.admin.auth.access_token",
-            "nexo_admin_access_token",
-            "adminAccessToken",
-            "access_token",
             "nexo.accessToken",
             "accessToken",
             "authToken",

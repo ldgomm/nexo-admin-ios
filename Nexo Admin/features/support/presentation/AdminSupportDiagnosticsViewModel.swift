@@ -35,6 +35,8 @@ final class AdminSupportDiagnosticsViewModel: ObservableObject {
         PermissionSet(permissions).canAny([
             PermissionCatalog.supportView,
             PermissionCatalog.supportDiagnosticsView,
+            PermissionCatalog.supportTicketsView,
+            PermissionCatalog.supportReportingView,
             PermissionCatalog.healthView,
             PermissionCatalog.observabilityView,
             PermissionCatalog.devicesView,

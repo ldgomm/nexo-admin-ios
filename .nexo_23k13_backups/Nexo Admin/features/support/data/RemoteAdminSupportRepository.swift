@@ -8,15 +8,10 @@
 import Foundation
 
 final class RemoteAdminSupportRepository: AdminSupportRepository, @unchecked Sendable {
-    let api: AdminSupportAPI
+    private let api: AdminSupportAPI
 
     init(api: AdminSupportAPI) {
         self.api = api
-    }
-
-    func makeSupportTicketRepository() -> (any AdminSupportTicketRepository)? {
-        guard let remoteAPI = api as? RemoteAdminSupportAPI else { return nil }
-        return RemoteAdminSupportTicketRepository(api: AdminSupportTicketAPI(apiClient: remoteAPI.apiClient))
     }
 
     func getHealth() async throws -> AdminHealthSummary {

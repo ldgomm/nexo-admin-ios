@@ -50,17 +50,8 @@ final class AdminSupportDeskViewModel: ObservableObject {
         } catch {
             tickets = []
             lastTicketLoadSucceeded = false
-            errorMessage = Self.supportTicketErrorMessage(error)
+            errorMessage = "No se pudo cargar tickets de soporte."
         }
-    }
-
-    private static func supportTicketErrorMessage(_ error: Error) -> String {
-        if let apiError = error as? AdminSupportTicketAPI.APIError {
-            return apiError.userVisibleMessage
-        }
-        let detail = String(describing: error).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !detail.isEmpty else { return "No se pudo cargar tickets de soporte." }
-        return "No se pudo cargar tickets de soporte. Detalle: \(detail)"
     }
 
     func selectTicket(_ ticket: AdminSupportTicketSummary) async {

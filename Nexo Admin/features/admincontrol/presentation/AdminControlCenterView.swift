@@ -186,25 +186,17 @@ struct AdminControlCenterView: View {
         NexoAdminUXCard {
             NexoAdminUXSectionHeader(
                 "Soporte y salida a piloto",
-                subtitle: "Health, versión, dispositivos y checklist TestFlight en una zona clara.",
-                systemImage: "stethoscope"
+                subtitle: "Tickets, diagnóstico, reportes, health y checklist de salida a piloto.",
+                systemImage: "lifepreserver"
             )
 
             VStack(spacing: 10) {
-                if canViewSupport {
-                    NexoAdminUXNavigationTile(
-                        title: "Diagnóstico y dispositivos",
-                        subtitle: "Health, versión API, device registry y trazabilidad móvil",
-                        systemImage: "stethoscope"
-                    ) {
-                        AdminSupportDiagnosticsView(
-                            viewModel: AdminSupportDiagnosticsViewModel(
-                                repository: adminSupportRepository,
-                                permissions: sessionStore.effectivePermissions,
-                                buildInfoProvider: { BuildInfo.current() }
-                            )
-                        )
-                    }
+                NexoAdminUXNavigationTile(
+                    title: "Soporte Nexo",
+                    subtitle: "Tickets, diagnóstico, reportes y trazabilidad",
+                    systemImage: "lifepreserver"
+                ) {
+                    AdminSupportDeskEntryPointView(notificationsRepository: adminSupportRepository)
                 }
 
                 NexoAdminUXNavigationTile(
@@ -245,9 +237,12 @@ struct AdminControlCenterView: View {
     }
 
     private var canViewSupport: Bool {
+        permissions.can(PermissionCatalog.all) ||
         permissions.canAny([
             PermissionCatalog.supportView,
             PermissionCatalog.supportDiagnosticsView,
+            PermissionCatalog.supportTicketsView,
+            PermissionCatalog.supportReportingView,
             PermissionCatalog.healthView,
             PermissionCatalog.observabilityView,
             PermissionCatalog.devicesView

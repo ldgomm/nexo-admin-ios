@@ -10,85 +10,136 @@ import SwiftUI
 
 struct AdminSupportDeskEntryPointView: View {
     private let notificationsRepository: (any AdminSupportRepository)?
+    private let ticketRepository: (any AdminSupportTicketRepository)?
     @StateObject private var notificationsViewModel = AdminSupportNotificationsViewModel()
 
-    init(notificationsRepository: (any AdminSupportRepository)? = nil) {
+    init(
+        notificationsRepository: (any AdminSupportRepository)? = nil,
+        ticketRepository: (any AdminSupportTicketRepository)? = nil
+    ) {
         self.notificationsRepository = notificationsRepository
+        if let ticketRepository {
+            self.ticketRepository = ticketRepository
+        } else if let remoteRepository = notificationsRepository as? RemoteAdminSupportRepository {
+            self.ticketRepository = remoteRepository.makeSupportTicketRepository()
+        } else {
+            self.ticketRepository = nil
+        }
     }
+
     var body: some View {
-
-        AdminSupportNotificationMiniBadge(
-            unreadCount: notificationsViewModel.unreadCount,
-            latestTitle: notificationsViewModel.latestTitle
-        )
-            .padding(.horizontal)
-            .padding(.top, 8)
-            .task {
-                await notificationsViewModel.refreshIfNeeded(repository: notificationsRepository)
-            }
-
         NavigationLink {
             AdminSupportDeskView(
                 viewModel: AdminSupportDeskViewModel(
-                    repository: RemoteAdminSupportTicketRepository()
+                    repository: ticketRepository ?? RemoteAdminSupportTicketRepository()
                 )
             )
         } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Tickets de soporte")
-                    .font(.headline)
-                Text("Lista, detalle, contexto sanitizado, respuesta, nota interna y resolver/cerrar.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            AdminSupportDeskEntryCard(
+                unreadCount: notificationsViewModel.unreadCount,
+                latestTitle: notificationsViewModel.latestTitle
+            )
         }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .padding(.vertical, 8)
         .accessibilityIdentifier("admin_support_desk_entrypoint")
-    }
-}
-
-#Preview {
-    NavigationStack {
-        List {
-            AdminSupportDeskEntryPointView()
+        .task {
+            await notificationsViewModel.refreshIfNeeded(repository: notificationsRepository)
         }
     }
 }
 
-private struct AdminSupportNotificationMiniBadge: View {
+private struct AdminSupportDeskEntryCard: View {
     let unreadCount: Int
     let latestTitle: String?
 
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: unreadCount > 0 ? "bell.badge" : "bell")
-                .font(.headline)
+    private var hasUnread: Bool { unreadCount > 0 }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(unreadCount > 0 ? "Novedades de soporte" : "Sin novedades de soporte")
-                    .font(.subheadline.weight(.semibold))
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            header
+
+            Divider().opacity(0.7)
+
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "ticket")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 30, height: 30)
+                    .background {
+                        Circle().fill(Color.accentColor.opacity(0.12))
+                    }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Tickets de soporte")
+                        .font(.headline)
+
+                    Text("Bandeja, contexto sanitizado, respuesta, nota interna y cierre.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemGroupedBackground))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+        .shadow(color: Color.black.opacity(0.045), radius: 10, x: 0, y: 5)
+    }
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: hasUnread ? "bell.badge.fill" : "bell")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(hasUnread ? Color.accentColor : Color.secondary)
+                .frame(width: 34, height: 34)
+                .background {
+                    Circle()
+                        .fill((hasUnread ? Color.accentColor : Color.secondary).opacity(0.12))
+                }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(hasUnread ? "Soporte requiere atención" : "Soporte sin novedades")
+                        .font(.subheadline.weight(.semibold))
+
+                    if hasUnread {
+                        Text("\(unreadCount)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(Color.accentColor)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background {
+                                Capsule(style: .continuous)
+                                    .fill(Color.accentColor.opacity(0.14))
+                            }
+                            .accessibilityLabel("Notificaciones no leídas: \(unreadCount)")
+                    }
+                }
 
                 Text(latestTitle ?? "Las notificaciones internas aparecerán aquí.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Spacer(minLength: 8)
-
-            if unreadCount > 0 {
-                Text("\(unreadCount)")
-                    .font(.caption.weight(.bold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.accentColor.opacity(0.18)))
-                    .accessibilityLabel("Notificaciones no leídas: \(unreadCount)")
-            }
+            Spacer(minLength: 0)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
         .accessibilityIdentifier("adminSupportNotificationsBadge")
     }
 }

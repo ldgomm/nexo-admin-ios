@@ -164,6 +164,10 @@ enum PermissionCatalog {
     static let auditView = "audit.view"
     static let supportView = "support.view"
     static let supportDiagnosticsView = "support.diagnostics.view"
+    static let supportTicketsView = "support.tickets.view"
+    static let supportTicketsRespond = "support.tickets.respond"
+    static let supportTicketsClose = "support.tickets.close"
+    static let supportReportingView = "support.reporting.view"
 }
 
 struct PermissionSet: Equatable, Sendable {

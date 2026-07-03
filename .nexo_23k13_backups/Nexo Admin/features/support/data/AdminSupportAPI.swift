@@ -15,7 +15,7 @@ protocol AdminSupportAPI: Sendable {
 }
 
 final class RemoteAdminSupportAPI: AdminSupportAPI, @unchecked Sendable {
-    let apiClient: APIClient
+    private let apiClient: APIClient
 
     init(apiClient: APIClient) {
         self.apiClient = apiClient
