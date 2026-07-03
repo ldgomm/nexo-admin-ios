@@ -65,23 +65,6 @@ final class AdminBusinessViewModel: ObservableObject {
         await load()
     }
 
-    func loadRestaurantReadiness(branchId: String? = nil) async {
-        guard !isLoadingRestaurantReadiness else { return }
-        isLoadingRestaurantReadiness = true
-        restaurantReadinessErrorMessage = nil
-        defer { isLoadingRestaurantReadiness = false }
-
-        do {
-            restaurantReadiness = try await repository.getRestaurantReadiness(branchId: branchId)
-        } catch {
-            restaurantReadinessErrorMessage = error.userFacingMessage
-        }
-    }
-
-    func refreshRestaurantReadiness(branchId: String? = nil) async {
-        await loadRestaurantReadiness(branchId: branchId)
-    }
-
     func updateBusiness(_ input: UpdateAdminBusinessProfileInput) async -> Bool {
         guard validateReason(input.reason) else { return false }
         return await savingSuccess("Datos del negocio actualizados.") {

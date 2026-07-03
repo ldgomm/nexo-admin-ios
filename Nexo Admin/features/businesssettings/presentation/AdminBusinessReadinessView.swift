@@ -57,13 +57,11 @@ struct AdminBusinessReadinessView: View {
             }
         }
         .navigationTitle("Readiness")
-        .task { await viewModel.loadRestaurantReadiness(branchId: viewModel.primaryBranchId) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Actualizar") {
                     Task {
                         await viewModel.refresh()
-                        await viewModel.refreshRestaurantReadiness(branchId: viewModel.primaryBranchId)
                     }
                 }
             }
