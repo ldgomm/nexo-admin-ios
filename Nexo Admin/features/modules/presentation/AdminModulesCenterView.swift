@@ -124,7 +124,7 @@ private struct AdminRetailServiceFoundationPlaceholderView: View {
                 Label("Inventory Pro, procurement and work orders are later phases.", systemImage: "clock.badge.checkmark")
             }
             Section("Next implementation") {
-                Text("24R.E will replace this placeholder with real Retail & Service activation/readiness once backend capabilities and templates are ready.")
+                Text("24R.E Retail & Service readiness is active as foundation metadata. Templates: retail_store, tech_store, hardware_store, bookstore, service_repair. Preview capabilities are metadata-only: procurement.preview, payables.preview, finance.operational_preview, finance.accountant_pack_preview, service.work_orders_preview. They do not unlock critical actions yet.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

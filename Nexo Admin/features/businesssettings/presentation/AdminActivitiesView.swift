@@ -151,7 +151,7 @@ struct EditAdminActivityView: View {
         _code = State(initialValue: activity?.code ?? "")
         _name = State(initialValue: activity?.name ?? "")
         _description = State(initialValue: activity?.description ?? "")
-        _activityType = State(initialValue: activity?.activityType ?? "retail")
+        _activityType = State(initialValue: activity?.activityType ?? "retail_store")
         _workflowMode = State(initialValue: activity?.workflowMode ?? "quick_sale")
         _status = State(initialValue: activity?.status.rawValue == "unknown" ? "active" : activity?.status.rawValue ?? "active")
         _requiresScheduling = State(initialValue: activity?.requiresScheduling ?? false)

@@ -72,7 +72,7 @@ struct AdminBusinessReadinessView: View {
     private var retailServiceFoundationSection: some View {
         Section("Retail & Service Foundation") {
             Label("Core operation remains the source of truth: sales, cash, customers, products, documents and history.", systemImage: "checkmark.seal")
-            Label("Retail/service readiness becomes active in 24R.E after capability registry and templates are defined.", systemImage: "shippingbox")
+            Label("Retail & Service readiness is active for 24R foundation. Preview capabilities are metadata-only: procurement.preview, payables.preview, finance.operational_preview, finance.accountant_pack_preview, service.work_orders_preview. They are readiness signals, not critical actions.", systemImage: "shippingbox")
             Text("Restaurant/table readiness is retained only as legacy code until it is removed safely from backend contracts and tests.")
                 .font(.caption)
                 .foregroundStyle(.secondary)

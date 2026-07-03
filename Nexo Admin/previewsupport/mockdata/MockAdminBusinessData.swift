@@ -25,11 +25,11 @@ enum MockAdminBusinessData {
 
     static let activities = [
         AdminBusinessActivity(
-            id: "act_restaurant",
+            id: "act_retail_store",
             organizationId: "org_1",
             code: "retail_store",
             name: "Retail store",
-            description: "Venta de comida y bebidas.",
+            description: "Venta retail, caja, facturación, clientes e inventario básico.",
             activityType: "retail_store",
             workflowMode: "order",
             status: .active,
@@ -37,6 +37,22 @@ enum MockAdminBusinessData {
             tracksInventory: true,
             allowsReceivables: true,
             sortOrder: 1,
+            createdAt: nil,
+            updatedAt: nil
+        ),
+        AdminBusinessActivity(
+            id: "act_service_repair",
+            organizationId: "org_1",
+            code: "service_repair",
+            name: "Servicio técnico",
+            description: "Recepción, diagnóstico y cotización de reparaciones. Flujo completo entra en 28R.",
+            activityType: "service_repair",
+            workflowMode: "service_order",
+            status: .draft,
+            requiresScheduling: false,
+            tracksInventory: true,
+            allowsReceivables: true,
+            sortOrder: 2,
             createdAt: nil,
             updatedAt: nil
         ),
