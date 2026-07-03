@@ -13,7 +13,7 @@ struct AdminSupportDiagnosticsView: View {
     var body: some View {
         List {
             AdminSupportDeskInlineEntryPointView()
-            Section("Mesa de soporte") {
+            Section("Support desk") {
                 AdminSupportDeskEntryPointView(notificationsRepository: viewModel.supportRepositoryForNotifications)
             }
             content

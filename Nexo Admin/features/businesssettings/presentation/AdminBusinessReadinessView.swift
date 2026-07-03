@@ -12,7 +12,7 @@ struct AdminBusinessReadinessView: View {
 
     var body: some View {
         List {
-            restaurantReadinessSection
+            retailServiceFoundationSection
 
             if let readiness = viewModel.readiness {
                 Section {
@@ -65,6 +65,17 @@ struct AdminBusinessReadinessView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var retailServiceFoundationSection: some View {
+        Section("Retail & Service Foundation") {
+            Label("Core operation remains the source of truth: sales, cash, customers, products, documents and history.", systemImage: "checkmark.seal")
+            Label("Retail/service readiness becomes active in 24R.E after capability registry and templates are defined.", systemImage: "shippingbox")
+            Text("Restaurant/table readiness is retained only as legacy code until it is removed safely from backend contracts and tests.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 

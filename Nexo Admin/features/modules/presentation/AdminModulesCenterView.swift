@@ -51,18 +51,13 @@ struct AdminModulesCenterView: View {
                 }
 
 
-                Section("Vertical activation") {
+                Section("Retail & Service foundation") {
                     NavigationLink {
-                        AdminVerticalActivationView(
-                            viewModel: AdminVerticalActivationViewModel(
-                                repository: verticalsRepository,
-                                permissions: sessionStore.effectivePermissions
-                            )
-                        )
+                        AdminRetailServiceFoundationPlaceholderView()
                     } label: {
                         AdminModulesCenterRow(
-                            title: "Verticales",
-                            subtitle: "Activar Restaurante v1, readiness, capabilities, work modes y seeds futuros",
+                            title: "Retail & Service",
+                            subtitle: "Foundation for retail/service templates, capabilities, readiness and safe previews",
                             systemImage: "square.3.layers.3d.down.right"
                         )
                     }
@@ -116,5 +111,24 @@ private struct AdminModulesCenterRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+
+private struct AdminRetailServiceFoundationPlaceholderView: View {
+    var body: some View {
+        List {
+            Section("Retail & Service Foundation") {
+                Label("24R prepares capability registry, activity templates, staging seeds and readiness.", systemImage: "shippingbox")
+                Label("No restaurant/table activation is exposed from this surface.", systemImage: "checkmark.shield")
+                Label("Inventory Pro, procurement and work orders are later phases.", systemImage: "clock.badge.checkmark")
+            }
+            Section("Next implementation") {
+                Text("24R.E will replace this placeholder with real Retail & Service activation/readiness once backend capabilities and templates are ready.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Retail & Service")
     }
 }

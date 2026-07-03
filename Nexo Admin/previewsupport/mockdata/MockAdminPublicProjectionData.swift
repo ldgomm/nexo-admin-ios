@@ -14,7 +14,7 @@ enum MockAdminPublicProjectionData {
         visible: false,
         status: "private",
         businessName: "Altos del Murco",
-        activityTypes: ["restaurant", "tourism"],
+        activityTypes: ["retail_store", "tourism"],
         publicCatalogRevision: "pubcat_001",
         locationVisibility: "approximate",
         publishedItemCount: 0,

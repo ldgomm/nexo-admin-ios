@@ -141,7 +141,7 @@ struct EditAdminActivityView: View {
     @State private var sortOrder: Int
     @State private var reason = "Configuración de actividad del negocio"
 
-    private let activityTypes = ["restaurant", "retail", "services", "tourism", "rental", "mixed", "custom"]
+    private let activityTypes = ["retail_store", "tech_store", "hardware_store", "bookstore", "service_repair", "retail", "services", "mixed", "custom"]
     private let workflowModes = ["quick_sale", "order", "reservation", "service_order", "rental"]
     private let statuses = ["active", "draft", "paused"]
 

@@ -21,7 +21,7 @@ final class AdminOrganizationAccessViewModel: ObservableObject {
     private let repository: AdminOrganizationAccessRepository
 
     @Published var state: State = .idle
-    @Published var businessType = "restaurant"
+    @Published var businessType = "retail_store"
     @Published var enabledModules: Set<String> = []
     @Published var disabledModules: Set<String> = []
     @Published var reason = ""

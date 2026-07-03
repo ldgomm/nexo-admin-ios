@@ -27,10 +27,10 @@ enum MockAdminBusinessData {
         AdminBusinessActivity(
             id: "act_restaurant",
             organizationId: "org_1",
-            code: "restaurant",
-            name: "Restaurante",
+            code: "retail_store",
+            name: "Retail store",
             description: "Venta de comida y bebidas.",
-            activityType: "restaurant",
+            activityType: "retail_store",
             workflowMode: "order",
             status: .active,
             requiresScheduling: false,

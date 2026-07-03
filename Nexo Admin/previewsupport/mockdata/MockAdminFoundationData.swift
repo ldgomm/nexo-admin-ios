@@ -24,7 +24,7 @@ enum MockAdminFoundationData {
         ],
         activeBranchId: "br_1",
         activities: [
-            AdminBusinessContextActivity(id: "act_1", activityType: "restaurant", workflowMode: "quick_sale", status: "active", requiresScheduling: false),
+            AdminBusinessContextActivity(id: "act_1", activityType: "retail_store", workflowMode: "quick_sale", status: "active", requiresScheduling: false),
             AdminBusinessContextActivity(id: "act_2", activityType: "tourism", workflowMode: "reservation", status: "active", requiresScheduling: true)
         ],
         activeModules: [

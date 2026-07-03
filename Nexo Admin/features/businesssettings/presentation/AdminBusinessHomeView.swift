@@ -218,7 +218,7 @@ struct AdminBusinessHomeView: View {
 
                 NexoAdminUXNavigationTile(
                     title: "Actividades",
-                    subtitle: "Restaurant, retail, servicios, turismo o mixto.",
+                    subtitle: "Retail, technology, hardware, bookstore, service repair or mixed.",
                     systemImage: "square.stack.3d.up"
                 ) {
                     AdminActivitiesView(

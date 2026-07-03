@@ -92,7 +92,7 @@ struct AdminSupportDeskView: View {
                     }
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Mesa de soporte")
+                    Text("Support desk")
                         .font(.title3.weight(.bold))
 
                     Text("Bandeja interna para atender tickets con contexto sanitizado y acciones controladas.")
