@@ -27,7 +27,7 @@ struct AdminCatalogHomeView: View {
                 ]
             ) {
                 content
-                    .navigationTitle("Catálogo")
+                    .navigationTitle("Catálogo retail")
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
@@ -43,7 +43,7 @@ struct AdminCatalogHomeView: View {
                     title: "Sin permiso",
                     message: "Tu usuario no tiene permisos efectivos para administrar catálogo. El backend también validará cada acción."
                 )
-                .navigationTitle("Catálogo")
+                .navigationTitle("Catálogo retail")
             }
         }
         .task { await viewModel.load() }

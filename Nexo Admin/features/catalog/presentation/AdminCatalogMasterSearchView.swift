@@ -20,7 +20,7 @@ struct AdminCatalogMasterSearchView: View {
                 TextField("Identificador opcional", text: $viewModel.masterSearch.identifier)
                     .textInputAutocapitalization(.characters)
                     .onSubmit { Task { await viewModel.searchMaster() } }
-                Picker("Tipo", selection: $viewModel.masterSearch.type) {
+                Picker("Tipo retail/servicio", selection: $viewModel.masterSearch.type) {
                     Text("Todos").tag("")
                     Text("Producto").tag("PRODUCT")
                     Text("Servicio").tag("SERVICE")
@@ -92,7 +92,7 @@ struct AdminCatalogMasterTemplateDetailView: View {
                     Spacer()
                     AdminCatalogStatusBadge(status: current.status)
                 }
-                LabeledContent("Tipo", value: current.type.readableSnakeCase)
+                LabeledContent("Tipo retail/servicio", value: current.type.readableSnakeCase)
                 LabeledContent("Global ID", value: current.globalCatalogId)
                 if let family = current.productFamilyId {
                     LabeledContent("Familia", value: family)

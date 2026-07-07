@@ -85,8 +85,8 @@ struct AdminCatalogLocalItemDetailView: View {
                     Spacer()
                     AdminCatalogStatusBadge(status: current.status)
                 }
-                LabeledContent("Precio", value: current.localPrice.formatted)
-                LabeledContent("Tipo", value: current.type.readableSnakeCase)
+                LabeledContent("Precio de venta", value: current.localPrice.formatted)
+                LabeledContent("Tipo retail/servicio", value: current.type.readableSnakeCase)
                 LabeledContent("Tax profile", value: current.taxProfileId)
                 LabeledContent("Origen", value: current.sourceDisplayTitle)
                 LabeledContent("Plantilla", value: current.templateReferenceText)
@@ -105,7 +105,7 @@ struct AdminCatalogLocalItemDetailView: View {
             ) {
                 Section("Actualizar copia local") {
                     TextField("Nombre local", text: $localName)
-                    AdminCatalogMoneyField(title: "Precio", amount: $priceAmount, currency: $currency)
+                    AdminCatalogMoneyField(title: "Precio de venta", amount: $priceAmount, currency: $currency)
                     TextField("Tax profile", text: $taxProfileCode)
                         .textInputAutocapitalization(.never)
                     AdminCatalogReasonSection(reason: $reason)

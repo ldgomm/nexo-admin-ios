@@ -80,7 +80,7 @@ struct AdminCatalogRequestDetailView: View {
                     Spacer()
                     AdminCatalogStatusBadge(status: current.status)
                 }
-                LabeledContent("Tipo", value: current.requestedType.readableSnakeCase)
+                LabeledContent("Tipo retail/servicio", value: current.requestedType.readableSnakeCase)
                 LabeledContent("Solicitado por", value: current.requestedByUserId)
                 LabeledContent("Creado", value: current.createdAt)
                 LabeledContent("Actualizado", value: current.updatedAt)
@@ -143,7 +143,7 @@ struct AdminCatalogCreateRequestView: View {
         Form {
             Section("Nuevo producto o servicio") {
                 TextField("Nombre solicitado", text: $requestedName)
-                Picker("Tipo", selection: $requestedType) {
+                Picker("Tipo retail/servicio", selection: $requestedType) {
                     Text("Producto").tag("PRODUCT")
                     Text("Servicio").tag("SERVICE")
                 }
@@ -159,7 +159,7 @@ struct AdminCatalogCreateRequestView: View {
             }
 
             Section("Identificador opcional") {
-                Picker("Tipo", selection: $identifierType) {
+                Picker("Tipo retail/servicio", selection: $identifierType) {
                     Text("SKU").tag("SKU")
                     Text("Código interno").tag("INTERNAL_CODE")
                     Text("EAN-13").tag("EAN13")
