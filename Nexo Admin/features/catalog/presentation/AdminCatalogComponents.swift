@@ -165,6 +165,10 @@ struct AdminCatalogItemRow: View {
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
             }
+            Text("V1C: \(item.v1cIdentifierSummary) · \(item.v1cSellabilitySummary)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
         }
         .padding(.vertical, 4)
     }

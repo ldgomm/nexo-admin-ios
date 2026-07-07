@@ -95,6 +95,20 @@ struct AdminCatalogLocalItemDetailView: View {
                 }
             }
 
+            Section("ProductModel V1C readiness") {
+                LabeledContent("Identificadores", value: current.v1cIdentifierSummary)
+                LabeledContent("Tags", value: current.v1cTagSummary)
+                LabeledContent("Media", value: current.v1cMediaSummary)
+                LabeledContent("Relacionados", value: current.v1cRelatedSummary)
+                LabeledContent("Pack / combo", value: current.v1cBundleSummary)
+                LabeledContent("Pricing / promos", value: current.v1cCommercialSummary)
+                LabeledContent("Sellability", value: current.v1cSellabilitySummary)
+                LabeledContent("Costo / margen", value: current.v1cCostMarginSummary)
+                Text("Preparado para inspección y readiness. No activa carga de archivos, promociones reales, inventario por componentes ni publicación Client.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             PermissionGate(
                 permissions: sessionStore.effectivePermissions,
                 required: [
