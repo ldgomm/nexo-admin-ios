@@ -75,6 +75,9 @@ enum PermissionCatalog {
     static let catalogLocalManage = catalogLocalUpdateLocalCopy
     static let catalogMasterManage = catalogManageMaster
 
+    static let inventoryView = "inventory.view"
+    static let inventoryAdjust = "inventory.adjust"
+
     static let customersView = "customers.view"
     static let customersCreate = "customers.create"
     static let customersUpdate = "customers.update"

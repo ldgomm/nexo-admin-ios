@@ -44,6 +44,7 @@ struct AdminShellView: View {
     let adminAccessRepository: any AdminAccessRepository
     let adminBusinessRepository: any AdminBusinessRepository
     let adminCatalogRepository: any AdminCatalogRepository
+    let adminInventoryRepository: any AdminInventoryRepository
     let adminTaxSriRepository: any AdminTaxSriRepository
     let adminElectronicDocumentRepository: any AdminElectronicDocumentRepository
     let adminOperationsRepository: any AdminOperationsRepository
@@ -74,6 +75,7 @@ struct AdminShellView: View {
                 sessionStore: sessionStore,
                 repository: adminBusinessRepository,
                 catalogRepository: adminCatalogRepository,
+                inventoryRepository: adminInventoryRepository,
                 foundationRepository: adminFoundationRepository
             )
             .tabItem {

@@ -11,6 +11,7 @@ struct AdminBusinessHomeView: View {
     @ObservedObject var sessionStore: AuthSessionStore
     @StateObject private var viewModel: AdminBusinessViewModel
     @StateObject private var catalogViewModel: AdminCatalogViewModel
+    let inventoryRepository: any AdminInventoryRepository
     let foundationRepository: any AdminFoundationRepository
 
     @State private var selectedFocus: AdminBusinessHomeFocus = .setup
@@ -25,15 +26,21 @@ struct AdminBusinessHomeView: View {
         PermissionCatalog.catalogLocalRequestNewItem
     ]
 
+    private let inventoryPermissions: Set<String> = [
+        PermissionCatalog.inventoryView
+    ]
+
     init(
         sessionStore: AuthSessionStore,
         repository: any AdminBusinessRepository,
         catalogRepository: any AdminCatalogRepository,
+        inventoryRepository: any AdminInventoryRepository,
         foundationRepository: any AdminFoundationRepository
     ) {
         self.sessionStore = sessionStore
         _viewModel = StateObject(wrappedValue: AdminBusinessViewModel(repository: repository))
         _catalogViewModel = StateObject(wrappedValue: AdminCatalogViewModel(repository: catalogRepository))
+        self.inventoryRepository = inventoryRepository
         self.foundationRepository = foundationRepository
     }
 
@@ -249,6 +256,21 @@ struct AdminBusinessHomeView: View {
                     )
                 }
 
+                if canViewInventory {
+                    NexoAdminUXNavigationTile(
+                        title: "Inventario Pro",
+                        subtitle: "Configura control, stock mínimo, existencias y auditoría por sucursal.",
+                        systemImage: "shippingbox.and.arrow.backward"
+                    ) {
+                        AdminInventoryView(
+                            repository: inventoryRepository,
+                            branches: viewModel.branches,
+                            activities: viewModel.activities,
+                            permissions: sessionStore.effectivePermissions
+                        )
+                    }
+                }
+
                 NexoAdminUXNavigationTile(
                     title: "Readiness operativo",
                     subtitle: "Checklist humano antes de vender, cobrar y emitir documentos.",
@@ -285,6 +307,10 @@ struct AdminBusinessHomeView: View {
 
     private var canViewCatalog: Bool {
         PermissionSet(values: sessionStore.effectivePermissions).canAny(catalogPermissions)
+    }
+
+    private var canViewInventory: Bool {
+        PermissionSet(values: sessionStore.effectivePermissions).canAny(inventoryPermissions)
     }
 
     private var isBusy: Bool {

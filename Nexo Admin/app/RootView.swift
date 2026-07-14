@@ -47,6 +47,7 @@ struct RootView: View {
                     adminAccessRepository: container.adminAccessRepository,
                     adminBusinessRepository: container.adminBusinessRepository,
                     adminCatalogRepository: container.adminCatalogRepository,
+                    adminInventoryRepository: container.adminInventoryRepository,
                     adminTaxSriRepository: container.adminTaxSriRepository,
                     adminElectronicDocumentRepository: container.adminElectronicDocumentRepository,
                     adminOperationsRepository: container.adminOperationsRepository,

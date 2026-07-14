@@ -13,6 +13,7 @@ struct AdminCatalogLocalItemsView: View {
 
     var body: some View {
         List {
+            AdminCatalogImportReadinessCard()
             Section {
                 TextField("Buscar por nombre, SKU o código", text: $viewModel.localSearch.query)
                     .textInputAutocapitalization(.never)
@@ -261,3 +262,49 @@ private enum LocalItemAction: String, Identifiable {
         }
     }
 }
+
+// MARK: - 25R.M.6 Import readiness/report surface
+private struct AdminCatalogImportReadinessCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "square.and.arrow.down.on.square")
+                    .font(.title3)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Importación CSV/Excel")
+                        .font(.headline)
+                    Text("Base segura lista para validación: dry-run, reporte de filas, duplicados, tax profile y escritura controlada.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                AdminCatalogImportReadinessRow(text: "Dry-run obligatorio antes de importar", isReady: true)
+                AdminCatalogImportReadinessRow(text: "Duplicados y tax profile se validan en backend", isReady: true)
+                AdminCatalogImportReadinessRow(text: "Sin inventario, compras ni movimientos en 25R.M", isReady: true)
+                AdminCatalogImportReadinessRow(text: "Upload desde Admin queda pendiente de endpoint/smoke", isReady: false)
+            }
+        }
+        .padding()
+        .background(Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct AdminCatalogImportReadinessRow: View {
+    let text: String
+    let isReady: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: isReady ? "checkmark.circle.fill" : "clock.badge.exclamationmark")
+                .foregroundStyle(isReady ? .green : .orange)
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+

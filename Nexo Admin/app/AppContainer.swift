@@ -19,6 +19,7 @@ final class AppContainer: ObservableObject {
     let adminAccessRepository: any AdminAccessRepository
     let adminBusinessRepository: any AdminBusinessRepository
     let adminCatalogRepository: any AdminCatalogRepository
+    let adminInventoryRepository: any AdminInventoryRepository
     let adminTaxSriRepository: any AdminTaxSriRepository
     let adminElectronicDocumentRepository: any AdminElectronicDocumentRepository
     let adminOperationsRepository: any AdminOperationsRepository
@@ -42,6 +43,7 @@ final class AppContainer: ObservableObject {
         adminAccessRepository: any AdminAccessRepository,
         adminBusinessRepository: any AdminBusinessRepository,
         adminCatalogRepository: any AdminCatalogRepository,
+        adminInventoryRepository: any AdminInventoryRepository,
         adminTaxSriRepository: any AdminTaxSriRepository,
         adminElectronicDocumentRepository: any AdminElectronicDocumentRepository,
         adminOperationsRepository: any AdminOperationsRepository,
@@ -63,6 +65,7 @@ final class AppContainer: ObservableObject {
         self.adminAccessRepository = adminAccessRepository
         self.adminBusinessRepository = adminBusinessRepository
         self.adminCatalogRepository = adminCatalogRepository
+        self.adminInventoryRepository = adminInventoryRepository
         self.adminTaxSriRepository = adminTaxSriRepository
         self.adminElectronicDocumentRepository = adminElectronicDocumentRepository
         self.adminOperationsRepository = adminOperationsRepository
@@ -115,6 +118,9 @@ final class AppContainer: ObservableObject {
         let adminCatalogAPI = RemoteAdminCatalogAPI(apiClient: client)
         let adminCatalogRepository = RemoteAdminCatalogRepository(api: adminCatalogAPI)
 
+        let adminInventoryAPI = RemoteAdminInventoryAPI(apiClient: client)
+        let adminInventoryRepository = RemoteAdminInventoryRepository(api: adminInventoryAPI)
+
         let adminTaxSriAPI = RemoteAdminTaxSriAPI(apiClient: client)
         let adminTaxSriRepository = RemoteAdminTaxSriRepository(api: adminTaxSriAPI)
 
@@ -159,6 +165,7 @@ final class AppContainer: ObservableObject {
             adminAccessRepository: adminAccessRepository,
             adminBusinessRepository: adminBusinessRepository,
             adminCatalogRepository: adminCatalogRepository,
+            adminInventoryRepository: adminInventoryRepository,
             adminTaxSriRepository: adminTaxSriRepository,
             adminElectronicDocumentRepository: adminElectronicDocumentRepository,
             adminOperationsRepository: adminOperationsRepository,
