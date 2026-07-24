@@ -12,6 +12,7 @@ struct AdminBusinessHomeView: View {
     @StateObject private var viewModel: AdminBusinessViewModel
     @StateObject private var catalogViewModel: AdminCatalogViewModel
     let inventoryRepository: any AdminInventoryRepository
+    let procurementRepository: any AdminProcurementRepository
     let foundationRepository: any AdminFoundationRepository
 
     @State private var selectedFocus: AdminBusinessHomeFocus = .setup
@@ -35,12 +36,14 @@ struct AdminBusinessHomeView: View {
         repository: any AdminBusinessRepository,
         catalogRepository: any AdminCatalogRepository,
         inventoryRepository: any AdminInventoryRepository,
+        procurementRepository: any AdminProcurementRepository,
         foundationRepository: any AdminFoundationRepository
     ) {
         self.sessionStore = sessionStore
         _viewModel = StateObject(wrappedValue: AdminBusinessViewModel(repository: repository))
         _catalogViewModel = StateObject(wrappedValue: AdminCatalogViewModel(repository: catalogRepository))
         self.inventoryRepository = inventoryRepository
+        self.procurementRepository = procurementRepository
         self.foundationRepository = foundationRepository
     }
 
@@ -271,6 +274,20 @@ struct AdminBusinessHomeView: View {
                     }
                 }
 
+                if canViewProcurement {
+                    NexoAdminUXNavigationTile(
+                        title: "Compras y cuentas por pagar",
+                        subtitle: "Proveedores, readiness, reconciliación operativa y hechos financieros.",
+                        systemImage: "shippingbox.and.arrow.forward"
+                    ) {
+                        AdminProcurementHomeView(
+                            foundationRepository: foundationRepository,
+                            procurementRepository: procurementRepository,
+                            permissions: sessionStore.effectivePermissions
+                        )
+                    }
+                }
+
                 NexoAdminUXNavigationTile(
                     title: "Readiness operativo",
                     subtitle: "Checklist humano antes de vender, cobrar y emitir documentos.",
@@ -311,6 +328,11 @@ struct AdminBusinessHomeView: View {
 
     private var canViewInventory: Bool {
         PermissionSet(values: sessionStore.effectivePermissions).canAny(inventoryPermissions)
+    }
+
+    private var canViewProcurement: Bool {
+        AdminSupplierAccess.canView(sessionStore.effectivePermissions) ||
+        AdminProcurementReadinessAccess.allows(sessionStore.effectivePermissions)
     }
 
     private var isBusy: Bool {

@@ -78,6 +78,47 @@ enum PermissionCatalog {
     static let inventoryView = "inventory.view"
     static let inventoryAdjust = "inventory.adjust"
 
+    static let suppliersView = "suppliers.view"
+    static let suppliersSensitiveView = "suppliers.sensitive_view"
+    static let suppliersCreate = "suppliers.create"
+    static let suppliersUpdate = "suppliers.update"
+    static let suppliersStatusManage = "suppliers.status_manage"
+
+    static let purchaseOrdersView = "purchase_orders.view"
+    static let purchaseOrdersCostView = "purchase_orders.cost_view"
+    static let purchaseOrdersCreate = "purchase_orders.create"
+    static let purchaseOrdersUpdate = "purchase_orders.update"
+    static let purchaseOrdersSend = "purchase_orders.send"
+    static let purchaseOrdersCancel = "purchase_orders.cancel"
+    static let purchaseOrdersClose = "purchase_orders.close"
+
+    static let purchaseReceiptsView = "purchase_receipts.view"
+    static let purchaseReceiptsCreate = "purchase_receipts.create"
+    static let purchaseReceiptsUpdate = "purchase_receipts.update"
+    static let purchaseReceiptsConfirm = "purchase_receipts.confirm"
+    static let purchaseReceiptsCancel = "purchase_receipts.cancel"
+
+    static let supplierDocumentsView = "supplier_documents.view"
+    static let supplierDocumentsCreate = "supplier_documents.create"
+    static let supplierDocumentsUpdate = "supplier_documents.update"
+    static let supplierDocumentsConfirm = "supplier_documents.confirm"
+    static let supplierDocumentsCancel = "supplier_documents.cancel"
+
+    static let payablesView = "payables.view"
+    static let payablesAgingView = "payables.aging_view"
+
+    static let supplierPaymentsView = "supplier_payments.view"
+    static let supplierPaymentsSensitiveView = "supplier_payments.sensitive_view"
+    static let supplierPaymentsCreate = "supplier_payments.create"
+    static let supplierPaymentsVoid = "supplier_payments.void"
+
+    static let supplierStatementsView = "supplier_statements.view"
+    static let supplierStatementsExport = "supplier_statements.export"
+
+    static let procurementAttachmentsUpload = "procurement.attachments_upload"
+    static let procurementAttachmentsDelete = "procurement.attachments_delete"
+    static let procurementAuditView = "procurement.audit_view"
+
     static let customersView = "customers.view"
     static let customersCreate = "customers.create"
     static let customersUpdate = "customers.update"
@@ -149,6 +190,7 @@ enum PermissionCatalog {
     static let reportsCashView = "reports.cash.view"
     static let reportsTaxView = "reports.tax.view"
     static let reportsDocumentsView = "reports.documents.view"
+    static let reportsExport = "reports.export"
 
     static let reportsToday = reportsDashboardView
     static let reportsSales = reportsSalesView
