@@ -14,6 +14,7 @@ struct AdminBusinessHomeView: View {
     let inventoryRepository: any AdminInventoryRepository
     let procurementRepository: any AdminProcurementRepository
     let foundationRepository: any AdminFoundationRepository
+    let financeControlRepository: any AdminFinanceControlRepository
 
     @State private var selectedFocus: AdminBusinessHomeFocus = .setup
 
@@ -37,7 +38,8 @@ struct AdminBusinessHomeView: View {
         catalogRepository: any AdminCatalogRepository,
         inventoryRepository: any AdminInventoryRepository,
         procurementRepository: any AdminProcurementRepository,
-        foundationRepository: any AdminFoundationRepository
+        foundationRepository: any AdminFoundationRepository,
+        financeControlRepository: any AdminFinanceControlRepository
     ) {
         self.sessionStore = sessionStore
         _viewModel = StateObject(wrappedValue: AdminBusinessViewModel(repository: repository))
@@ -45,6 +47,7 @@ struct AdminBusinessHomeView: View {
         self.inventoryRepository = inventoryRepository
         self.procurementRepository = procurementRepository
         self.foundationRepository = foundationRepository
+        self.financeControlRepository = financeControlRepository
     }
 
     var body: some View {
@@ -276,14 +279,27 @@ struct AdminBusinessHomeView: View {
 
                 if canViewProcurement {
                     NexoAdminUXNavigationTile(
-                        title: "Compras y cuentas por pagar",
-                        subtitle: "Proveedores, readiness, reconciliación operativa y hechos financieros.",
+                        title: "Compras y proveedores",
+                        subtitle: "Órdenes, recepciones, documentos, cuentas por pagar, pagos y conciliación.",
                         systemImage: "shippingbox.and.arrow.forward"
                     ) {
                         AdminProcurementHomeView(
                             foundationRepository: foundationRepository,
                             procurementRepository: procurementRepository,
                             permissions: sessionStore.effectivePermissions
+                        )
+                    }
+                }
+
+                if canViewFinanceControl {
+                    NexoAdminUXNavigationTile(
+                        title: "Control financiero",
+                        subtitle: "Entidades, políticas, periodos, importaciones, conciliación, cutover y evidencia.",
+                        systemImage: "chart.line.text.clipboard"
+                    ) {
+                        AdminFinanceControlSurfaceView(
+                            effectivePermissions: sessionStore.effectivePermissions,
+                            repository: financeControlRepository
                         )
                     }
                 }
@@ -331,8 +347,22 @@ struct AdminBusinessHomeView: View {
     }
 
     private var canViewProcurement: Bool {
-        AdminSupplierAccess.canView(sessionStore.effectivePermissions) ||
-        AdminProcurementReadinessAccess.allows(sessionStore.effectivePermissions)
+        let permissions = sessionStore.effectivePermissions
+        return AdminSupplierAccess.canView(permissions)
+            || AdminPurchaseOrderAccess.canView(permissions)
+            || AdminPurchaseReceiptAccess.canView(permissions)
+            || AdminSupplierDocumentAccess.canView(permissions)
+            || AdminPayableAccess.canEnter(permissions)
+            || AdminSupplierPaymentAccess.canView(permissions)
+            || AdminSupplierStatementAccess.canView(permissions)
+            || AdminProcurementExportAccess.canViewCatalog(permissions)
+            || AdminProcurementReadinessAccess.allows(permissions)
+    }
+
+    private var canViewFinanceControl: Bool {
+        AdminFinanceControlAccessPolicy(
+            effectivePermissions: sessionStore.effectivePermissions
+        ).canViewSurface
     }
 
     private var isBusy: Bool {

@@ -8,7 +8,7 @@
 import Combine
 
 @MainActor
-final class AppContainer: ObservableObject {
+class AppContainer: ObservableObject {
     let environment: AppEnvironment
 
     let tokenStore: AuthTokenStorage
@@ -30,6 +30,7 @@ final class AppContainer: ObservableObject {
     let adminRoleTemplateRepository: any AdminRoleTemplateRepository
     let adminBusinessPackagesRepository: any AdminBusinessPackagesRepository
     let adminVerticalsRepository: any AdminVerticalsRepository
+    let adminFinanceControlRepository: any AdminFinanceControlRepository
 
     @Published var sessionStore: AuthSessionStore
     let authCoordinator: AuthSessionCoordinator
@@ -55,6 +56,7 @@ final class AppContainer: ObservableObject {
         adminRoleTemplateRepository: any AdminRoleTemplateRepository,
         adminBusinessPackagesRepository: any AdminBusinessPackagesRepository,
         adminVerticalsRepository: any AdminVerticalsRepository,
+        adminFinanceControlRepository: any AdminFinanceControlRepository,
         sessionStore: AuthSessionStore,
         authCoordinator: AuthSessionCoordinator
     ) {
@@ -78,6 +80,7 @@ final class AppContainer: ObservableObject {
         self.adminRoleTemplateRepository = adminRoleTemplateRepository
         self.adminBusinessPackagesRepository = adminBusinessPackagesRepository
         self.adminVerticalsRepository = adminVerticalsRepository
+        self.adminFinanceControlRepository = adminFinanceControlRepository
         self.sessionStore = sessionStore
         self.authCoordinator = authCoordinator
     }
@@ -149,6 +152,7 @@ final class AppContainer: ObservableObject {
         let businessPackagesRepository = RemoteAdminBusinessPackagesRepository(apiClient: client)
         let verticalsAPI = RemoteAdminVerticalsAPI(apiClient: client)
         let verticalsRepository = RemoteAdminVerticalsRepository(api: verticalsAPI)
+        let financeControlRepository = AdminFinanceControlAPIRepository(apiClient: client)
 
         let sessionStore = AuthSessionStore(
             tokenStore: tokenStore,
@@ -182,6 +186,7 @@ final class AppContainer: ObservableObject {
             adminRoleTemplateRepository: roleTemplateRepository,
             adminBusinessPackagesRepository: businessPackagesRepository,
             adminVerticalsRepository: verticalsRepository,
+            adminFinanceControlRepository: financeControlRepository,
             sessionStore: sessionStore,
             authCoordinator: coordinator
         )

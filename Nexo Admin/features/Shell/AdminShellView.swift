@@ -55,6 +55,7 @@ struct AdminShellView: View {
     let adminRoleTemplateRepository: any AdminRoleTemplateRepository
     let adminBusinessPackagesRepository: any AdminBusinessPackagesRepository
     let adminVerticalsRepository: any AdminVerticalsRepository
+    let adminFinanceControlRepository: any AdminFinanceControlRepository
     let onChangeOrganization: () -> Void
     let onLogout: () -> Void
 
@@ -78,7 +79,8 @@ struct AdminShellView: View {
                 catalogRepository: adminCatalogRepository,
                 inventoryRepository: adminInventoryRepository,
                 procurementRepository: adminProcurementRepository,
-                foundationRepository: adminFoundationRepository
+                foundationRepository: adminFoundationRepository,
+                financeControlRepository: adminFinanceControlRepository
             )
             .tabItem {
                 Label(AdminShellTab.business.title, systemImage: AdminShellTab.business.systemImage)

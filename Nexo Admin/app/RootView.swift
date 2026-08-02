@@ -58,6 +58,7 @@ struct RootView: View {
                     adminRoleTemplateRepository: container.adminRoleTemplateRepository,
                     adminBusinessPackagesRepository: container.adminBusinessPackagesRepository,
                     adminVerticalsRepository: container.adminVerticalsRepository,
+                    adminFinanceControlRepository: container.adminFinanceControlRepository,
                     onChangeOrganization: {
                         Task { await container.authCoordinator.requestOrganizationSelection() }
                     },
