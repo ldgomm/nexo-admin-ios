@@ -2,6 +2,8 @@
 //  AdminPurchaseOrderMapper.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.3 — Lossless order mapping with explicit cost-redaction boundaries.
 //
 

@@ -2,6 +2,8 @@
 //  AdminSupplierDTOs.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.2 — Exact supplier master wire contracts.
 //
 

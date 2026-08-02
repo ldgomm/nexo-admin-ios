@@ -2,6 +2,8 @@
 //  AdminPurchaseReceiptViewModel.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.4 — Permission-gated, read-only receipt and inventory-effect state.
 //
 
@@ -9,7 +11,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminPurchaseReceiptViewModel: ObservableObject {
+class AdminPurchaseReceiptViewModel: ObservableObject {
     @Published var branchId = ""
     @Published var supplierId = ""
     @Published var purchaseOrderId = ""

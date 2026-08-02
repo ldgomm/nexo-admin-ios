@@ -2,6 +2,8 @@
 //  AdminPurchaseOrderViewModel.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.3 — Permission-gated, read-only purchase order oversight state.
 //
 
@@ -9,7 +11,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminPurchaseOrderViewModel: ObservableObject {
+class AdminPurchaseOrderViewModel: ObservableObject {
     @Published var query = ""
     @Published var branchId = ""
     @Published var supplierId = ""

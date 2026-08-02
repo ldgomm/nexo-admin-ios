@@ -2,12 +2,14 @@
 //  AdminProcurementReadinessViewModelTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 
 import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminProcurementReadinessViewModelTests: XCTestCase {
+class AdminProcurementReadinessViewModelTests: XCTestCase {
     func testLoadUsesActiveBranchAndDefaultCurrency() async {
         let procurement = AdminProcurementTestRepository()
         let viewModel = AdminProcurementReadinessViewModel(

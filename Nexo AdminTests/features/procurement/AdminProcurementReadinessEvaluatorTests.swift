@@ -2,11 +2,13 @@
 //  AdminProcurementReadinessEvaluatorTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminProcurementReadinessEvaluatorTests: XCTestCase {
+class AdminProcurementReadinessEvaluatorTests: XCTestCase {
     func testExactBackendContractsAndModulesAreReady() async throws {
         let report = try await makeReport(contracts: .fixture())
 
@@ -15,6 +17,16 @@ final class AdminProcurementReadinessEvaluatorTests: XCTestCase {
         XCTAssertEqual(report.reportCount, 10)
         XCTAssertEqual(report.matchingPayableCount, 2)
         XCTAssertEqual(report.financeFactCount, 4)
+        XCTAssertEqual(report.financeSourceFactSchemaVersion, 1)
+        XCTAssertEqual(report.financeSourceFactTypeCount, 9)
+        XCTAssertEqual(report.accountingCompletenessMatrix?.totalItemCount, 33)
+        XCTAssertEqual(report.accountingCompletenessMatrix?.passExistingCount, 20)
+        XCTAssertEqual(report.accountingCompletenessMatrix?.futureGapCount, 10)
+        XCTAssertEqual(report.accountingCompletenessMatrix?.notApplicableCount, 3)
+        XCTAssertEqual(
+            report.accountingCompletenessMatrix?.items.first { $0.id == "SERVICE_PERIOD" }?.classification,
+            .documentFutureGap
+        )
     }
 
     func testBackendReconciliationFailureBlocksReadiness() async throws {
@@ -37,6 +49,35 @@ final class AdminProcurementReadinessEvaluatorTests: XCTestCase {
         XCTAssertFalse(report.isReady)
         XCTAssertTrue(report.checks.contains { $0.id == "payables.contract" && $0.status == .blocked })
         XCTAssertTrue(report.checks.contains { $0.id == "finance-facts.contract" && $0.status == .blocked })
+        XCTAssertTrue(report.checks.contains { $0.id == "finance-source-facts-v1.contract" && $0.status == .blocked })
+    }
+
+    func testReplayBoundaryFailureBlocksReadiness() async throws {
+        let report = try await makeReport(contracts: .fixture(replayReadOnly: false))
+
+        XCTAssertFalse(report.isReady)
+        XCTAssertTrue(report.checks.contains { $0.id == "finance-source-facts-v1.boundary" && $0.status == .blocked })
+    }
+
+    func testReplayCursorMismatchBlocksReadiness() async throws {
+        let report = try await makeReport(contracts: .fixture(replayHasMore: true, replayNextCursorAvailable: false))
+
+        XCTAssertFalse(report.isReady)
+        XCTAssertTrue(report.checks.contains { $0.id == "finance-source-facts-v1.cursor" && $0.status == .blocked })
+    }
+
+    func testAccountingCompletenessVersionMismatchBlocksReadiness() async throws {
+        let report = try await makeReport(contracts: .fixture(accountingMatrixVersion: "unexpected"))
+
+        XCTAssertFalse(report.isReady)
+        XCTAssertTrue(report.checks.contains { $0.id == "accounting-completeness.contract" && $0.status == .blocked })
+    }
+
+    func testAccountingCompletenessBoundaryFailureBlocksReadiness() async throws {
+        let report = try await makeReport(contracts: .fixture(accountingMatrixReadOnly: false))
+
+        XCTAssertFalse(report.isReady)
+        XCTAssertTrue(report.checks.contains { $0.id == "accounting-completeness.boundary" && $0.status == .blocked })
     }
 
     func testUnexpectedCatalogImplementationBlocksReadiness() async throws {

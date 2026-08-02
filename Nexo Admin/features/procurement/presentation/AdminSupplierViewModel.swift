@@ -2,6 +2,8 @@
 //  AdminSupplierViewModel.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.2 — Permission-gated supplier master state.
 //
 
@@ -9,7 +11,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminSupplierViewModel: ObservableObject {
+class AdminSupplierViewModel: ObservableObject {
     @Published var query = ""
     @Published var category = ""
     @Published var statusFilter: AdminSupplierStatusFilter = .all

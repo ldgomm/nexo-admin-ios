@@ -2,6 +2,8 @@
 //  AdminProcurementModels.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.1B — Procurement readiness domain.
 //
 
@@ -74,10 +76,87 @@ struct AdminProcurementFinanceHealth: Equatable, Sendable {
     let hasMore: Bool
 }
 
+struct AdminProcurementFinanceSourceFactReplayReadiness: Equatable, Sendable {
+    let contractVersion: Int
+    let schemaVersion: Int
+    let organizationId: String
+    let branchId: String?
+    let supplierId: String?
+    let currency: String
+    let effectiveFrom: String?
+    let effectiveTo: String?
+    let snapshotAt: String
+    let returnedFactCount: Int
+    let hasMore: Bool
+    let nextCursorAvailable: Bool
+    let maxPageSize: Int
+    let supportedFactTypes: [String]
+    let reservedFactTypes: [String]
+    let replayMode: String
+    let readOnly: Bool
+    let accountingEntriesGenerated: Bool
+    let postable: Bool
+    let limitations: [String]
+}
+
+enum AdminProcurementAccountingCompletenessClassification: String, Equatable, Sendable {
+    case passExisting = "PASS_EXISTING"
+    case documentFutureGap = "DOCUMENT_FUTURE_GAP"
+    case notApplicable = "NOT_APPLICABLE"
+
+    var title: String {
+        switch self {
+        case .passExisting: return "Fuente lista"
+        case .documentFutureGap: return "Brecha futura"
+        case .notApplicable: return "Fuera de 27R"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .passExisting: return "checkmark.circle.fill"
+        case .documentFutureGap: return "exclamationmark.triangle.fill"
+        case .notApplicable: return "arrow.forward.circle.fill"
+        }
+    }
+}
+
+struct AdminProcurementAccountingCompletenessItem: Identifiable, Equatable, Sendable {
+    let id: String
+    let title: String
+    let displayTitle: String
+    let authoritativeEvidence: String
+    let v1ReplayStatus: String
+    let classification: AdminProcurementAccountingCompletenessClassification
+    let classificationNote: String?
+    let futureOwnerAction: String
+}
+
+struct AdminProcurementAccountingCompletenessMatrix: Equatable, Sendable {
+    let contractVersion: Int
+    let matrixVersion: String
+    let acceptedStage: String
+    let organizationId: String
+    let currency: String
+    let scope: String
+    let sourceDocument: String
+    let totalItemCount: Int
+    let passExistingCount: Int
+    let futureGapCount: Int
+    let notApplicableCount: Int
+    let items: [AdminProcurementAccountingCompletenessItem]
+    let readOnly: Bool
+    let accountingEntriesGenerated: Bool
+    let postable: Bool
+    let limitations: [String]
+}
+
 struct AdminProcurementContractSnapshot: Equatable, Sendable {
     let catalog: AdminProcurementReportCatalog
     let payableHealth: AdminProcurementOperationalHealth
     let financeHealth: AdminProcurementFinanceHealth
+    let financeSourceFactReplayReadiness: AdminProcurementFinanceSourceFactReplayReadiness
+    let accountingCompletenessMatrix: AdminProcurementAccountingCompletenessMatrix
 }
 
 enum AdminProcurementReadinessStatus: String, Equatable, Sendable {
@@ -126,6 +205,9 @@ struct AdminProcurementReadinessReport: Equatable, Sendable {
     let matchingPayableCount: Int?
     let openPayableBalance: AdminProcurementMoney?
     let financeFactCount: Int?
+    let financeSourceFactSchemaVersion: Int?
+    let financeSourceFactTypeCount: Int?
+    let accountingCompletenessMatrix: AdminProcurementAccountingCompletenessMatrix?
     let sections: [AdminProcurementReadinessSection]
 
     var checks: [AdminProcurementReadinessCheck] { sections.flatMap(\.checks) }
@@ -163,6 +245,8 @@ enum AdminProcurementReadinessAccess {
         PermissionCatalog.modulesView,
         PermissionCatalog.reportsDashboardView,
         PermissionCatalog.procurementAuditView,
+        PermissionCatalog.purchaseOrdersView,
+        PermissionCatalog.purchaseOrdersCostView,
         PermissionCatalog.purchaseReceiptsView,
         PermissionCatalog.supplierDocumentsView,
         PermissionCatalog.payablesView,

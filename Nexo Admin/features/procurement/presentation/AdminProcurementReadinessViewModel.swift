@@ -2,6 +2,8 @@
 //  AdminProcurementReadinessViewModel.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.1B — Procurement readiness state.
 //
 
@@ -9,7 +11,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminProcurementReadinessViewModel: ObservableObject {
+class AdminProcurementReadinessViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminProcurementReadinessReport> = .idle
 
     private let permissions: Set<String>

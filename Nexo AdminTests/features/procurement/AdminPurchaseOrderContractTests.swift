@@ -2,13 +2,15 @@
 //  AdminPurchaseOrderContractTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.3 — Admin purchase order read contract and permission boundary.
 //
 
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminPurchaseOrderContractTests: XCTestCase {
+class AdminPurchaseOrderContractTests: XCTestCase {
     func testRoutesStayInsideExactReadOnlyAdminNamespace() {
         XCTAssertEqual(
             AdminProcurementRoutes.purchaseOrders,

@@ -2,6 +2,8 @@
 //  AdminPurchaseReceiptMapper.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.4 — Lossless receipt mapping and fail-closed inventory-effect validation.
 //
 
@@ -190,9 +192,46 @@ extension AdminPurchaseReceiptInventoryEffectsDTO {
         if !costsVisible, mappedLines.contains(where: { $0.unitCost != nil || $0.totalCost != nil }) {
             throw AppError.decoding("El backend declaró costos restringidos pero incluyó valores.")
         }
-        if valueStatus == .sourceCurrencyLinked {
-            guard costsVisible, mappedLines.contains(where: { $0.valueStatus == .sourceCurrencyLinked }) else {
-                throw AppError.decoding("La moneda enlazada no tiene evidencia de costo visible.")
+        let reconciledMovementLines = mappedLines.filter { $0.effectStatus == .quantityReconciled }
+        switch valueStatus {
+        case .valueReconciled:
+            guard quantityStatus == .quantityReconciled,
+                  costsVisible,
+                  !reconciledMovementLines.isEmpty,
+                  reconciledMovementLines.allSatisfy({
+                      $0.valueStatus == .valueReconciled && $0.unitCost != nil && $0.totalCost != nil
+                  }),
+                  !limitations.contains("MOVEMENT_VALUE_OR_CURRENCY_NOT_RECORDED") else {
+                throw AppError.decoding("La conciliación de valor y moneda no tiene evidencia canónica completa.")
+            }
+        case .redacted:
+            guard quantityStatus == .quantityReconciled || quantityStatus == .reviewRequired,
+                  !costsVisible,
+                  mappedLines.contains(where: { $0.effectStatus != .notApplicable }),
+                  reconciledMovementLines.allSatisfy({ $0.valueStatus == .redacted }) else {
+                throw AppError.decoding("La redacción de valores contradice la evidencia por línea.")
+            }
+        case .notRecorded:
+            guard quantityStatus == .quantityReconciled,
+                  costsVisible,
+                  reconciledMovementLines.contains(where: { $0.valueStatus == .notRecorded }),
+                  limitations.contains("MOVEMENT_VALUE_OR_CURRENCY_NOT_RECORDED") else {
+                throw AppError.decoding("El valor no registrado carece de la limitación canónica esperada.")
+            }
+        case .notApplicable:
+            guard quantityStatus == .noEffectExpected,
+                  mappedLines.allSatisfy({ $0.valueStatus == .notApplicable }) else {
+                throw AppError.decoding("El valor no aplicable contradice la evidencia por línea.")
+            }
+        case .pending:
+            guard quantityStatus == .pending,
+                  mappedLines.allSatisfy({ $0.valueStatus == .pending }) else {
+                throw AppError.decoding("El valor pendiente contradice la evidencia por línea.")
+            }
+        case .unverifiable:
+            guard quantityStatus == .reviewRequired,
+                  mappedLines.contains(where: { $0.valueStatus == .unverifiable }) else {
+                throw AppError.decoding("El valor no verificable no identifica una línea incompatible.")
             }
         }
 
@@ -246,6 +285,36 @@ extension AdminPurchaseReceiptInventoryEffectLineDTO {
            let totalCurrency = mappedTotalCost?.currency,
            unitCurrency != totalCurrency {
             throw AppError.decoding("Los valores del movimiento usan monedas distintas.")
+        }
+
+        switch valueStatus {
+        case .valueReconciled:
+            guard costsVisible,
+                  effectStatus == .quantityReconciled,
+                  mappedUnitCost != nil,
+                  mappedTotalCost != nil else {
+                throw AppError.decoding("La línea conciliada no contiene valor y moneda canónicos completos.")
+            }
+        case .redacted:
+            guard !costsVisible, mappedUnitCost == nil, mappedTotalCost == nil else {
+                throw AppError.decoding("La línea restringida contradice la evidencia de costos.")
+            }
+        case .notRecorded:
+            guard costsVisible, effectStatus == .quantityReconciled else {
+                throw AppError.decoding("El valor no registrado no corresponde a un movimiento conciliado.")
+            }
+        case .notApplicable:
+            guard effectStatus == .notApplicable, mappedUnitCost == nil, mappedTotalCost == nil else {
+                throw AppError.decoding("El valor no aplicable contradice el estado del efecto.")
+            }
+        case .pending:
+            guard effectStatus == .pending, mappedUnitCost == nil, mappedTotalCost == nil else {
+                throw AppError.decoding("El valor pendiente contradice el estado del efecto.")
+            }
+        case .unverifiable:
+            guard effectStatus == .unverifiable, mappedUnitCost == nil, mappedTotalCost == nil else {
+                throw AppError.decoding("El valor no verificable contradice el estado del efecto.")
+            }
         }
 
         if effectStatus == .quantityReconciled {

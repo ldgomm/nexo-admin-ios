@@ -2,6 +2,8 @@
 //  AdminSupplierContractTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.2 — Supplier wire and permission contract.
 //
 
@@ -9,7 +11,7 @@ import Foundation
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminSupplierContractTests: XCTestCase {
+class AdminSupplierContractTests: XCTestCase {
     func testRoutesStayInsideExactAdminProcurementNamespace() {
         XCTAssertEqual(AdminProcurementRoutes.suppliers, "/api/v1/admin/procurement/suppliers")
         XCTAssertEqual(

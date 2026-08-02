@@ -2,6 +2,8 @@
 //  AdminPurchaseReceiptViewModelTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.4 — Permission, exact filters, pagination and canonical detail loading.
 //
 
@@ -10,7 +12,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminPurchaseReceiptViewModelTests: XCTestCase {
+class AdminPurchaseReceiptViewModelTests: XCTestCase {
     func testMissingReceiptPermissionBlocksRepositoryCall() async {
         let repository = AdminProcurementTestRepository()
         let viewModel = AdminPurchaseReceiptViewModel(repository: repository, permissions: [])
@@ -101,7 +103,8 @@ final class AdminPurchaseReceiptViewModelTests: XCTestCase {
         XCTAssertEqual(repository.purchaseReceiptDetailIds, ["pr_1"])
         XCTAssertEqual(repository.purchaseReceiptEffectIds, ["pr_1"])
         XCTAssertEqual(repository.purchaseOrderDetailIds, ["po_1"])
-        XCTAssertEqual(viewModel.inventoryEffects(receiptId: "pr_1")?.reconciliationScope, .quantityReconciled)
+        XCTAssertEqual(viewModel.inventoryEffects(receiptId: "pr_1")?.reconciliationScope, .quantityValueReconciled)
+        XCTAssertEqual(viewModel.inventoryEffects(receiptId: "pr_1")?.valueStatus, .valueReconciled)
         XCTAssertEqual(viewModel.linkedPurchaseOrder(receiptId: "pr_1")?.orderNumber, "PO-260721-000001")
     }
 

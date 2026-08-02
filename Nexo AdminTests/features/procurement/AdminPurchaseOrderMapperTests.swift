@@ -2,6 +2,8 @@
 //  AdminPurchaseOrderMapperTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.3 — Purchase order snapshots, quantities and cost redaction.
 //
 
@@ -9,7 +11,7 @@ import Foundation
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminPurchaseOrderMapperTests: XCTestCase {
+class AdminPurchaseOrderMapperTests: XCTestCase {
     func testFullOrderMapsBackendTotalsAndReceiptProgressWithoutRecalculation() throws {
         let order = try makeDTO().toDomain()
 

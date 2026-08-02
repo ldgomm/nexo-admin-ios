@@ -2,6 +2,8 @@
 //  AdminSupplierViews.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.2 — Supplier master list, detail, edit and status controls.
 //
 

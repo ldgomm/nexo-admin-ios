@@ -2,13 +2,15 @@
 //  AdminPurchaseReceiptContractTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.4 — Exact Admin read routes, filters and permission boundaries.
 //
 
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminPurchaseReceiptContractTests: XCTestCase {
+class AdminPurchaseReceiptContractTests: XCTestCase {
     func testRoutesStayInsideExactReadOnlyAdminNamespace() {
         XCTAssertEqual(
             AdminProcurementRoutes.purchaseReceipts,
@@ -78,6 +80,14 @@ final class AdminPurchaseReceiptContractTests: XCTestCase {
             ])
         )
         XCTAssertTrue(AdminPurchaseReceiptAccess.canViewInventoryEffects([PermissionCatalog.all]))
+    }
+
+    func testCanonicalValueReconciliationTokenAndScopeStayStable() {
+        XCTAssertEqual(AdminPurchaseReceiptValueStatus.valueReconciled.rawValue, "VALUE_RECONCILED")
+        XCTAssertEqual(
+            AdminPurchaseReceiptReconciliationScope.quantityValueReconciled.rawValue,
+            "QUANTITY_VALUE_RECONCILED"
+        )
     }
 
     func testCostAndAuditPermissionsRemainIndependent() {

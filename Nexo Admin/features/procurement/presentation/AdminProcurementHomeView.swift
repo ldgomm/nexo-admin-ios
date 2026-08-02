@@ -2,6 +2,8 @@
 //  AdminProcurementHomeView.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.3 — Extensible Admin procurement control hub.
 //
 
@@ -83,6 +85,83 @@ struct AdminProcurementHomeView: View {
                             }
                         }
 
+                        if AdminSupplierDocumentAccess.canView(permissions) {
+                            NexoAdminUXNavigationTile(
+                                title: "Documentos de proveedor",
+                                subtitle: "Revisar facturas y gastos, importes, impuestos, vínculos, evidencia y cuenta por pagar.",
+                                systemImage: "doc.text.fill"
+                            ) {
+                                AdminSupplierDocumentListView(
+                                    viewModel: AdminSupplierDocumentViewModel(
+                                        repository: procurementRepository,
+                                        permissions: permissions
+                                    )
+                                )
+                            }
+                        }
+
+                        if AdminPayableAccess.canEnter(permissions) {
+                            NexoAdminUXNavigationTile(
+                                title: "Cuentas por pagar",
+                                subtitle: "Supervisar saldos, vencimientos, ageing y fuentes canónicas sin recalcular ni modificar.",
+                                systemImage: "calendar.badge.exclamationmark"
+                            ) {
+                                AdminPayableListView(
+                                    viewModel: AdminPayableViewModel(
+                                        repository: procurementRepository,
+                                        permissions: permissions
+                                    )
+                                )
+                            }
+                        }
+
+
+                        if AdminSupplierPaymentAccess.canView(permissions) {
+                            NexoAdminUXNavigationTile(
+                                title: "Pagos a proveedores",
+                                subtitle: "Revisar aplicaciones, evidencia y anular con permiso; el backend restaura saldos sin borrar historial.",
+                                systemImage: "banknote.fill"
+                            ) {
+                                AdminSupplierPaymentListView(
+                                    viewModel: AdminSupplierPaymentViewModel(
+                                        repository: procurementRepository,
+                                        permissions: permissions
+                                    )
+                                )
+                            }
+                        }
+
+
+                        if AdminSupplierStatementAccess.canView(permissions) {
+                            NexoAdminUXNavigationTile(
+                                title: "Estado de cuenta proveedor",
+                                subtitle: "Consultar cargos, pagos, reversos, saldos y CSV canónico sin cálculos locales.",
+                                systemImage: "list.bullet.rectangle.portrait.fill"
+                            ) {
+                                AdminSupplierStatementView(
+                                    viewModel: AdminSupplierStatementViewModel(
+                                        repository: procurementRepository,
+                                        permissions: permissions
+                                    )
+                                )
+                            }
+                        }
+
+                        if AdminProcurementExportAccess.canViewCatalog(permissions) {
+                            NexoAdminUXNavigationTile(
+                                title: "Exportaciones operativas",
+                                subtitle: "Descargar los nueve reportes reconciliados publicados por el catálogo backend.",
+                                systemImage: "square.and.arrow.down.on.square.fill"
+                            ) {
+                                AdminProcurementExportsView(
+                                    viewModel: AdminProcurementExportsViewModel(
+                                        repository: procurementRepository,
+                                        permissions: permissions
+                                    )
+                                )
+                            }
+                        }
+
                         if AdminProcurementReadinessAccess.allows(permissions) {
                             NexoAdminUXNavigationTile(
                                 title: "Readiness y reconciliación",
@@ -102,7 +181,7 @@ struct AdminProcurementHomeView: View {
                         if !canAccessAnySurface {
                             NexoAdminUXInlineMessage(
                                 title: "Sin permisos de compras",
-                                message: "Solicita suppliers.view, purchase_orders.view, purchase_receipts.view o el conjunto completo de permisos de readiness.",
+                                message: "Solicita permisos de proveedores, órdenes, recepciones, documentos, cuentas por pagar, pagos, estados de cuenta, reportes o readiness.",
                                 tone: .warning
                             )
                         }
@@ -112,13 +191,18 @@ struct AdminProcurementHomeView: View {
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Compras")
+        .navigationTitle("Compras y proveedores")
     }
 
     private var canAccessAnySurface: Bool {
         AdminSupplierAccess.canView(permissions)
             || AdminPurchaseOrderAccess.canView(permissions)
             || AdminPurchaseReceiptAccess.canView(permissions)
+            || AdminSupplierDocumentAccess.canView(permissions)
+            || AdminPayableAccess.canEnter(permissions)
+            || AdminSupplierPaymentAccess.canView(permissions)
+            || AdminSupplierStatementAccess.canView(permissions)
+            || AdminProcurementExportAccess.canViewCatalog(permissions)
             || AdminProcurementReadinessAccess.allows(permissions)
     }
 }

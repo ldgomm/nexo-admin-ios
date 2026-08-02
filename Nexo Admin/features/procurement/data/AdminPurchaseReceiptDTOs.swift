@@ -2,6 +2,8 @@
 //  AdminPurchaseReceiptDTOs.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.4 — Exact read-only purchase receipt and inventory-effect wire contracts.
 //
 

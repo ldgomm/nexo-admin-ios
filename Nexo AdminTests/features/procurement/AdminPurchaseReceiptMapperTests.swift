@@ -2,6 +2,8 @@
 //  AdminPurchaseReceiptMapperTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.4 — Receipt quantities, linkage, redaction and reconciliation scope.
 //
 
@@ -9,7 +11,7 @@ import Foundation
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminPurchaseReceiptMapperTests: XCTestCase {
+class AdminPurchaseReceiptMapperTests: XCTestCase {
     func testConfirmedReceiptMapsEventQuantitiesWithoutCollapsingThem() throws {
         let receipt = try makeReceiptDTO().toDomain()
 
@@ -39,15 +41,16 @@ final class AdminPurchaseReceiptMapperTests: XCTestCase {
         XCTAssertThrowsError(try makeReceiptDTO(status: "DRAFT", movementId: "stmov_1").toDomain())
     }
 
-    func testConfirmedInventoryEffectMapsQuantityButNotValueReconciliationScope() throws {
+    func testConfirmedInventoryEffectMapsCanonicalQuantityValueAndMovementCurrency() throws {
         let effects = try makeEffectsDTO().toDomain(requestId: "req_1")
 
         XCTAssertEqual(effects.quantityStatus, .quantityReconciled)
-        XCTAssertEqual(effects.reconciliationScope, .quantityReconciled)
-        XCTAssertEqual(effects.valueStatus, .sourceCurrencyLinked)
-        XCTAssertTrue(effects.currencyComesFromReceiptSource)
+        XCTAssertEqual(effects.reconciliationScope, .quantityValueReconciled)
+        XCTAssertEqual(effects.valueStatus, .valueReconciled)
+        XCTAssertFalse(effects.movementValueOrCurrencyNotRecorded)
         XCTAssertEqual(effects.lines.first?.movementQuantity?.value, Decimal(2))
         XCTAssertEqual(effects.lines.first?.unitCost?.currency, "USD")
+        XCTAssertEqual(effects.lines.first?.totalCost?.currency, "USD")
     }
 
     func testRedactedEffectPreservesQuantityAndOmitsAllMoney() throws {
@@ -55,9 +58,51 @@ final class AdminPurchaseReceiptMapperTests: XCTestCase {
 
         XCTAssertEqual(effects.quantityStatus, .quantityReconciled)
         XCTAssertEqual(effects.valueStatus, .redacted)
+        XCTAssertEqual(effects.reconciliationScope, .quantityReconciled)
         XCTAssertFalse(effects.costsVisible)
         XCTAssertNil(effects.lines.first?.unitCost)
         XCTAssertNil(effects.lines.first?.totalCost)
+    }
+
+    func testHistoricalMovementWithoutValueOrCurrencyRemainsQuantityOnly() throws {
+        let effects = try makeEffectsDTO(
+            valueStatus: "NOT_RECORDED",
+            includeUnitCost: false,
+            includeTotalCost: false,
+            limitations: ["MOVEMENT_VALUE_OR_CURRENCY_NOT_RECORDED"]
+        ).toDomain(requestId: nil)
+
+        XCTAssertEqual(effects.quantityStatus, .quantityReconciled)
+        XCTAssertEqual(effects.valueStatus, .notRecorded)
+        XCTAssertEqual(effects.reconciliationScope, .quantityReconciled)
+        XCTAssertTrue(effects.movementValueOrCurrencyNotRecorded)
+        XCTAssertNil(effects.lines.first?.unitCost)
+        XCTAssertNil(effects.lines.first?.totalCost)
+    }
+
+    func testNotRecordedAllowsPartialMovementEvidenceWithoutCallingItReconciled() throws {
+        let effects = try makeEffectsDTO(
+            valueStatus: "NOT_RECORDED",
+            includeTotalCost: false,
+            limitations: ["MOVEMENT_VALUE_OR_CURRENCY_NOT_RECORDED"]
+        ).toDomain(requestId: nil)
+
+        XCTAssertEqual(effects.reconciliationScope, .quantityReconciled)
+        XCTAssertEqual(effects.valueStatus, .notRecorded)
+        XCTAssertNotNil(effects.lines.first?.unitCost)
+        XCTAssertNil(effects.lines.first?.totalCost)
+    }
+
+    func testValueReconciledRequiresBothCanonicalMovementAmounts() {
+        XCTAssertThrowsError(
+            try makeEffectsDTO(includeTotalCost: false).toDomain(requestId: nil)
+        )
+    }
+
+    func testValueReconciledRejectsMixedMovementCurrencies() {
+        XCTAssertThrowsError(
+            try makeEffectsDTO(totalCostCurrency: "EUR").toDomain(requestId: nil)
+        )
     }
 
     func testDraftEffectIsExplicitlyNoEffectExpected() throws {
@@ -150,11 +195,16 @@ final class AdminPurchaseReceiptMapperTests: XCTestCase {
     private func makeEffectsDTO(
         status: String = "CONFIRMED",
         quantityStatus: String = "QUANTITY_RECONCILED",
-        valueStatus: String = "SOURCE_CURRENCY_LINKED",
+        valueStatus: String = "VALUE_RECONCILED",
         costsVisible: Bool = true,
         hasMovement: Bool = true,
         sourceId: String = "pr_1",
-        quantityAfter: String = "7"
+        quantityAfter: String = "7",
+        includeUnitCost: Bool = true,
+        includeTotalCost: Bool = true,
+        unitCostCurrency: String = "USD",
+        totalCostCurrency: String = "USD",
+        limitations: [String]? = nil
     ) -> AdminPurchaseReceiptInventoryEffectsDTO {
         let line = AdminPurchaseReceiptInventoryEffectLineDTO(
             receiptLineId: "prl_1",
@@ -180,11 +230,11 @@ final class AdminPurchaseReceiptMapperTests: XCTestCase {
             sourceLineId: hasMovement ? "prl_1" : nil,
             occurredAt: hasMovement ? "2026-07-22T14:00:00Z" : nil,
             createdBy: hasMovement ? "usr_confirm" : nil,
-            unitCost: hasMovement && costsVisible
-                ? AdminProcurementMoneyDTO(amount: "3.25", currency: "USD")
+            unitCost: hasMovement && costsVisible && includeUnitCost
+                ? AdminProcurementMoneyDTO(amount: "3.25", currency: unitCostCurrency)
                 : nil,
-            totalCost: hasMovement && costsVisible
-                ? AdminProcurementMoneyDTO(amount: "6.50", currency: "USD")
+            totalCost: hasMovement && costsVisible && includeTotalCost
+                ? AdminProcurementMoneyDTO(amount: "6.50", currency: totalCostCurrency)
                 : nil,
             valueStatus: hasMovement
                 ? (costsVisible ? valueStatus : "REDACTED")
@@ -203,9 +253,7 @@ final class AdminPurchaseReceiptMapperTests: XCTestCase {
                 ? (costsVisible ? valueStatus : "REDACTED")
                 : "NOT_APPLICABLE",
             costsVisible: costsVisible,
-            limitations: hasMovement && costsVisible
-                ? ["MOVEMENT_CURRENCY_DERIVED_FROM_RECEIPT_SOURCE"]
-                : [],
+            limitations: limitations ?? [],
             lines: [line]
         )
     }

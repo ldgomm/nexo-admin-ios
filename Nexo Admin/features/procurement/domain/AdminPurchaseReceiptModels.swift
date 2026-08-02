@@ -2,6 +2,8 @@
 //  AdminPurchaseReceiptModels.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.4 — Read-only receipt and canonical inventory-effect review domain.
 //
 
@@ -89,7 +91,7 @@ enum AdminPurchaseReceiptValueStatus: String, Sendable {
     case notApplicable = "NOT_APPLICABLE"
     case notRecorded = "NOT_RECORDED"
     case pending = "PENDING"
-    case sourceCurrencyLinked = "SOURCE_CURRENCY_LINKED"
+    case valueReconciled = "VALUE_RECONCILED"
     case unverifiable = "UNVERIFIABLE"
 
     var title: String {
@@ -98,15 +100,24 @@ enum AdminPurchaseReceiptValueStatus: String, Sendable {
         case .notApplicable: return "Valor no aplicable"
         case .notRecorded: return "Valor no registrado"
         case .pending: return "Valor pendiente"
-        case .sourceCurrencyLinked: return "Moneda enlazada desde la recepción"
+        case .valueReconciled: return "Valor y moneda conciliados"
         case .unverifiable: return "Valor no verificable"
         }
     }
 }
 
 enum AdminPurchaseReceiptReconciliationScope: String, Sendable {
+    case quantityValueReconciled = "QUANTITY_VALUE_RECONCILED"
     case quantityReconciled = "QUANTITY_RECONCILED"
     case none = "NONE"
+
+    var title: String {
+        switch self {
+        case .quantityValueReconciled: return "Cantidad, valor y moneda conciliados"
+        case .quantityReconciled: return "Solo cantidad conciliada"
+        case .none: return "Sin conciliación"
+        }
+    }
 }
 
 struct AdminPurchaseTrackedUnit: Equatable, Sendable {
@@ -246,11 +257,18 @@ struct AdminPurchaseReceiptInventoryEffects: Equatable, Sendable {
     let requestId: String?
 
     var reconciliationScope: AdminPurchaseReceiptReconciliationScope {
-        quantityStatus == .quantityReconciled ? .quantityReconciled : .none
+        switch (quantityStatus, valueStatus) {
+        case (.quantityReconciled, .valueReconciled):
+            return .quantityValueReconciled
+        case (.quantityReconciled, _):
+            return .quantityReconciled
+        default:
+            return .none
+        }
     }
 
-    var currencyComesFromReceiptSource: Bool {
-        limitations.contains("MOVEMENT_CURRENCY_DERIVED_FROM_RECEIPT_SOURCE")
+    var movementValueOrCurrencyNotRecorded: Bool {
+        limitations.contains("MOVEMENT_VALUE_OR_CURRENCY_NOT_RECORDED")
     }
 
     var trackedUnitEffectIsOutsideContract: Bool {

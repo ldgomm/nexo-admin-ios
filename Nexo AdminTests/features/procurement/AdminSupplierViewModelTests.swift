@@ -2,6 +2,8 @@
 //  AdminSupplierViewModelTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.2 — Supplier permissions, filtering, pagination and mutations.
 //
 
@@ -9,7 +11,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminSupplierViewModelTests: XCTestCase {
+class AdminSupplierViewModelTests: XCTestCase {
     func testRefreshWithoutViewPermissionFailsBeforeRepositoryCall() async {
         let repository = AdminProcurementTestRepository()
         let viewModel = AdminSupplierViewModel(repository: repository, permissions: [])

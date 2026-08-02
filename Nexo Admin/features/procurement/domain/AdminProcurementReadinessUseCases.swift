@@ -2,6 +2,8 @@
 //  AdminProcurementReadinessUseCases.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.1B — Evidence-driven procurement readiness evaluation.
 //
 
@@ -56,6 +58,48 @@ struct AdminProcurementReadinessEvaluator: Sendable {
         "supplier_cost_trend",
         "procurement_evidence",
         "supplier_statement"
+    ]
+
+    static let accountingCompletenessPassExistingIds: Set<String> = [
+        "SUPPLIER_IDENTITY",
+        "ORGANIZATION_BRANCH",
+        "PURCHASE_INTENT",
+        "ACTUAL_RECEIPT",
+        "INVENTORY_ACQUISITION",
+        "SUPPLIER_DOCUMENT_IDENTITY",
+        "BUSINESS_DATES",
+        "EXACT_CURRENCY_MONEY",
+        "ORDER_LINE_ECONOMICS",
+        "DOCUMENT_LINE_ECONOMICS",
+        "TAX_COMPONENT_EVIDENCE",
+        "PAID_AT_SOURCE_PURCHASE",
+        "PAYABLE_ORIGIN",
+        "PAYABLE_BALANCE_EFFECTS",
+        "SUPPLIER_PAYMENT",
+        "SUPPLIER_STATEMENT",
+        "ATTACHMENT_EVIDENCE",
+        "IDEMPOTENCY",
+        "HISTORICAL_REPLAY",
+        "OPERATIONAL_REPORT_EQUIVALENCE",
+    ]
+
+    static let accountingCompletenessFutureGapIds: Set<String> = [
+        "SERVICE_PERIOD",
+        "FINANCIAL_CATEGORY_COST_CENTER",
+        "DEDUCTIBILITY",
+        "CAPITALIZATION",
+        "RETENTION_EVIDENCE",
+        "SUPPLIER_CREDIT_DEBIT_ADJUSTMENT",
+        "NON_CASH_SETTLEMENT",
+        "SUPPLIER_ADVANCE",
+        "CASH_BANK_ACCOUNT_BINDING",
+        "EXCHANGE_RATE_ORIGINAL_CURRENCY",
+    ]
+
+    static let accountingCompletenessNotApplicableIds: Set<String> = [
+        "ACCOUNTING_POLICY_ACCOUNT_MAPPING",
+        "DEBIT_CREDIT_JOURNAL",
+        "POSTED_LEDGER_FINANCIAL_STATEMENTS",
     ]
 
     var generatedAt: @Sendable () -> Date = { Date() }
@@ -131,7 +175,12 @@ struct AdminProcurementReadinessEvaluator: Sendable {
                         id: "accounting.not-generated",
                         title: "Sin asientos contables automáticos",
                         passed: contracts.map {
-                            !$0.catalog.accountingEntriesGenerated && !$0.financeHealth.accountingEntriesGenerated
+                            !$0.catalog.accountingEntriesGenerated &&
+                                !$0.financeHealth.accountingEntriesGenerated &&
+                                !$0.financeSourceFactReplayReadiness.accountingEntriesGenerated &&
+                                !$0.financeSourceFactReplayReadiness.postable &&
+                                !$0.accountingCompletenessMatrix.accountingEntriesGenerated &&
+                                !$0.accountingCompletenessMatrix.postable
                         } ?? false,
                         ready: "El backend declara hechos operativos para revisión futura; no genera contabilidad oficial.",
                         blocked: contracts == nil
@@ -152,6 +201,9 @@ struct AdminProcurementReadinessEvaluator: Sendable {
             matchingPayableCount: contracts?.payableHealth.matchingRowCount,
             openPayableBalance: contracts?.payableHealth.openBalance,
             financeFactCount: contracts?.financeHealth.matchingFactCount,
+            financeSourceFactSchemaVersion: contracts?.financeSourceFactReplayReadiness.schemaVersion,
+            financeSourceFactTypeCount: contracts?.financeSourceFactReplayReadiness.supportedFactTypes.count,
+            accountingCompletenessMatrix: contracts?.accountingCompletenessMatrix,
             sections: sections
         )
     }
@@ -183,6 +235,30 @@ struct AdminProcurementReadinessEvaluator: Sendable {
         }
         let payableChecks = contracts.payableHealth.reconciliationChecks
         let financeChecks = contracts.financeHealth.reconciliationChecks
+        let replay = contracts.financeSourceFactReplayReadiness
+        let matrix = contracts.accountingCompletenessMatrix
+        let matrixPassExistingIds = Set(matrix.items.filter { $0.classification == .passExisting }.map(\.id))
+        let matrixFutureGapIds = Set(matrix.items.filter { $0.classification == .documentFutureGap }.map(\.id))
+        let matrixNotApplicableIds = Set(matrix.items.filter { $0.classification == .notApplicable }.map(\.id))
+        let supportedFactTypes = Set(replay.supportedFactTypes)
+        let reservedFactTypes = Set(replay.reservedFactTypes)
+        let expectedSupportedFactTypes: Set<String> = [
+            "PURCHASE_ORDER_SENT",
+            "PURCHASE_ORDER_CANCELLED",
+            "PURCHASE_RECEIPT_CONFIRMED",
+            "SUPPLIER_DOCUMENT_CONFIRMED",
+            "SOURCE_PAYMENT_RECORDED",
+            "PAYABLE_CREATED",
+            "PAYABLE_STATUS_CHANGED",
+            "SUPPLIER_PAYMENT_RECORDED",
+            "SUPPLIER_PAYMENT_VOIDED"
+        ]
+        let expectedReservedFactTypes: Set<String> = [
+            "PURCHASE_RECEIPT_REVERSED",
+            "SUPPLIER_DOCUMENT_VOIDED",
+            "PAYABLE_ADJUSTMENT_RECORDED",
+            "PAYABLE_ADJUSTMENT_VOIDED"
+        ]
 
         return [
             requiredCheck(
@@ -245,6 +321,100 @@ struct AdminProcurementReadinessEvaluator: Sendable {
                 passed: !financeChecks.isEmpty && financeChecks.allSatisfy(\.passed),
                 ready: "Las comprobaciones backend de hechos financieros pasaron.",
                 blocked: "Los hechos financieros no reconciliaron o no devolvieron comprobaciones."
+            ),
+            requiredCheck(
+                id: "finance-source-facts-v1.contract",
+                title: "Replay FinanceSourceFact V1",
+                passed: replay.contractVersion == 1 &&
+                    replay.schemaVersion == 1 &&
+                    replay.organizationId == organizationId &&
+                    replay.branchId == branchId &&
+                    replay.supplierId == nil &&
+                    replay.currency == currency &&
+                    replay.effectiveFrom == nil &&
+                    replay.effectiveTo == nil &&
+                    replay.maxPageSize == 100 &&
+                    replay.replayMode == "SNAPSHOT_KEYSET_V1" &&
+                    !replay.snapshotAt.isEmpty,
+                ready: "El backend expone un snapshot V1 acotado y reproducible para toda la historia de la sucursal.",
+                blocked: "El replay V1 cambió de versión, filtros, scope, moneda o contrato de paginación."
+            ),
+            requiredCheck(
+                id: "finance-source-facts-v1.families",
+                title: "Familias de hechos V1",
+                passed: supportedFactTypes == expectedSupportedFactTypes &&
+                    replay.supportedFactTypes.count == expectedSupportedFactTypes.count &&
+                    reservedFactTypes == expectedReservedFactTypes &&
+                    replay.reservedFactTypes.count == expectedReservedFactTypes.count &&
+                    supportedFactTypes.isDisjoint(with: reservedFactTypes),
+                ready: "Nueve familias soportadas están diferenciadas de las operaciones reservadas.",
+                blocked: "Faltan familias soportadas, hay duplicados o una familia reservada fue expuesta como aceptada."
+            ),
+            requiredCheck(
+                id: "finance-source-facts-v1.cursor",
+                title: "Cursor de backfill consistente",
+                passed: (0...1).contains(replay.returnedFactCount) &&
+                    replay.hasMore == replay.nextCursorAvailable,
+                ready: "La lectura de readiness está acotada y declara correctamente si existe una página siguiente.",
+                blocked: "El backend devolvió una página no acotada o un cursor inconsistente."
+            ),
+            requiredCheck(
+                id: "finance-source-facts-v1.boundary",
+                title: "Replay de solo lectura",
+                passed: replay.readOnly &&
+                    !replay.accountingEntriesGenerated &&
+                    !replay.postable &&
+                    Set(replay.limitations).isSuperset(of: [
+                        "USD_ONLY",
+                        "READ_ONLY",
+                        "NO_ACCOUNTING_ENTRIES",
+                        "NO_PAYLOAD_EXPOSURE"
+                    ]),
+                ready: "Admin verifica replay y backfill sin exponer payloads ni generar contabilidad.",
+                blocked: "La ruta V1 dejó de ser read-only o pretende exponer/postear información fuera de 27R."
+            ),
+            requiredCheck(
+                id: "accounting-completeness.contract",
+                title: "Matriz de completitud contable",
+                passed: matrix.contractVersion == 1 &&
+                    matrix.matrixVersion == "27R.L0.H.v1" &&
+                    matrix.acceptedStage == "27R.L.7" &&
+                    matrix.organizationId == organizationId &&
+                    matrix.currency == currency &&
+                    matrix.scope == "PROCUREMENT_PAYABLES" &&
+                    matrix.sourceDocument == "NEXO_27R_ACCOUNTING_COMPLETENESS_SOURCE_MATRIX.md" &&
+                    matrix.totalItemCount == 33 &&
+                    matrix.passExistingCount == 20 &&
+                    matrix.futureGapCount == 10 &&
+                    matrix.notApplicableCount == 3,
+                ready: "La matriz runtime coincide con la fuente aceptada: 20 fuentes listas, 10 brechas futuras y 3 rubros fuera de 27R.",
+                blocked: "La matriz cambió de versión, scope, moneda, fuente o conteos aceptados."
+            ),
+            requiredCheck(
+                id: "accounting-completeness.rows",
+                title: "Cobertura completa de filas",
+                passed: matrix.items.count == 33 &&
+                    Set(matrix.items.map(\.id)).count == 33 &&
+                    matrixPassExistingIds == Self.accountingCompletenessPassExistingIds &&
+                    matrixFutureGapIds == Self.accountingCompletenessFutureGapIds &&
+                    matrixNotApplicableIds == Self.accountingCompletenessNotApplicableIds,
+                ready: "Impuestos, fechas, periodos, clasificación, activos, retenciones y settlements quedan explícitos sin inferencias.",
+                blocked: "Faltan filas, existen duplicados o una clasificación dejó de coincidir con el cierre 27R.L.7."
+            ),
+            requiredCheck(
+                id: "accounting-completeness.boundary",
+                title: "Matriz read-only y no contable",
+                passed: matrix.readOnly &&
+                    !matrix.accountingEntriesGenerated &&
+                    !matrix.postable &&
+                    Set(matrix.limitations).isSuperset(of: [
+                        "USD_ONLY",
+                        "READ_ONLY",
+                        "NO_ACCOUNTING_ENTRIES",
+                        "NO_TAX_OR_ACCOUNTING_INFERENCE"
+                    ]),
+                ready: "Admin muestra evidencia y brechas; no decide impuestos, cuentas, débitos, créditos ni estados financieros.",
+                blocked: "La matriz intenta postear, generar contabilidad o inferir tratamiento tributario."
             )
         ]
     }
@@ -253,7 +423,7 @@ struct AdminProcurementReadinessEvaluator: Sendable {
         [
             permissionCheck(id: "reports", title: "Readiness y reportes", permissions: permissions, required: [PermissionCatalog.reportsDashboardView]),
             permissionCheck(id: "suppliers", title: "Proveedores", permissions: permissions, required: [PermissionCatalog.suppliersView]),
-            permissionCheck(id: "orders", title: "Órdenes de compra", permissions: permissions, required: [PermissionCatalog.purchaseOrdersView]),
+            permissionCheck(id: "orders", title: "Órdenes de compra y costos", permissions: permissions, required: [PermissionCatalog.purchaseOrdersView, PermissionCatalog.purchaseOrdersCostView]),
             permissionCheck(id: "receipts", title: "Recepciones", permissions: permissions, required: [PermissionCatalog.purchaseReceiptsView]),
             permissionCheck(id: "documents", title: "Documentos de proveedor", permissions: permissions, required: [PermissionCatalog.supplierDocumentsView]),
             permissionCheck(id: "payables", title: "Cuentas por pagar y vencimientos", permissions: permissions, required: [PermissionCatalog.payablesView, PermissionCatalog.payablesAgingView]),

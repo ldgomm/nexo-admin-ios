@@ -2,13 +2,15 @@
 //  AdminSupplierMapperTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.2 — Supplier response mapping.
 //
 
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminSupplierMapperTests: XCTestCase {
+class AdminSupplierMapperTests: XCTestCase {
     func testFullSupplierMapsSensitiveFieldsAndPaymentTerms() throws {
         let supplier = try makeDTO().toDomain()
 

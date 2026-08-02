@@ -2,6 +2,8 @@
 //  AdminProcurementReadinessView.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.1B — Procurement readiness and health summary.
 //
 
@@ -93,18 +95,38 @@ struct AdminProcurementReadinessView: View {
                     NexoAdminUXMetricTile(
                         title: "Hechos financieros",
                         value: report.financeFactCount.map(String.init) ?? "—",
-                        subtitle: "versionados, no contabilizados",
+                        subtitle: "legado reconciliado",
                         systemImage: "point.3.connected.trianglepath.dotted",
                         tint: .purple
+                    )
+                    NexoAdminUXMetricTile(
+                        title: "Replay V1",
+                        value: report.financeSourceFactSchemaVersion.map { "v\($0)" } ?? "—",
+                        subtitle: report.financeSourceFactTypeCount.map { "\($0) familias · snapshot keyset" } ?? "No consultado",
+                        systemImage: "arrow.triangle.2.circlepath.circle.fill",
+                        tint: .indigo
+                    )
+                    NexoAdminUXMetricTile(
+                        title: "Matriz contable",
+                        value: report.accountingCompletenessMatrix.map { String($0.totalItemCount) } ?? "—",
+                        subtitle: report.accountingCompletenessMatrix.map {
+                            "\($0.passExistingCount) fuentes · \($0.futureGapCount) brechas · \($0.notApplicableCount) fuera de 27R"
+                        } ?? "No consultada",
+                        systemImage: "tablecells.badge.ellipsis",
+                        tint: .teal
                     )
                 }
             }
 
             NexoAdminUXInlineMessage(
                 title: "Frontera honesta",
-                message: "Esta pantalla muestra salud operativa y hechos reproducibles. No genera asientos, no declara contabilidad oficial y no reemplaza la revisión de 28R/29R.",
+                message: "Esta pantalla verifica hechos y replay reproducibles sin exponer payloads. No genera asientos, no declara contabilidad oficial y no reemplaza la revisión de 28R/29R.",
                 tone: .info
             )
+
+            if let matrix = report.accountingCompletenessMatrix {
+                AdminProcurementAccountingCompletenessCard(matrix: matrix)
+            }
 
             ForEach(report.sections) { section in
                 NexoAdminUXCard {
@@ -180,6 +202,112 @@ private struct AdminProcurementReadinessRow: View {
         case .ready: return .green
         case .warning: return .orange
         case .blocked: return .red
+        }
+    }
+}
+
+private struct AdminProcurementAccountingCompletenessCard: View {
+    let matrix: AdminProcurementAccountingCompletenessMatrix
+
+    var body: some View {
+        NexoAdminUXCard {
+            NexoAdminUXSectionHeader(
+                "Matriz de completitud contable",
+                subtitle: "Proyección runtime de la matriz aceptada en 27R.L.7; las brechas futuras permanecen visibles y no se reconstruyen.",
+                systemImage: "tablecells.badge.ellipsis"
+            )
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                NexoAdminUXMetricTile(
+                    title: "Fuentes listas",
+                    value: String(matrix.passExistingCount),
+                    subtitle: "PASS_EXISTING",
+                    systemImage: "checkmark.circle.fill",
+                    tint: .green
+                )
+                NexoAdminUXMetricTile(
+                    title: "Brechas futuras",
+                    value: String(matrix.futureGapCount),
+                    subtitle: "DOCUMENT_FUTURE_GAP",
+                    systemImage: "exclamationmark.triangle.fill",
+                    tint: .orange
+                )
+                NexoAdminUXMetricTile(
+                    title: "Fuera de 27R",
+                    value: String(matrix.notApplicableCount),
+                    subtitle: "NOT_APPLICABLE",
+                    systemImage: "arrow.forward.circle.fill",
+                    tint: .secondary
+                )
+                NexoAdminUXMetricTile(
+                    title: "Contrato",
+                    value: matrix.matrixVersion,
+                    subtitle: matrix.acceptedStage,
+                    systemImage: "checkmark.seal.fill",
+                    tint: .teal
+                )
+            }
+
+            NexoAdminUXInlineMessage(
+                title: "Sin inferencias",
+                message: "Servicio, deducibilidad, capitalización, retenciones, ajustes, settlement no monetario, cuenta bancaria y FX siguen como brechas explícitas hasta que exista una fuente operativa aceptada.",
+                tone: .info
+            )
+
+            VStack(spacing: 8) {
+                ForEach(matrix.items) { item in
+                    AdminProcurementAccountingCompletenessRow(item: item)
+                    if item.id != matrix.items.last?.id { Divider() }
+                }
+            }
+        }
+    }
+}
+
+private struct AdminProcurementAccountingCompletenessRow: View {
+    let item: AdminProcurementAccountingCompletenessItem
+
+    var body: some View {
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(item.authoritativeEvidence)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Replay V1: \(item.v1ReplayStatus)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Siguiente responsable: \(item.futureOwnerAction)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let note = item.classificationNote, !note.isEmpty {
+                    Text("Alcance: \(note)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(tint)
+                }
+            }
+            .padding(.top, 6)
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: item.classification.systemImage)
+                    .foregroundStyle(tint)
+                Text(item.displayTitle)
+                    .font(.subheadline.weight(.semibold))
+                Spacer(minLength: 8)
+                NexoAdminUXStatusBadge(
+                    title: item.classification.title,
+                    systemImage: item.classification.systemImage,
+                    tint: tint
+                )
+            }
+        }
+        .padding(.vertical, 3)
+    }
+
+    private var tint: Color {
+        switch item.classification {
+        case .passExisting: return .green
+        case .documentFutureGap: return .orange
+        case .notApplicable: return .secondary
         }
     }
 }

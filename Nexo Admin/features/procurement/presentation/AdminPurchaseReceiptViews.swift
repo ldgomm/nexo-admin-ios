@@ -2,6 +2,8 @@
 //  AdminPurchaseReceiptViews.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.4 — Read-only receipt list, detail and inventory-effect review.
 //
 
@@ -315,13 +317,13 @@ struct AdminPurchaseReceiptDetailView: View {
                     systemImage: effects.quantityStatus.systemImage,
                     tint: effects.quantityStatus.tint
                 )
-                LabeledContent("Alcance", value: effects.reconciliationScope.rawValue)
+                LabeledContent("Alcance", value: effects.reconciliationScope.title)
                 LabeledContent("Valor", value: effects.valueStatus.title)
 
-                if effects.currencyComesFromReceiptSource {
+                if effects.movementValueOrCurrencyNotRecorded {
                     NexoAdminUXInlineMessage(
-                        title: "Conciliación limitada a cantidades",
-                        message: "La moneda del movimiento se deriva de la recepción. Esta pantalla no declara conciliación de valor ni contabilidad oficial.",
+                        title: "Valor o moneda no registrados",
+                        message: "La cantidad puede estar conciliada, pero el movimiento no conserva evidencia completa de valor y moneda.",
                         tone: .warning
                     )
                 }

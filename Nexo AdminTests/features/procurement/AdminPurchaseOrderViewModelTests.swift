@@ -2,6 +2,8 @@
 //  AdminPurchaseOrderViewModelTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 //  27R.N.3 — Permission, backend filters, pagination and detail refresh.
 //
 
@@ -10,7 +12,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminPurchaseOrderViewModelTests: XCTestCase {
+class AdminPurchaseOrderViewModelTests: XCTestCase {
     func testMissingViewPermissionBlocksRepositoryCall() async {
         let repository = AdminProcurementTestRepository()
         let viewModel = AdminPurchaseOrderViewModel(repository: repository, permissions: [])
