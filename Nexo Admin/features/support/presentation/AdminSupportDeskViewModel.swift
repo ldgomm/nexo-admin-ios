@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminSupportDeskViewModel: ObservableObject {
+class AdminSupportDeskViewModel: ObservableObject {
     @Published private(set) var tickets: [AdminSupportTicketSummary] = []
     @Published private(set) var selectedTicket: AdminSupportTicketDetail?
     @Published private(set) var isLoading = false

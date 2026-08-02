@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class RemoteAdminTaxSriRepository: AdminTaxSriRepository, @unchecked Sendable {
+class RemoteAdminTaxSriRepository: AdminTaxSriRepository, @unchecked Sendable {
     private let api: any AdminTaxSriAPI
 
     init(api: any AdminTaxSriAPI) { self.api = api }

@@ -322,7 +322,7 @@ private struct AdminSecurityCenterView: View {
 }
 
 @MainActor
-private final class AdminSecurityCenterViewModel: ObservableObject {
+private class AdminSecurityCenterViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<[AdminAccessUser]> = .idle
 
     let repository: any AdminAccessRepository

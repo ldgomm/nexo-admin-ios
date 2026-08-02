@@ -2,13 +2,13 @@
 //  AdminBusinessPackageCatalogResponseTests.swift
 //  Nexo AdminTests
 //
-//  Created by Nexo on 22/6/26.
+//  Created by José Ruiz on 22/6/26.
 //
 
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminBusinessPackageCatalogResponseTests: XCTestCase {
+class AdminBusinessPackageCatalogResponseTests: XCTestCase {
     func testDecodesCompleteResponse() throws {
         let json = Data(
             """

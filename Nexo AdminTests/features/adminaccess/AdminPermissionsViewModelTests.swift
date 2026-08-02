@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminPermissionsViewModelTests: XCTestCase {
+class AdminPermissionsViewModelTests: XCTestCase {
     func testLoadPublishesPermissions() async {
         let repository = AdminAccessTestRepository()
         let viewModel = AdminPermissionsViewModel(repository: repository)

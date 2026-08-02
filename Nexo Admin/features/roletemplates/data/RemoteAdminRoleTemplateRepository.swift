@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class RemoteAdminRoleTemplateRepository: AdminRoleTemplateRepository, @unchecked Sendable {
+class RemoteAdminRoleTemplateRepository: AdminRoleTemplateRepository, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

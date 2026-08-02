@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminRolesViewModel: ObservableObject {
+class AdminRolesViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<[AdminAccessRole]> = .idle
     @Published private(set) var permissionsState: LoadableViewState<[AdminAccessPermission]> = .idle
     @Published private(set) var capabilityGroupsState: LoadableViewState<[AdminHumanCapabilityGroup]> = .idle
@@ -168,7 +168,7 @@ final class AdminRolesViewModel: ObservableObject {
 }
 
 @MainActor
-final class AdminRoleDetailViewModel: ObservableObject {
+class AdminRoleDetailViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminAccessRole> = .idle
     @Published private(set) var permissionsState: LoadableViewState<[AdminAccessPermission]> = .idle
     @Published private(set) var capabilityGroupsState: LoadableViewState<[AdminHumanCapabilityGroup]> = .idle

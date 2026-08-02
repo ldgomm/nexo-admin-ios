@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class RemoteAdminPublicProjectionRepository: AdminPublicProjectionRepository, @unchecked Sendable {
+class RemoteAdminPublicProjectionRepository: AdminPublicProjectionRepository, @unchecked Sendable {
     private let api: AdminPublicProjectionAPI
 
     init(api: AdminPublicProjectionAPI) {

@@ -702,7 +702,7 @@ private struct AdminSriLinkedHomologationDocumentScreen: View {
 }
 
 @MainActor
-private final class AdminSriLinkedHomologationDocumentViewModel: ObservableObject {
+private class AdminSriLinkedHomologationDocumentViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminElectronicDocumentDetail> = .idle
     @Published private(set) var actionMessage: String?
     @Published private(set) var actionErrorMessage: String?
@@ -806,7 +806,7 @@ private struct AdminSriDocumentQuickLookPreview: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {}
 
-    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+    class Coordinator: NSObject, QLPreviewControllerDataSource {
         let fileURL: URL
 
         init(fileURL: URL) {

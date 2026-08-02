@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminUserDetailViewModel: ObservableObject {
+class AdminUserDetailViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminAccessUser> = .idle
     @Published private(set) var rolesState: LoadableViewState<[AdminAccessRole]> = .idle
     @Published private(set) var sessionsState: LoadableViewState<[AdminUserSession]> = .idle

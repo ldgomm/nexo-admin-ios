@@ -8,7 +8,7 @@
 import Foundation
 
 @MainActor
-final class AuthSessionCoordinator {
+class AuthSessionCoordinator {
     private let repository: AuthRepository
     private let sessionStore: AuthSessionStore
     private let tokenStore: AuthTokenStorage

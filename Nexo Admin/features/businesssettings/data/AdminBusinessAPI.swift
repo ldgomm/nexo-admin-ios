@@ -32,7 +32,7 @@ protocol AdminBusinessAPI: Sendable {
     func deactivateEmissionPoint(id: String, request: AdminBusinessActionRequestDTO) async throws -> AdminEmissionPointEnvelopeDTO
 }
 
-final class RemoteAdminBusinessAPI: AdminBusinessAPI, @unchecked Sendable {
+class RemoteAdminBusinessAPI: AdminBusinessAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

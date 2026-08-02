@@ -26,7 +26,7 @@ protocol AdminCatalogAPI: Sendable {
     func listPriceHistory(organizationId: String, itemId: String, limit: Int) async throws -> AdminCatalogPriceHistoryResponseDTO
 }
 
-final class RemoteAdminCatalogAPI: AdminCatalogAPI, @unchecked Sendable {
+class RemoteAdminCatalogAPI: AdminCatalogAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminBusinessViewModelTests: XCTestCase {
+class AdminBusinessViewModelTests: XCTestCase {
     func testLoadPublishesOverview() async {
         let repository = AdminBusinessTestRepository()
         let viewModel = AdminBusinessViewModel(repository: repository)

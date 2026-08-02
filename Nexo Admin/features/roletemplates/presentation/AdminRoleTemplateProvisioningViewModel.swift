@@ -10,7 +10,7 @@ import Observation
 
 @MainActor
 @Observable
-final class AdminRoleTemplateProvisioningViewModel {
+class AdminRoleTemplateProvisioningViewModel {
     enum State: Equatable {
         case idle
         case loading

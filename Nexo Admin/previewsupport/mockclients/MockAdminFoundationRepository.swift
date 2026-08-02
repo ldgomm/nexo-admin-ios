@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockAdminFoundationRepository: AdminFoundationRepository, @unchecked Sendable {
+class MockAdminFoundationRepository: AdminFoundationRepository, @unchecked Sendable {
     var context: AdminBusinessContext
     var modules: [AdminResolvedModule]
     var readiness: [AdminModuleReadinessItem]

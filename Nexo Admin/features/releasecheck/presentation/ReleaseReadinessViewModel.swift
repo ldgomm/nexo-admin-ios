@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class ReleaseReadinessViewModel: ObservableObject {
+class ReleaseReadinessViewModel: ObservableObject {
     @Published private(set) var report: ReleaseReadinessReport?
 
     private let sessionStore: AuthSessionStore

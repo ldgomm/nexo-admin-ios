@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockAdminSupportRepository: AdminSupportRepository, @unchecked Sendable {
+class MockAdminSupportRepository: AdminSupportRepository, @unchecked Sendable {
     var health: AdminHealthSummary
     var devices: [AdminRegisteredDevice]
 

@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminBusinessViewModel: ObservableObject {
+class AdminBusinessViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isSaving = false
     @Published private(set) var overview: AdminBusinessOverview?

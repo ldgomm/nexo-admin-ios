@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class RemoteAdminBusinessRepository: AdminBusinessRepository, @unchecked Sendable {
+class RemoteAdminBusinessRepository: AdminBusinessRepository, @unchecked Sendable {
     private let api: AdminBusinessAPI
 
     init(api: AdminBusinessAPI) {

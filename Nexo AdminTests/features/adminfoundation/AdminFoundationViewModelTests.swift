@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminFoundationViewModelTests: XCTestCase {
+class AdminFoundationViewModelTests: XCTestCase {
     func testLoadBuildsFoundationSnapshot() async {
         let repository = AdminFoundationTestRepository()
         let viewModel = AdminFoundationViewModel(

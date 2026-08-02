@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockAdminBusinessRepository: AdminBusinessRepository, @unchecked Sendable {
+class MockAdminBusinessRepository: AdminBusinessRepository, @unchecked Sendable {
     private var business: AdminBusinessProfile
     private var activities: [AdminBusinessActivity]
     private var branches: [AdminBusinessBranch]

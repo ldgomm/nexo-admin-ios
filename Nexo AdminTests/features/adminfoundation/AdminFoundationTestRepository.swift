@@ -8,7 +8,7 @@
 import Foundation
 @testable import Nexo_Admin
 
-final class AdminFoundationTestRepository: AdminFoundationRepository, @unchecked Sendable {
+class AdminFoundationTestRepository: AdminFoundationRepository, @unchecked Sendable {
     var contextResult: AdminBusinessContext
     var modulesResult: AdminModulesResult
     var readinessResult: AdminModuleReadinessResult

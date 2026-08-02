@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminBusinessAppReadinessViewModelTests: XCTestCase {
+class AdminBusinessAppReadinessViewModelTests: XCTestCase {
     func testRefreshLoadsReportWhenUserHasPermission() async {
         let repository = FakeFoundationRepository()
         let viewModel = AdminBusinessAppReadinessViewModel(
@@ -45,7 +45,7 @@ final class AdminBusinessAppReadinessViewModelTests: XCTestCase {
     }
 }
 
-final class FakeFoundationRepository: AdminFoundationRepository, @unchecked Sendable {
+class FakeFoundationRepository: AdminFoundationRepository, @unchecked Sendable {
     var contextCalls = 0
     var modulesCalls = 0
     var readinessCalls = 0

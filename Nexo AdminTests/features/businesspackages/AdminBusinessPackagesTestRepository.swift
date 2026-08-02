@@ -2,13 +2,13 @@
 //  AdminBusinessPackagesTestRepository.swift
 //  Nexo AdminTests
 //
-//  Created by Nexo on 22/6/26.
+//  Created by José Ruiz on 22/6/26.
 //
 
 import Foundation
 @testable import Nexo_Admin
 
-final class AdminBusinessPackagesTestRepository: AdminBusinessPackagesRepository, @unchecked Sendable {
+class AdminBusinessPackagesTestRepository: AdminBusinessPackagesRepository, @unchecked Sendable {
     var result: AdminBusinessPackageCatalogResponse
     var error: Error?
     private(set) var loadCount = 0

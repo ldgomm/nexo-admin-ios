@@ -2,7 +2,7 @@
 //  AdminBusinessPackageMapper.swift
 //  Nexo Admin
 //
-//  Created by Nexo on 22/6/26.
+//  Created by José Ruiz on 22/6/26.
 //
 
 import Foundation

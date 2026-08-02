@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockAuthRepository: AuthRepository, @unchecked Sendable {
+class MockAuthRepository: AuthRepository, @unchecked Sendable {
     
     var loginResult: Result<SessionTokens, Error>
     var meResult: Result<MeContext, Error>

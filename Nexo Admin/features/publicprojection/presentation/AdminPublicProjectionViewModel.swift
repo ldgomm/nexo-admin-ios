@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminPublicProjectionViewModel: ObservableObject {
+class AdminPublicProjectionViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminPublicStoreProjection> = .idle
     @Published private(set) var isMutating = false
     @Published var settingsInput = AdminPublicProjectionSettingsInput()

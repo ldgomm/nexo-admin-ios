@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class RemoteAdminCatalogRepository: AdminCatalogRepository, @unchecked Sendable {
+class RemoteAdminCatalogRepository: AdminCatalogRepository, @unchecked Sendable {
     private let api: AdminCatalogAPI
 
     init(api: AdminCatalogAPI) {

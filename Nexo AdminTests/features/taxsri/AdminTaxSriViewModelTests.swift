@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminTaxSriViewModelTests: XCTestCase {
+class AdminTaxSriViewModelTests: XCTestCase {
     func testLoadSummaryPopulatesAllSections() async {
         let repository = AdminTaxSriTestRepository()
         let viewModel = AdminTaxSriViewModel(repository: repository)
@@ -53,7 +53,7 @@ final class AdminTaxSriViewModelTests: XCTestCase {
 }
 
 @MainActor
-final class AdminElectronicSignatureStateTests: XCTestCase {
+class AdminElectronicSignatureStateTests: XCTestCase {
     func testUploadedSignatureCanOnlyBeValidatedOrRevoked() {
         let signature = makeSignature(status: "UPLOADED", effectiveStatus: "UPLOADED", usable: false)
 

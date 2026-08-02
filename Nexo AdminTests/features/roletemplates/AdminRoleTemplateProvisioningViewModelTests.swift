@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminRoleTemplateProvisioningViewModelTests: XCTestCase {
+class AdminRoleTemplateProvisioningViewModelTests: XCTestCase {
     func testLoadPublishesTemplates() async {
         let repository = AdminRoleTemplateRepositorySpy()
         let viewModel = AdminRoleTemplateProvisioningViewModel(repository: repository)
@@ -63,7 +63,7 @@ final class AdminRoleTemplateProvisioningViewModelTests: XCTestCase {
     }
 }
 
-private final class AdminRoleTemplateRepositorySpy: AdminRoleTemplateRepository, @unchecked Sendable {
+private class AdminRoleTemplateRepositorySpy: AdminRoleTemplateRepository, @unchecked Sendable {
     var templates: [AdminRoleTemplate] = [
         .fixture(templateCode: "core.cashier", name: "Cajero"),
         .fixture(templateCode: "restaurant.waiter", vertical: "RESTAURANT", roleCode: "mesero", name: "Mesero")

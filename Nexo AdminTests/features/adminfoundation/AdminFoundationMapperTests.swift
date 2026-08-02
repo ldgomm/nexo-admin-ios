@@ -8,7 +8,7 @@
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminFoundationMapperTests: XCTestCase {
+class AdminFoundationMapperTests: XCTestCase {
     func testBusinessContextMapperPreservesCriticalRevisionsAndModules() {
         let dto = BusinessContextResponseDTO(
             user: BusinessContextUserResponseDTO(id: "usr_1", displayName: "Admin", email: "admin@nexo.test"),

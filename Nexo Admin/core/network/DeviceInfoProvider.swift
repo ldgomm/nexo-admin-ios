@@ -12,7 +12,7 @@ protocol DeviceIdentityStoring: Sendable {
     var deviceId: String { get }
 }
 
-final class UserDefaultsDeviceIdentityStore: DeviceIdentityStoring, @unchecked Sendable {
+class UserDefaultsDeviceIdentityStore: DeviceIdentityStoring, @unchecked Sendable {
     private let key = "nexo.admin.device.id"
     private let defaults: UserDefaults
 
@@ -31,7 +31,7 @@ final class UserDefaultsDeviceIdentityStore: DeviceIdentityStoring, @unchecked S
     }
 }
 
-final class KeychainDeviceIdentityStore: DeviceIdentityStoring, @unchecked Sendable {
+class KeychainDeviceIdentityStore: DeviceIdentityStoring, @unchecked Sendable {
     private let key = "nexo.admin.device.id"
     private let keychain: SecureKeyValueStore
 

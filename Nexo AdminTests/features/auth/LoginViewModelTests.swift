@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class LoginViewModelTests: XCTestCase {
+class LoginViewModelTests: XCTestCase {
     func testCanSubmitRequiresEmailAndPassword() {
         let viewModel = LoginViewModel(authCoordinator: makeCoordinator())
         XCTAssertFalse(viewModel.canSubmit)

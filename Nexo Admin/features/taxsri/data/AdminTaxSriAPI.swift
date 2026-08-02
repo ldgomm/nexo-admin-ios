@@ -26,7 +26,7 @@ protocol AdminTaxSriAPI: Sendable {
     func requestProductionEnable(_ request: RequestProductionEnableRequestDTO) async throws -> AdminSriSettingsResponseDTO
 }
 
-final class RemoteAdminTaxSriAPI: AdminTaxSriAPI, @unchecked Sendable {
+class RemoteAdminTaxSriAPI: AdminTaxSriAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) { self.apiClient = apiClient }

@@ -15,7 +15,7 @@ protocol AdminFoundationRepository: Sendable {
     func disableModule(code: String, reason: String) async throws -> AdminModulesResult
 }
 
-final class AdminFoundationRemoteRepository: AdminFoundationRepository, @unchecked Sendable {
+class AdminFoundationRemoteRepository: AdminFoundationRepository, @unchecked Sendable {
     private let api: AdminFoundationAPI
 
     init(api: AdminFoundationAPI) {

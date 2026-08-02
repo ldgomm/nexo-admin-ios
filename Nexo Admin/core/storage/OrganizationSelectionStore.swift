@@ -13,7 +13,7 @@ protocol OrganizationSelectionStoring: Sendable {
     func clearSelectedOrganization()
 }
 
-final class UserDefaultsOrganizationSelectionStore: OrganizationSelectionStoring, @unchecked Sendable {
+class UserDefaultsOrganizationSelectionStore: OrganizationSelectionStoring, @unchecked Sendable {
     private let key = "nexo.selected.organization.id"
     private let defaults: UserDefaults
 
@@ -38,7 +38,7 @@ final class UserDefaultsOrganizationSelectionStore: OrganizationSelectionStoring
     }
 }
 
-final class InMemoryOrganizationSelectionStore: OrganizationSelectionStoring, @unchecked Sendable {
+class InMemoryOrganizationSelectionStore: OrganizationSelectionStoring, @unchecked Sendable {
     private var value: String?
 
     init(selectedOrganizationId: String? = nil) {

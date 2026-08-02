@@ -2,14 +2,14 @@
 //  AdminBusinessPackagesDiagnosticsViewModelTests.swift
 //  Nexo AdminTests
 //
-//  Created by Nexo on 22/6/26.
+//  Created by José Ruiz on 22/6/26.
 //
 
 import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminBusinessPackagesDiagnosticsViewModelTests: XCTestCase {
+class AdminBusinessPackagesDiagnosticsViewModelTests: XCTestCase {
     func testLoadSuccessProducesRecommendedPresets() async {
         let repository = AdminBusinessPackagesTestRepository()
         let viewModel = AdminBusinessPackagesDiagnosticsViewModel(

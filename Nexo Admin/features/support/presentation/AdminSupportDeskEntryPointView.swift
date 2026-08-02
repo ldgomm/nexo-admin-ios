@@ -145,7 +145,7 @@ private struct AdminSupportDeskEntryCard: View {
 }
 
 @MainActor
-private final class AdminSupportNotificationsViewModel: ObservableObject {
+private class AdminSupportNotificationsViewModel: ObservableObject {
     @Published private(set) var unreadCount: Int = 0
     @Published private(set) var latestTitle: String?
     @Published private(set) var latestSummary: String?

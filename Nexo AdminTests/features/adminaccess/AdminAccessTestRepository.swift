@@ -8,7 +8,7 @@
 import Foundation
 @testable import Nexo_Admin
 
-final class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendable {
+class AdminAccessTestRepository: AdminAccessRepository, @unchecked Sendable {
     func listUserSessions(userId: String) async throws -> [Nexo_Admin.AdminUserSession] {
         return []
     }

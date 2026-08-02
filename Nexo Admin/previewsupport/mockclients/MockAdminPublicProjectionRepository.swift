@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockAdminPublicProjectionRepository: AdminPublicProjectionRepository, @unchecked Sendable {
+class MockAdminPublicProjectionRepository: AdminPublicProjectionRepository, @unchecked Sendable {
     var projection: AdminPublicStoreProjection
 
     init(projection: AdminPublicStoreProjection = MockAdminPublicProjectionData.privateProjection) {

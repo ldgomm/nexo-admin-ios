@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AuthSessionCoordinatorTests: XCTestCase {
+class AuthSessionCoordinatorTests: XCTestCase {
     func testLoginStoresTokensAndAuthenticatesWhenOrganizationIsActive() async throws {
         let tokenStore = InMemoryAuthTokenStore()
         let orgStore = InMemoryOrganizationSelectionStore(selectedOrganizationId: "org_1")

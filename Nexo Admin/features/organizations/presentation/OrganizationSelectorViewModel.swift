@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class OrganizationSelectorViewModel: ObservableObject {
+class OrganizationSelectorViewModel: ObservableObject {
     @Published private(set) var organizations: [OrganizationChoice]
     @Published private(set) var isLoading = false
     @Published var searchText = ""

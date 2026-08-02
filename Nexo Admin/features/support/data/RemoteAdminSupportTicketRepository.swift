@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class RemoteAdminSupportTicketRepository: AdminSupportTicketRepository {
+class RemoteAdminSupportTicketRepository: AdminSupportTicketRepository {
     private let api: AdminSupportTicketAPI
 
     init(api: AdminSupportTicketAPI = AdminSupportTicketAPI()) {

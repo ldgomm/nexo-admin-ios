@@ -2,14 +2,14 @@
 //  AdminBusinessPackagesDiagnosticsViewModel.swift
 //  Nexo Admin
 //
-//  Created by Nexo on 22/6/26.
+//  Created by José Ruiz on 22/6/26.
 //
 
 import Combine
 import Foundation
 
 @MainActor
-final class AdminBusinessPackagesDiagnosticsViewModel: ObservableObject {
+class AdminBusinessPackagesDiagnosticsViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminBusinessPackagesDiagnosticsPresentation> = .idle
 
     let permissions: Set<String>

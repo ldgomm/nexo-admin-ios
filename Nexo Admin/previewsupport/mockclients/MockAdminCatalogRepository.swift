@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockAdminCatalogRepository: AdminCatalogRepository, @unchecked Sendable {
+class MockAdminCatalogRepository: AdminCatalogRepository, @unchecked Sendable {
     private var items: [AdminCatalogLocalItem]
     private var templates: [AdminCatalogMasterTemplate]
     private var requests: [AdminCatalogRequest]

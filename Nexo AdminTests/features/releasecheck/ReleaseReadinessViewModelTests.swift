@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class ReleaseReadinessViewModelTests: XCTestCase {
+class ReleaseReadinessViewModelTests: XCTestCase {
     func testReportFailsWhenAPIIsLocal() throws {
         let sessionStore = AuthSessionStore(
             tokenStore: InMemoryAuthTokenStore(),

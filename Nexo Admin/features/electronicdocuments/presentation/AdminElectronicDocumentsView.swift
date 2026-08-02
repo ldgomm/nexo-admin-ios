@@ -1232,7 +1232,7 @@ private struct AdminElectronicDocumentQuickLookPreview: UIViewControllerRepresen
         uiViewController.reloadData()
     }
 
-    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+    class Coordinator: NSObject, QLPreviewControllerDataSource {
         var fileURL: URL
 
         init(fileURL: URL) {

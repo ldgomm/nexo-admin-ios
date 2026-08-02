@@ -14,7 +14,7 @@ protocol AdminSupportAPI: Sendable {
     func getNotificationsSummary() async throws -> AdminSupportNotificationsResponseDTO
 }
 
-final class RemoteAdminSupportAPI: AdminSupportAPI, @unchecked Sendable {
+class RemoteAdminSupportAPI: AdminSupportAPI, @unchecked Sendable {
     let apiClient: APIClient
 
     init(apiClient: APIClient) {

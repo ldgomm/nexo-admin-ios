@@ -8,7 +8,7 @@
 import Foundation
 @testable import Nexo_Admin
 
-final class AdminBusinessTestRepository: AdminBusinessRepository, @unchecked Sendable {
+class AdminBusinessTestRepository: AdminBusinessRepository, @unchecked Sendable {
     var business = AdminBusinessProfile(
         id: "org_1",
         countryCode: "EC",

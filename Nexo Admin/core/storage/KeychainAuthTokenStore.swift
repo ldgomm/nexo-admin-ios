@@ -13,7 +13,7 @@ protocol AuthTokenStorage: Sendable {
     func clearTokens() throws
 }
 
-final class KeychainAuthTokenStore: AuthTokenStorage, @unchecked Sendable {
+class KeychainAuthTokenStore: AuthTokenStorage, @unchecked Sendable {
     private let keychain: SecureKeyValueStore
     private let key = "nexo.auth.tokens"
     private let encoder = JSONEncoder.nexo
@@ -38,7 +38,7 @@ final class KeychainAuthTokenStore: AuthTokenStorage, @unchecked Sendable {
     }
 }
 
-final class InMemoryAuthTokenStore: AuthTokenStorage, @unchecked Sendable {
+class InMemoryAuthTokenStore: AuthTokenStorage, @unchecked Sendable {
     private var tokens: SessionTokens?
 
     init(tokens: SessionTokens? = nil) {

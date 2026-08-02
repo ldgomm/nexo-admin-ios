@@ -8,7 +8,7 @@
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminRoleTemplateModelsDecodingTests: XCTestCase {
+class AdminRoleTemplateModelsDecodingTests: XCTestCase {
     func testDecodesRoleTemplatesResponse() throws {
         let json = Data(
             """

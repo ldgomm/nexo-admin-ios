@@ -2,12 +2,12 @@
 //  RemoteAdminVerticalsRepository.swift
 //  Nexo Admin
 //
-//  Created by Nexo on 26/6/26.
+//  Created by José Ruiz on 26/6/26.
 //
 
 import Foundation
 
-final class RemoteAdminVerticalsRepository: AdminVerticalsRepository, @unchecked Sendable {
+class RemoteAdminVerticalsRepository: AdminVerticalsRepository, @unchecked Sendable {
     private let api: AdminVerticalsAPI
 
     init(api: AdminVerticalsAPI) {

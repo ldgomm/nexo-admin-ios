@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class RemoteAdminSupportRepository: AdminSupportRepository, @unchecked Sendable {
+class RemoteAdminSupportRepository: AdminSupportRepository, @unchecked Sendable {
     let api: AdminSupportAPI
 
     init(api: AdminSupportAPI) {

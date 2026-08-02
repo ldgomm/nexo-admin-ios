@@ -2,7 +2,7 @@
 //  AdminVerticalMapper.swift
 //  Nexo Admin
 //
-//  Created by Nexo on 26/6/26.
+//  Created by José Ruiz on 26/6/26.
 //
 
 import Foundation

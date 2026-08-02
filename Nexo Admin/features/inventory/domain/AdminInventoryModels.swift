@@ -2,6 +2,8 @@
 //  AdminInventoryModels.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 
 import Foundation
 

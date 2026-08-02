@@ -14,7 +14,7 @@ protocol AuthAPI: Sendable {
     func logout(sessionId: String?, reason: String) async throws -> RevokeSessionResponseDTO
 }
 
-final class RemoteAuthAPI: AuthAPI, @unchecked Sendable {
+class RemoteAuthAPI: AuthAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

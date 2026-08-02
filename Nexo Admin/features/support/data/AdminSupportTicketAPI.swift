@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class AdminSupportTicketAPI {
+class AdminSupportTicketAPI {
     private let apiClient: APIClient?
     enum APIError: Error {
         case invalidBaseURL

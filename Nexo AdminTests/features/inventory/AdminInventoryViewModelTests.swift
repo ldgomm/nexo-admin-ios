@@ -2,13 +2,15 @@
 //  AdminInventoryViewModelTests.swift
 //  Nexo AdminTests
 //
+//  Created by José Ruiz on 29/7/26.
+//
 
 import Foundation
 import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminInventoryViewModelTests: XCTestCase {
+class AdminInventoryViewModelTests: XCTestCase {
     func testQuantityPresentationRemovesBackendScaleWithoutLosingPrecision() {
         XCTAssertEqual(AdminInventoryNumberFormatter.format("3.000000"), "3")
         XCTAssertEqual(AdminInventoryNumberFormatter.format("3.500000"), "3,5")
@@ -288,7 +290,7 @@ final class AdminInventoryViewModelTests: XCTestCase {
     }
 }
 
-private final class AdminInventoryTestRepository: AdminInventoryRepository, @unchecked Sendable {
+private class AdminInventoryTestRepository: AdminInventoryRepository, @unchecked Sendable {
     var items: [AdminInventoryItem]
     var movements: [AdminInventoryMovement]
     var adjustmentResult: AdminInventoryAdjustmentResult?

@@ -8,7 +8,7 @@
 import Foundation
 @testable import Nexo_Admin
 
-final class AdminCatalogTestRepository: AdminCatalogRepository, @unchecked Sendable {
+class AdminCatalogTestRepository: AdminCatalogRepository, @unchecked Sendable {
     var localItems: [AdminCatalogLocalItem]
     var templates: [AdminCatalogMasterTemplate]
     var requests: [AdminCatalogRequest]

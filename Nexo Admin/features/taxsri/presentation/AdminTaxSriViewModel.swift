@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminTaxSriViewModel: ObservableObject {
+class AdminTaxSriViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isMutating = false
     @Published var errorMessage: String?

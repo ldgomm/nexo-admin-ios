@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminElectronicDocumentsViewModelTests: XCTestCase {
+class AdminElectronicDocumentsViewModelTests: XCTestCase {
     func testLoadDocumentsWithPermissionLoadsList() async {
         let repository = MockAdminElectronicDocumentRepository()
         let viewModel = AdminElectronicDocumentsViewModel(

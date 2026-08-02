@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminUserDetailViewModelTests: XCTestCase {
+class AdminUserDetailViewModelTests: XCTestCase {
     func testLoadHydratesUpdateInputAndOnlyAssignableRoles() async {
         let repository = AdminAccessTestRepository()
         let viewModel = AdminUserDetailViewModel(userId: "usr_cashier", repository: repository)

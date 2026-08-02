@@ -30,7 +30,7 @@ struct DashboardSummaryRequest: Equatable, Sendable {
     }
 }
 
-final class RemoteDashboardAPI: DashboardAPI, @unchecked Sendable {
+class RemoteDashboardAPI: DashboardAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

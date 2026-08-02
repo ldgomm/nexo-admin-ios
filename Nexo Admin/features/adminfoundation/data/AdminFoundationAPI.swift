@@ -15,7 +15,7 @@ protocol AdminFoundationAPI: Sendable {
     func disableModule(code: String, reason: String) async throws -> ModulesResponseDTO
 }
 
-final class RemoteAdminFoundationAPI: AdminFoundationAPI, @unchecked Sendable {
+class RemoteAdminFoundationAPI: AdminFoundationAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

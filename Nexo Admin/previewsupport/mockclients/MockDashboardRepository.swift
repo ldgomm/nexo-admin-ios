@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockDashboardRepository: DashboardRepository, @unchecked Sendable {
+class MockDashboardRepository: DashboardRepository, @unchecked Sendable {
     private let summary: DashboardSummary
     private let delayNanoseconds: UInt64
 

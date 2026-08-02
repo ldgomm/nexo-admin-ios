@@ -51,7 +51,7 @@ struct AdminElectronicDocumentDownloadedFile: Identifiable, Equatable, Sendable 
     }
 }
 
-final class AdminElectronicDocumentTemporaryFileStore: @unchecked Sendable {
+class AdminElectronicDocumentTemporaryFileStore: @unchecked Sendable {
     private let baseDirectory: URL
     private let fileManager: FileManager
 

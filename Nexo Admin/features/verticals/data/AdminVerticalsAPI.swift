@@ -2,7 +2,7 @@
 //  AdminVerticalsAPI.swift
 //  Nexo Admin
 //
-//  Created by Nexo on 26/6/26.
+//  Created by José Ruiz on 26/6/26.
 //
 
 import Foundation
@@ -16,7 +16,7 @@ protocol AdminVerticalsAPI: Sendable {
     func restaurantTablesReadiness(branchId: String?) async throws -> AdminRestaurantTablesReadinessResponseDTO
 }
 
-final class RemoteAdminVerticalsAPI: AdminVerticalsAPI, @unchecked Sendable {
+class RemoteAdminVerticalsAPI: AdminVerticalsAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

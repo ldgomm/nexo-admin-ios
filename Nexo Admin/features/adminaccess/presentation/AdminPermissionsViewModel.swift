@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminPermissionsViewModel: ObservableObject {
+class AdminPermissionsViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<[AdminAccessPermission]> = .idle
     @Published var includeReserved = false
     @Published var searchText = ""

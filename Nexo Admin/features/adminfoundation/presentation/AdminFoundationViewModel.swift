@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminFoundationViewModel: ObservableObject {
+class AdminFoundationViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminFoundationSnapshot> = .idle
     @Published private(set) var isMutating = false
     @Published var selectedBranchId: String?

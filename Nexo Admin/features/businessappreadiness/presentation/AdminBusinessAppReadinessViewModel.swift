@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminBusinessAppReadinessViewModel: ObservableObject {
+class AdminBusinessAppReadinessViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminBusinessAppReadinessReport> = .idle
     @Published var errorMessage: String?
 

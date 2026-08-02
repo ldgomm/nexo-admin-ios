@@ -14,7 +14,7 @@ protocol SecureKeyValueStore: Sendable {
     func delete(_ key: String) throws
 }
 
-final class KeychainStore: SecureKeyValueStore, @unchecked Sendable {
+class KeychainStore: SecureKeyValueStore, @unchecked Sendable {
     private let service: String
 
     init(service: String) {

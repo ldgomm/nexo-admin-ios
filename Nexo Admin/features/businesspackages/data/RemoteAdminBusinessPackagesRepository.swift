@@ -2,12 +2,12 @@
 //  RemoteAdminBusinessPackagesRepository.swift
 //  Nexo Admin
 //
-//  Created by Nexo on 22/6/26.
+//  Created by José Ruiz on 22/6/26.
 //
 
 import Foundation
 
-final class RemoteAdminBusinessPackagesRepository: AdminBusinessPackagesRepository, @unchecked Sendable {
+class RemoteAdminBusinessPackagesRepository: AdminBusinessPackagesRepository, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminInvitationsViewModel: ObservableObject {
+class AdminInvitationsViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<[AdminAccessInvitation]> = .idle
     @Published private(set) var rolesState: LoadableViewState<[AdminAccessRole]> = .idle
     @Published private(set) var createdInvitation: AdminInvitationCreatedResult?

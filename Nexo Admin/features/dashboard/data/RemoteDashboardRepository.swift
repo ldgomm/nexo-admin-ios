@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class RemoteDashboardRepository: DashboardRepository, @unchecked Sendable {
+class RemoteDashboardRepository: DashboardRepository, @unchecked Sendable {
     private let api: any DashboardAPI
     private let nowProvider: @Sendable () -> Date
     private let calendar: Calendar

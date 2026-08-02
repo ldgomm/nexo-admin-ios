@@ -15,7 +15,7 @@ protocol AdminPublicProjectionAPI: Sendable {
     func suspend(_ request: AdminPublicProjectionActionRequestDTO) async throws -> AdminPublicProjectionResponseDTO
 }
 
-final class RemoteAdminPublicProjectionAPI: AdminPublicProjectionAPI, @unchecked Sendable {
+class RemoteAdminPublicProjectionAPI: AdminPublicProjectionAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

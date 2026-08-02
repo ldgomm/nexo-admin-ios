@@ -8,7 +8,7 @@
 import XCTest
 @testable import Nexo_Admin
 
-final class AdminBusinessAppReadinessEvaluatorTests: XCTestCase {
+class AdminBusinessAppReadinessEvaluatorTests: XCTestCase {
     func testReadySnapshotHasNoRequiredBlockers() {
         let report = AdminBusinessAppReadinessEvaluator(generatedAt: { Date(timeIntervalSince1970: 0) })
             .evaluate(snapshot: makeSnapshot(context: makeContext()))

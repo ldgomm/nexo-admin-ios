@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class LoginViewModel: ObservableObject {
+class LoginViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var password: String = ""
     @Published private(set) var isLoading: Bool = false

@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminPublicProjectionViewModelTests: XCTestCase {
+class AdminPublicProjectionViewModelTests: XCTestCase {
     func testRefreshLoadsProjection() async {
         let repository = FakePublicProjectionRepository()
         let viewModel = AdminPublicProjectionViewModel(
@@ -57,7 +57,7 @@ final class AdminPublicProjectionViewModelTests: XCTestCase {
     }
 }
 
-final class FakePublicProjectionRepository: AdminPublicProjectionRepository, @unchecked Sendable {
+class FakePublicProjectionRepository: AdminPublicProjectionRepository, @unchecked Sendable {
     var projection = AdminPublicStoreProjection(
         organizationId: "org_1",
         publicStoreId: "store_1",

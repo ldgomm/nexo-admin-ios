@@ -8,7 +8,7 @@
 import XCTest
 @testable import Nexo_Admin
 
-final class RemoteAdminElectronicDocumentAPITests: XCTestCase {
+class RemoteAdminElectronicDocumentAPITests: XCTestCase {
     func testAdminElectronicDocumentRoutesUseAdminNamespaceForAdministrativeOperationsAndBusinessForBinaryFiles() {
         XCTAssertEqual(AdminElectronicDocumentRoutes.list(), "/api/v1/admin/electronic-documents")
         XCTAssertEqual(AdminElectronicDocumentRoutes.detail(documentId: "edoc_1"), "/api/v1/admin/electronic-documents/edoc_1")

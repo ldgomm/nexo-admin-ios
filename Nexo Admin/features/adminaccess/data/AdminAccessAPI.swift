@@ -35,7 +35,7 @@ protocol AdminAccessAPI: Sendable {
     func listPermissions(includeReserved: Bool) async throws -> AdminPermissionsResponseDTO
 }
 
-final class RemoteAdminAccessAPI: AdminAccessAPI, @unchecked Sendable {
+class RemoteAdminAccessAPI: AdminAccessAPI, @unchecked Sendable {
     private let apiClient: APIClient
 
     init(apiClient: APIClient) {

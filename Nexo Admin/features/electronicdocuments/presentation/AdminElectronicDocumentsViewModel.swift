@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminElectronicDocumentsViewModel: ObservableObject {
+class AdminElectronicDocumentsViewModel: ObservableObject {
     @Published private(set) var documentsState: LoadableViewState<[AdminElectronicDocumentSummary]> = .idle
     @Published private(set) var selectedDetailState: LoadableViewState<AdminElectronicDocumentDetail> = .idle
     @Published private(set) var lastActionMessage: String?

@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminCatalogViewModel: ObservableObject {
+class AdminCatalogViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var isSearchingMaster = false
     @Published private(set) var isSaving = false

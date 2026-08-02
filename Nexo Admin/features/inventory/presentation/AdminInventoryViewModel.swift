@@ -2,12 +2,14 @@
 //  AdminInventoryViewModel.swift
 //  Nexo Admin
 //
+//  Created by José Ruiz on 29/7/26.
+//
 
 import Combine
 import Foundation
 
 @MainActor
-final class AdminInventoryViewModel: ObservableObject {
+class AdminInventoryViewModel: ObservableObject {
     @Published var selectedBranchId: String
     @Published var selectedActivityId: String
     @Published var query = ""

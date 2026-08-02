@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminOrganizationAccessViewModel: ObservableObject {
+class AdminOrganizationAccessViewModel: ObservableObject {
     enum State: Equatable {
         case idle
         case loading

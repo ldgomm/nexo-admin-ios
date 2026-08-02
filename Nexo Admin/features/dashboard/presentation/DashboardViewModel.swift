@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class DashboardViewModel: ObservableObject {
+class DashboardViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<DashboardSummary> = .idle
     @Published private(set) var isRefreshing = false
     @Published var selectedPeriod: DashboardPeriod = .today

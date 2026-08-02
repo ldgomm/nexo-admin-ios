@@ -1,7 +1,14 @@
+//
+//  BuildInfoTests.swift
+//  Nexo Admin
+//
+//  Created by José Ruiz on 29/7/26.
+//
+
 import XCTest
 @testable import Nexo_Admin
 
-final class BuildInfoTests: XCTestCase {
+class BuildInfoTests: XCTestCase {
     func testBuildInfoReadsInfoDictionary() {
         let info: [String: Any] = [
             "CFBundleDisplayName": "Nexo Admin",

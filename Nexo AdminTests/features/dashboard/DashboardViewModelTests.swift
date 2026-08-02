@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class DashboardViewModelTests: XCTestCase {
+class DashboardViewModelTests: XCTestCase {
     func testLoadPublishesLoadedStateWhenRepositoryReturnsSummary() async {
         let tokenStore = InMemoryAuthTokenStore()
         let organizationStore = InMemoryOrganizationSelectionStore()
@@ -73,7 +73,7 @@ final class DashboardViewModelTests: XCTestCase {
     }
 }
 
-private final class FakeDashboardRepository: DashboardRepository, @unchecked Sendable {
+private class FakeDashboardRepository: DashboardRepository, @unchecked Sendable {
     let result: Result<DashboardSummary, Error>
 
     init(result: Result<DashboardSummary, Error>) {
@@ -191,7 +191,7 @@ private enum DashboardTestData {
     }
 }
 
-private final class InMemoryAuthTokenStore: AuthTokenStorage, @unchecked Sendable {
+private class InMemoryAuthTokenStore: AuthTokenStorage, @unchecked Sendable {
     private var tokens: SessionTokens?
 
     func saveTokens(_ tokens: SessionTokens) throws { self.tokens = tokens }
@@ -199,7 +199,7 @@ private final class InMemoryAuthTokenStore: AuthTokenStorage, @unchecked Sendabl
     func clearTokens() throws { tokens = nil }
 }
 
-private final class InMemoryOrganizationSelectionStore: OrganizationSelectionStoring, @unchecked Sendable {
+private class InMemoryOrganizationSelectionStore: OrganizationSelectionStoring, @unchecked Sendable {
     var selectedOrganizationId: String?
 
     func selectOrganization(id: String?) { selectedOrganizationId = id }

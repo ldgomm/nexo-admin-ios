@@ -9,7 +9,7 @@ import XCTest
 @testable import Nexo_Admin
 
 @MainActor
-final class AdminSupportDiagnosticsViewModelTests: XCTestCase {
+class AdminSupportDiagnosticsViewModelTests: XCTestCase {
     func testRefreshLoadsHealthAndDevices() async {
         let repository = FakeSupportRepository()
         let viewModel = AdminSupportDiagnosticsViewModel(
@@ -44,7 +44,7 @@ final class AdminSupportDiagnosticsViewModelTests: XCTestCase {
     }
 }
 
-final class FakeSupportRepository: AdminSupportRepository, @unchecked Sendable {
+class FakeSupportRepository: AdminSupportRepository, @unchecked Sendable {
     func getHealth() async throws -> AdminHealthSummary {
         AdminHealthSummary(status: "healthy", environment: "staging", version: "2.4.0", commit: "abc", database: "connected", sri: "test", outbox: "ready", generatedAt: "2026-05-27T00:00:00Z")
     }

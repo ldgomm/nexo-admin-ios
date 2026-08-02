@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockAdminElectronicDocumentRepository: AdminElectronicDocumentRepository, @unchecked Sendable {
+class MockAdminElectronicDocumentRepository: AdminElectronicDocumentRepository, @unchecked Sendable {
     var listResult: AdminElectronicDocumentList
     var details: [String: AdminElectronicDocumentDetail]
     var shouldFail = false

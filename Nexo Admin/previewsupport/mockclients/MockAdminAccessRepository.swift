@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class MockAdminAccessRepository: AdminAccessRepository, @unchecked Sendable {
+class MockAdminAccessRepository: AdminAccessRepository, @unchecked Sendable {
     private var users: [AdminAccessUser]
     private var roles: [AdminAccessRole]
     private var invitations: [AdminAccessInvitation]

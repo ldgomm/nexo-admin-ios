@@ -36,7 +36,7 @@ protocol APIDataClient: APIClient {
 
 struct EmptyRequestBody: Encodable, Sendable {}
 
-final class DefaultAPIClient: APIDataClient, @unchecked Sendable {
+class DefaultAPIClient: APIDataClient, @unchecked Sendable {
     private let environment: AppEnvironment
     private let session: URLSession
     private let decoder: JSONDecoder

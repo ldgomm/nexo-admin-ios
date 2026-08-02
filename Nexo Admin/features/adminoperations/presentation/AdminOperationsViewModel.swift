@@ -9,7 +9,7 @@ import Combine
 import Foundation
 
 @MainActor
-final class AdminOperationsViewModel: ObservableObject {
+class AdminOperationsViewModel: ObservableObject {
     enum Section: String, CaseIterable, Identifiable {
         case snapshot
         case overview

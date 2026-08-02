@@ -19,7 +19,7 @@ enum AuthSessionPhase: Equatable {
 }
 
 @MainActor
-final class AuthSessionStore: ObservableObject {
+class AuthSessionStore: ObservableObject {
     @Published private(set) var phase: AuthSessionPhase = .restoring
     @Published private(set) var currentUser: AdminUser?
     @Published private(set) var currentSession: CurrentSession?

@@ -2,14 +2,14 @@
 //  AdminVerticalActivationViewModel.swift
 //  Nexo Admin
 //
-//  Created by Nexo on 26/6/26.
+//  Created by José Ruiz on 26/6/26.
 //
 
 import Combine
 import Foundation
 
 @MainActor
-final class AdminVerticalActivationViewModel: ObservableObject {
+class AdminVerticalActivationViewModel: ObservableObject {
     @Published private(set) var state: LoadableViewState<AdminVerticalActivationPresentation> = .idle
     @Published private(set) var isMutating = false
     @Published var activationReason = "Activar restaurante v1 desde Nexo Admin iOS"
